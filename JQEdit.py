@@ -19,21 +19,21 @@ class ReplaceDialog(QDialog, Ui_replace_window):
         self.text_edit = text_edit
         self.setupUi(self)
         self.findnext_btn.clicked.connect(self.find_next)
+        self.replace_btn.clicked.connect(self.replace)
         self.allreplace_btn.clicked.connect(self.replace_all)
         self.cancel_btn.clicked.connect(self.close_dialog)
         self.regex = None
-        self.original_text=None
-        self.replaced_text = None  # 用于存储替换后的文本
-        self.loop_count = 0  # 记录循环搜索的次数
+        self.original_text = None
+        self.loop_count = 0
 
     def update_regex(self):
         pattern = self.search_text.text()
         options = QRegularExpression.PatternOption(0)
 
         if self.matchcase_check.isChecked():
-            options &= ~QRegularExpression.CaseInsensitiveOption  # 区分大小写
+            options &= ~QRegularExpression.CaseInsensitiveOption
         else:
-            options |= QRegularExpression.CaseInsensitiveOption  # 不区分大小写
+            options |= QRegularExpression.CaseInsensitiveOption
 
         if self.multiline_check.isChecked():
             options |= QRegularExpression.MultilineOption
@@ -45,7 +45,7 @@ class ReplaceDialog(QDialog, Ui_replace_window):
         except QRegularExpression.SyntaxError:
             QApplication.instance().beep()
             QMessageBox.critical(self, "错误", "无效的正则表达式，请重新输入", QMessageBox.Ok)
-            self.regex = None  # 如果正则表达式模式无效，将正则表达式重置为None
+            self.regex = None
 
     def find_next(self):
         self.update_regex()
@@ -56,18 +56,21 @@ class ReplaceDialog(QDialog, Ui_replace_window):
         end = cursor.selectionEnd() if cursor.hasSelection() else cursor.position()
 
         if self.up_rdbtn.isChecked():
+            direction = -1
             start, end = 0, start
         else:
+            direction = 1
             start, end = end, len(plain_text)
 
-        if self.up_rdbtn.isChecked():
-            match_iter = self.regex.globalMatch(plain_text, start)
-            last_match = None
-            while match_iter.hasNext():
-                match = match_iter.next()
-                match_start = match.capturedStart()
-                match_end = match.capturedEnd()
+        match_iter = self.regex.globalMatch(plain_text, start)
 
+        last_match = None
+        while match_iter.hasNext():
+            match = match_iter.next()
+            match_start = match.capturedStart()
+            match_end = match.capturedEnd()
+
+            if direction == -1:
                 if match_start >= end:
                     if last_match:
                         cursor.setPosition(last_match.capturedStart())
@@ -85,7 +88,14 @@ class ReplaceDialog(QDialog, Ui_replace_window):
                             return self.find_next()  # 继续从头搜索
                 else:
                     last_match = match
+            else:
+                if match_start >= start:
+                    cursor.setPosition(match_start)
+                    cursor.setPosition(match_end, QTextCursor.KeepAnchor)
+                    self.text_edit.setTextCursor(cursor)
+                    return
 
+        if direction == -1:
             if last_match:
                 cursor.setPosition(last_match.capturedStart())
                 cursor.setPosition(last_match.capturedEnd(), QTextCursor.KeepAnchor)
@@ -99,20 +109,7 @@ class ReplaceDialog(QDialog, Ui_replace_window):
                 else:
                     self.loop_count = 0
                     return self.find_next()  # 继续从头搜索
-
         else:
-            match_iter = self.regex.globalMatch(plain_text)
-            while match_iter.hasNext():
-                match = match_iter.next()
-                match_start = match.capturedStart()
-                match_end = match.capturedEnd()
-
-                if match_start >= start:
-                    cursor.setPosition(match_start)
-                    cursor.setPosition(match_end, QTextCursor.KeepAnchor)
-                    self.text_edit.setTextCursor(cursor)
-                    return
-
             if self.loop_count == 0:
                 QApplication.instance().beep()
                 cursor.setPosition(0)
@@ -122,17 +119,43 @@ class ReplaceDialog(QDialog, Ui_replace_window):
                 self.loop_count = 0
                 return self.find_next()  # 继续从头搜索
 
-    def replace_all(self):
-        self.update_regex()
+    def replace(self):
         cursor = self.text_edit.textCursor()
-        plain_text = self.text_edit.toPlainText()
-        self.original_text = plain_text  # 存储原始文本
+        if cursor.hasSelection():
+            cursor.insertText(self.replacewith_text.text())
+        self.find_next()
 
-        # 使用正则表达式替换所有匹配项
-        replaced_text = self.regex.sub(self.replacewith_text.text(), plain_text)
-        self.replaced_text = replaced_text  # 存储替换后的文本
-        # 将替换后的文本设置到文本编辑器中
-        self.text_edit.setPlainText(replaced_text)
+    def replace_all(self):
+        document = self.text_edit.document()
+        cursor = QTextCursor(document)
+        pattern = self.search_text.text()
+        replacement = self.replacewith_text.text()
+
+        matchcase = self.matchcase_check.isChecked()
+        multiline = self.multiline_check.isChecked()
+        dotall = self.dotall_check.isChecked()
+
+        flags = 0
+        if not matchcase:
+            flags |= re.IGNORECASE
+        if multiline:
+            flags |= re.MULTILINE
+        if dotall:
+            flags |= re.DOTALL
+
+        cursor.beginEditBlock()
+
+        plain_text = self.text_edit.toPlainText()
+        new_text = re.sub(pattern, replacement, plain_text, flags=flags)
+
+        if new_text == plain_text:
+            QApplication.instance().beep()
+
+        cursor.select(QTextCursor.Document)
+        cursor.removeSelectedText()
+        cursor.insertText(new_text)
+
+        cursor.endEditBlock()
 
     def close_dialog(self):
         self.close()
@@ -759,8 +782,8 @@ class MyNotepad(QMainWindow):
     @Slot()
     def open_dialog(self):
         if self.tip_to_save():
-            filename, _ = QFileDialog.getOpenFileName(self, "打开", "2024-03-03/",
-                                                      "*.txt *.py *.html *.xml *.sh *.bat;;所有文件(*.*)")
+            filename, _ = QFileDialog.getOpenFileName(self, "打开", "",
+                                                      "*.txt *.py *.html *.xml *.ini *.bat;;所有文件(*.*)")
             self.read_file(filename)
 
     # 根据当前是否打开文件来决定是直接保存，还是另存至其他位置（）
@@ -826,16 +849,7 @@ class MyNotepad(QMainWindow):
 
     @Slot()
     def undo(self):
-        if self.find_dialog.original_text is not None:
-            self.text_edit.setPlainText(self.find_dialog.original_text)
-            self.find_dialog.original_text = None
-            self.find_dialog.replaced_text = None
-        else:
-
-            # 恢复到撤销操作前的文本
-            self.find_dialog.original_text = self.text_edit.toPlainText()
-            self.find_dialog.replaced_text = None
-            # self.text_edit.undo()
+        self.text_edit.undo()
 
     @Slot()
     def cut(self):
