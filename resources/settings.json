@@ -1,0 +1,11 @@
+{
+    "font_family": "Monaco",
+    "pointSize": 14,
+    "bold": false,
+    "italic": false,
+    "underline": false,
+    "strikeOut": false,
+    "theme": "default",
+    "wrap_lines": true,
+    "statusbar_shown": true
+}
