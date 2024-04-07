@@ -305,18 +305,23 @@ class MyNotepad(QMainWindow):
         self.edit_menu.addAction(self.date_action)
 
         # 主题菜单
-
-        self.def_theme_action = QAction("windows默认", self)
+        # 将主题样式存入数组全部设为未选中，当用户选中哪一个，就把哪一个设为True
+        # 也就是点击哪个主题，哪个主题样式前面就显示打勾
+        self.theme_actions = []
+        self.def_theme_action = QAction("windows默认", self,checkable=True)
         self.def_theme_action.triggered.connect(self.set_default_style)
         self.theme_menu.addAction(self.def_theme_action)
+        self.theme_actions.append(self.def_theme_action)
 
-        self.dark_theme_action = QAction("Dark", self)
+        self.dark_theme_action = QAction("Dark", self,checkable=True)
         self.dark_theme_action.triggered.connect(self.set_dark_style)
         self.theme_menu.addAction(self.dark_theme_action)
+        self.theme_actions.append(self.dark_theme_action)
 
-        self.light_theme_action = QAction("light", self)
+        self.light_theme_action = QAction("light", self,checkable=True)
         self.light_theme_action.triggered.connect(self.set_light_style)
         self.theme_menu.addAction(self.light_theme_action)
+        self.theme_actions.append(self.light_theme_action)
 
         self.font_action = QAction("字体(&Z)", self)
         self.font_action.setShortcut("Alt+Z")
@@ -574,11 +579,12 @@ class MyNotepad(QMainWindow):
         self.font.setStrikeOut(font_properties["strikeOut"])
 
         self.text_edit.setFont(self.font)
+        #加载用户字体选择结束
 
-        # 加载主题设置
+        # 加载用户主题设置
         self.theme = settings.get("theme", "default")
 
-        # 加载状态栏，自动换行设置，如果json文件中没有值，使用备选值True
+        # 加载用户状态栏，自动换行设置，如果json文件中没有值，使用备选值True
         self.wrap_lines = settings.get("wrap_lines", True)
         self.statusbar_shown = settings.get("statusbar_shown", True)
 
@@ -621,6 +627,11 @@ class MyNotepad(QMainWindow):
         with open(self.json_file, "w") as f:
             json.dump(settings, f, indent=4)
 
+    def clear_checked(self):
+        # 清除主题样式菜单项的选中状态
+        for action in self.theme_actions:
+            action.setChecked(False)
+
     def set_default_style(self):
         self.setStyleSheet("""
             QPlainTextEdit {
@@ -631,6 +642,8 @@ class MyNotepad(QMainWindow):
             }
           """)
         self.theme = "default"
+        self.clear_checked()
+        self.def_theme_action.setChecked(True)
         self.save_settings()
 
     def set_light_style(self):
@@ -643,6 +656,8 @@ class MyNotepad(QMainWindow):
             }
           """)
         self.theme = "light"
+        self.clear_checked()
+        self.light_theme_action.setChecked(True)
         self.save_settings()
 
     def set_dark_style(self):
@@ -655,7 +670,10 @@ class MyNotepad(QMainWindow):
             }
         """)
         self.theme = "dark"
+        self.clear_checked()
+        self.dark_theme_action.setChecked(True)
         self.save_settings()
+
 
     def jump_to_line(self, line_number):
         # 创建 QTextCursor 对象

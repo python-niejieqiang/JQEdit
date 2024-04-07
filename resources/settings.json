@@ -5,7 +5,7 @@
     "italic": false,
     "underline": false,
     "strikeOut": false,
-    "theme": "default",
+    "theme": "light",
     "wrap_lines": true,
     "statusbar_shown": true
 }
