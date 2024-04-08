@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (QApplication, QDialog, QFileDialog, QMainWindow, QWidget, QFontDialog, QPlainTextEdit,
                                QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
-from PySide6.QtCore import QTranslator, QFile, QTextStream, Qt, QUrl, Slot,QRegularExpression
-from PySide6.QtGui import QAction, QColor, QIcon, QFont, QTextCursor, QDesktopServices, QKeyEvent
+from PySide6.QtCore import QTranslator,Qt, QUrl, Slot,QRegularExpression
+from PySide6.QtGui import QAction, QColor, QIcon, QFont, QTextCursor, QDesktopServices, QKeyEvent,QPainter
 import chardet
 import time
 import sys
@@ -172,6 +172,9 @@ class MyNotepad(QMainWindow):
 
         self.text_edit = QPlainTextEdit()
         self.text_edit.cursorPositionChanged.connect(self.get_row_col)
+        # 设置文本反锯齿
+        self.setDefaultRenderHints()
+
         self.setCentralWidget(self.text_edit)
 
         # 添加底部状态栏
@@ -186,7 +189,6 @@ class MyNotepad(QMainWindow):
         self.current_file_name = ""
         # 记录是否需要保存
         self.is_saved = False
-        self.font=""
 
         # 把命令行第一个参数作为文件名打开
         if file_in_cmd is not None:
@@ -343,6 +345,7 @@ class MyNotepad(QMainWindow):
         # 读取settings.json文件
         self.json_file = os.path.join(resource_path,"settings.json")
         self.load_settings()
+
         # 主窗口部分
         self.replace_action = QAction("查找/替换(&Z)", self)
         # 创建查找对话框的实例,暂时不显示,点击查找替换才显示在display_replace函数中使用
@@ -530,7 +533,7 @@ class MyNotepad(QMainWindow):
         try:
             # 尝试读取更多字符以提高编码检测的准确性
             with open(filename, "rb") as f:
-                content = f.read(100000)  # 读取更多的内容
+                content = f.read(10000)  # 读取更多的内容
                 encoding = chardet.detect(content)["encoding"]
                 detected = encoding.upper()
                 if encoding.upper() in ["GB2312", "GBK"]:
@@ -639,7 +642,8 @@ class MyNotepad(QMainWindow):
                 color: black;
                 selection-background-color: rgb(100, 149, 237);
                 selection-color: white;
-            }
+                border:none
+            }            
           """)
         self.theme = "default"
         self.clear_checked()
@@ -661,13 +665,15 @@ class MyNotepad(QMainWindow):
         self.save_settings()
 
     def set_dark_style(self):
-        self.setStyleSheet("""  
-            QPlainTextEdit {  
+        self.setStyleSheet("""
+            QPlainTextEdit {
                 background-color:rgb(30,43,50);
                 color: rgb(168, 153, 132);
                 selection-background-color: rgb(53, 65, 72);
-                selection-color: rgb(168, 153, 132); 
+                selection-color: rgb(168, 153, 132);
+                border:none
             }
+
         """)
         self.theme = "dark"
         self.clear_checked()
@@ -968,6 +974,12 @@ class MyNotepad(QMainWindow):
         # 弹出颜色选择器
         QColorDialog.getColor(Qt.white, self, "点击 Pick Screen Color 拾取颜色")
 
+    def setDefaultRenderHints(self):
+        # 设置 QPainter 对象的默认渲染策略
+        painter = QPainter(self.text_edit.viewport())
+        painter.setRenderHint(QPainter.Antialiasing)  # 启用反锯齿
+        painter.setRenderHint(QPainter.TextAntialiasing)  # 启用文本反锯齿
+        self.text_edit.viewport().update()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
