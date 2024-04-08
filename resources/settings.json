@@ -1,11 +1,11 @@
 {
     "font_family": "Microsoft YaHei UI",
-    "pointSize": 12,
+    "pointSize": 48,
     "bold": false,
     "italic": false,
     "underline": false,
     "strikeOut": false,
-    "theme": "default",
+    "theme": "dark",
     "wrap_lines": true,
     "statusbar_shown": true
 }

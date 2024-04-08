@@ -1,16 +1,18 @@
-from PySide6.QtWidgets import (QApplication, QDialog, QFileDialog, QMainWindow, QWidget, QFontDialog, QPlainTextEdit,
-                               QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
-from PySide6.QtCore import QTranslator,Qt, QUrl, Slot,QRegularExpression
-from PySide6.QtGui import QAction, QColor, QIcon, QFont, QTextCursor, QDesktopServices, QKeyEvent,QPainter
-import chardet
-import time
-import sys
-import subprocess
 import functools
+import json
 import os
 import re
-import json
+import subprocess
+import sys
+import time
+import chardet
+from PySide6.QtCore import QTranslator, Qt, QUrl, Slot, QRegularExpression
+from PySide6.QtGui import QAction, QIcon, QFont, QTextCursor, QDesktopServices, QKeyEvent, QPainter
+from PySide6.QtWidgets import (QApplication, QDialog, QFileDialog, QMainWindow, QFontDialog, QPlainTextEdit,
+                               QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
+
 from replace_window_ui import Ui_replace_window
+
 
 class ReplaceDialog(QDialog, Ui_replace_window):
     def __init__(self, text_edit, parent=None):
@@ -166,6 +168,9 @@ class MyNotepad(QMainWindow):
 
         self.app_name = "JQEdit"
         self.setWindowTitle(self.app_name)
+        # 设置窗口的最小尺寸
+        self.resize(800,600)
+
         # 初始化界面，依次添加菜单栏，text_edit，status_bar
         self.menu_bar = QMenuBar(self)
         self.setMenuBar(self.menu_bar)
@@ -657,6 +662,7 @@ class MyNotepad(QMainWindow):
                 color: rgb(38, 38, 38);
                 selection-background-color: rgb(184, 221, 224);
                 selection-color: rgb(38, 38, 38);
+                border:none
             }
           """)
         self.theme = "light"
@@ -991,14 +997,14 @@ if __name__ == "__main__":
     # 加载图片
     zh_cn_path = os.path.join(resource_path, "qt_zh_CN.qm")
     cn_widgets_path = os.path.join(resource_path, "widgets.qm")
-    translator = QTranslator()
-    translator1 = QTranslator()
+    zh_cn_translator = QTranslator()
+    widgets_translator = QTranslator()
 
-    translator.load(zh_cn_path)
-    translator1.load(cn_widgets_path)
+    zh_cn_translator.load(zh_cn_path)
+    widgets_translator.load(cn_widgets_path)
 
-    app.installTranslator(translator)
-    app.installTranslator(translator1)
+    app.installTranslator(zh_cn_translator)
+    app.installTranslator(widgets_translator)
 
     icon_path = os.path.join(resource_path, "JQEdit.png")
     app.setWindowIcon(QIcon(icon_path))
