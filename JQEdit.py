@@ -177,9 +177,6 @@ class MyNotepad(QMainWindow):
 
         self.text_edit = QPlainTextEdit()
         self.text_edit.cursorPositionChanged.connect(self.get_row_col)
-        # 设置文本反锯齿
-        self.setDefaultRenderHints()
-
         self.setCentralWidget(self.text_edit)
 
         # 添加底部状态栏
@@ -194,10 +191,6 @@ class MyNotepad(QMainWindow):
         self.current_file_name = ""
         # 记录是否需要保存
         self.is_saved = False
-
-        # 把命令行第一个参数作为文件名打开
-        if file_in_cmd is not None:
-            self.read_file(file_in_cmd)
 
         # 添加菜单项
         self.file_menu = QMenu("文件", self.menu_bar)
@@ -226,10 +219,15 @@ class MyNotepad(QMainWindow):
         self.clear_recent_files_action.triggered.connect(self.clear_recent_files)
         self.recent_files_menu.addAction(self.clear_recent_files_action)
         # 最近打开的文件列表
-        self.recent_files = []
         self.action_connections = {}
         # 使用os模块读取路径只是为了pyinstaller打包成exe的时候不会报错
         self.recent_files_path = os.path.join(resource_path,"recent_files.json")
+
+        #这个数组跟命令行参数处理一定要等recent_files_menu初始化才能正常运行
+        self.recent_files = []
+        # 把命令行第一个参数作为文件名打开
+        if file_in_cmd is not None:
+            self.read_file(file_in_cmd)
 
         self.new_file_action = QAction("新建(&N)", self)
         self.new_file_action.setShortcut("Ctrl+N")
@@ -1042,12 +1040,25 @@ class MyNotepad(QMainWindow):
         # 弹出颜色选择器
         QColorDialog.getColor(Qt.white, self, "点击 Pick Screen Color 拾取颜色")
 
-    def setDefaultRenderHints(self):
-        # 设置 QPainter 对象的默认渲染策略
-        painter = QPainter(self.text_edit.viewport())
-        painter.setRenderHint(QPainter.Antialiasing)  # 启用反锯齿
-        painter.setRenderHint(QPainter.TextAntialiasing)  # 启用文本反锯齿
-        self.text_edit.viewport().update()
+###############################################################################################
+#                             MyNotepad 类 代码结束                                              #
+###############################################################################################
+
+def load_and_install_translator(resource_path, language_code):
+    #此方法不要写到MyNotepad类中，翻译文件必须在图形界面初始化前启动
+    translator = QTranslator()
+    translator_path = os.path.join(resource_path, f"{language_code}.qm")
+    translator.load(translator_path)
+    app.installTranslator(translator)
+
+def get_file_argument():
+    """
+    获取命令行参数中的文件路径
+    """
+    if len(sys.argv) > 1:
+        return os.path.abspath(sys.argv[1])
+    else:
+        return None
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
@@ -1056,22 +1067,16 @@ if __name__ == "__main__":
     current_directory = os.path.dirname(os.path.abspath(__file__))
     # 构建资源文件夹的绝对路径（资源文件夹在可执行文件内部是 'resources/'）
     resource_path = os.path.join(sys._MEIPASS if hasattr(sys, '_MEIPASS') else current_directory, 'resources')
-    # 加载图片
-    zh_cn_path = os.path.join(resource_path, "qt_zh_CN.qm")
-    cn_widgets_path = os.path.join(resource_path, "widgets.qm")
-    zh_cn_translator = QTranslator()
-    widgets_translator = QTranslator()
 
-    zh_cn_translator.load(zh_cn_path)
-    widgets_translator.load(cn_widgets_path)
-
-    app.installTranslator(zh_cn_translator)
-    app.installTranslator(widgets_translator)
+    # 加载并安装中文翻译文件
+    load_and_install_translator(resource_path, "qt_zh_CN")
+    load_and_install_translator(resource_path, "widgets")
 
     icon_path = os.path.join(resource_path, "JQEdit.png")
     app.setWindowIcon(QIcon(icon_path))
     # 如果有参数就传给记事本打开（这样打包成exe双击txt就能被记事本打开），否则创建空窗口
-    filename = sys.argv[1] if len(sys.argv) > 1 else None
+    filename = get_file_argument()
+
     window = MyNotepad(filename) if filename else MyNotepad()
     window.showMaximized()
     sys.exit(app.exec())
