@@ -1,4 +1,4 @@
-import functools
+from functools import partial
 import json
 import os
 import re
@@ -219,6 +219,18 @@ class MyNotepad(QMainWindow):
         self.menu_bar.addMenu(self.tool_menu)
 
         # 文件菜单
+        # 添加最近打开的文件子菜单
+        self.recent_files_menu = self.file_menu.addMenu("最近打开")
+        # 添加清空记录的菜单项
+        self.clear_recent_files_action = QAction("清空记录", self)
+        self.clear_recent_files_action.triggered.connect(self.clear_recent_files)
+        self.recent_files_menu.addAction(self.clear_recent_files_action)
+        # 最近打开的文件列表
+        self.recent_files = []
+        self.action_connections = {}
+        # 使用os模块读取路径只是为了pyinstaller打包成exe的时候不会报错
+        self.recent_files_path = os.path.join(resource_path,"recent_files.json")
+
         self.new_file_action = QAction("新建(&N)", self)
         self.new_file_action.setShortcut("Ctrl+N")
         self.new_file_action.triggered.connect(self.new_file)
@@ -350,7 +362,8 @@ class MyNotepad(QMainWindow):
         # 读取settings.json文件
         self.json_file = os.path.join(resource_path,"settings.json")
         self.load_settings()
-
+        self.load_recent_files()
+        self.update_recent_files_menu()
         # 主窗口部分
         self.replace_action = QAction("查找/替换(&Z)", self)
         # 创建查找对话框的实例,暂时不显示,点击查找替换才显示在display_replace函数中使用
@@ -367,9 +380,9 @@ class MyNotepad(QMainWindow):
 
             self.to_sava_as = QAction("以该编码另存", self)
             self.encoding_submenu.addAction(self.to_sava_as)
-            self.to_sava_as.triggered.connect(functools.partial(self.use_code_save, cod=code_name))
+            self.to_sava_as.triggered.connect(partial(self.use_code_save, cod=code_name))
             self.to_open = QAction("以该编码重新加载", self)
-            self.to_open.triggered.connect(functools.partial(self.re_open, coding=code_name))
+            self.to_open.triggered.connect(partial(self.re_open, coding=code_name))
             self.encoding_submenu.addAction(self.to_open)
 
         # 工具菜单
@@ -552,7 +565,8 @@ class MyNotepad(QMainWindow):
                 content = f.read()
             self.text_edit.setPlainText(content)
             self.set_current_file(filename)
-
+            # 将文件路径保存至最近打开
+            self.add_recent_file(filename)
             # 更新窗口标题以显示文件路径、编码等信息
             self.setWindowTitle(f"{self.app_name} - {detected} - {filename}")
 
@@ -564,6 +578,54 @@ class MyNotepad(QMainWindow):
             QMessageBox.warning(self, "错误", "文件编码无法识别，请尝试手动选择编码！")
         except Exception as e:
             QMessageBox.warning(self, "错误", f"打开文件时发生错误（很可能不支持该文件类型）:{e}")
+
+    def add_recent_file(self, file_path):
+        # 添加最近打开的文件路径到列表中
+        if file_path in self.recent_files:
+            self.recent_files.remove(file_path)
+        self.recent_files.insert(0, file_path)
+        # 如果超过十个文件，则移除列表中最早打开的文件
+        if len(self.recent_files) > 10:
+            self.recent_files.pop(-1)
+        # 更新最近打开的文件菜单
+        self.update_recent_files_menu()
+        self.save_recent_files()
+
+    def clear_recent_files(self):
+        # 清空最近打开文件列表
+        self.recent_files = []
+        # 更新最近打开菜单
+        self.update_recent_files_menu()
+        # 保存最近打开文件列表
+        self.save_recent_files()
+
+    def update_recent_files_menu(self):
+        # 清空最近打开的文件菜单
+        self.recent_files_menu.clear()
+
+        # 添加最近打开的文件到菜单中
+        self.action_connections.clear()  # 清空连接字典
+        for file_path in self.recent_files:
+            action = QAction(os.path.basename(file_path), self)
+            new_connection = partial(self.read_file, file_path)
+            action.triggered.connect(new_connection)
+            self.action_connections[action] = new_connection
+            self.recent_files_menu.addAction(action)
+
+        # 添加清空记录的菜单项，但只有在有记录时才显示
+        if self.recent_files:
+            self.recent_files_menu.addSeparator()  # 添加分隔符
+            self.clear_recent_files_action.setVisible(True)  # 设置可见
+            self.recent_files_menu.addAction(self.clear_recent_files_action)
+
+    def load_recent_files(self):
+        if os.path.exists(self.recent_files_path):
+            with open(self.recent_files_path, "r") as f:
+                self.recent_files = json.load(f)
+
+    def save_recent_files(self):
+        with open(self.recent_files_path, "w") as f:
+            json.dump(self.recent_files, f)
 
     def load_settings(self):
         with open(self.json_file, "r") as f:
