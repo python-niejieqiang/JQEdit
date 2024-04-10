@@ -8,16 +8,10 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-                            QMetaObject, QObject, QPoint, QRect,
-                            QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-                           QFont, QFontDatabase, QGradient, QIcon,
-                           QImage, QKeySequence, QLinearGradient, QPainter,
-                           QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QCheckBox, QGroupBox, QLabel,
-                               QLineEdit, QPushButton, QRadioButton, QSizePolicy,
-                               QWidget)
+from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect)
+from PySide6.QtGui import (QFont)
+from PySide6.QtWidgets import (QCheckBox, QGroupBox, QLabel,
+                               QLineEdit, QPushButton, QRadioButton)
 
 
 class Ui_replace_window(object):
@@ -25,11 +19,11 @@ class Ui_replace_window(object):
         if not replace_window.objectName():
             replace_window.setObjectName(u"replace_window")
         replace_window.setEnabled(True)
-        replace_window.resize(530, 182)
+        replace_window.setFixedSize(530, 182)
 
         font = QFont()
         font.setFamilies([u"Microsoft YaHei"])
-        font.setPointSize(9)
+        font.setPointSize(10)
         replace_window.setFont(font)
         self.label_chazhao = QLabel(replace_window)
         self.label_chazhao.setObjectName(u"label_chazhao")
