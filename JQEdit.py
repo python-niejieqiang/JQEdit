@@ -1,17 +1,19 @@
-from functools import partial
 import json
 import os
 import re
 import subprocess
 import sys
 import time
+from functools import partial
+
 import chardet
-from PySide6.QtCore import QTranslator, Qt, QUrl, Slot, QRegularExpression
-from PySide6.QtGui import QAction, QIcon, QFont, QTextCursor, QDesktopServices, QKeyEvent, QPainter
-from PySide6.QtWidgets import (QApplication, QDialog, QLabel,QLineEdit,QCheckBox,QVBoxLayout,QPushButton,QFileDialog, QMainWindow, QFontDialog, QPlainTextEdit,
-                               QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
 from PySide6 import QtGui
-from PySide6 import QtCore
+from PySide6.QtCore import QTranslator, Qt, QUrl, Slot, QRegularExpression
+from PySide6.QtGui import QAction, QIcon, QFont, QTextCursor, QDesktopServices, QKeyEvent
+from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QLineEdit, QCheckBox, QVBoxLayout, QPushButton,
+                               QFileDialog, QMainWindow, QFontDialog, QPlainTextEdit,
+                               QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
+
 from replace_window_ui import Ui_replace_window
 
 
@@ -554,41 +556,39 @@ class Notepad(QMainWindow):
         return False
 
     def read_file(self, filename):
+        start_time=time.time()
         if not filename:
             return
         try:
-            # 尝试读取更多字符以提高编码检测的准确性
             with open(filename, "rb") as f:
-                content = f.read(10000)  # 读取更多的内容
+                # 获取文件长度
+                file_size = os.path.getsize(filename)
+                # 读取文件的前10000个字节
+                content = f.read(min(10000, file_size))
                 encoding_info = chardet.detect(content)
                 if encoding_info is None:
-                    encoding = "utf-8"  # 默认使用 UTF-8 编码
+                    encoding = "utf-8"
                 else:
-                    encoding = encoding_info.get("encoding", "utf-8")#空文件返回编码是空的时候默认使用UTF-8
+                    encoding = encoding_info.get("encoding", "utf-8")
                     if not encoding:
-                        encoding = "utf-8"  # 如果编码为空，则使用默认的 UTF-8 编码
+                        encoding = "utf-8"
                     if encoding.upper() in ["GB2312", "GBK"]:
                         encoding = "GB18030"
 
-            # 记录打开文件时的编码和文件名
-            self.current_file_name = filename
-            self.current_file_encoding = encoding
+                self.current_file_name = filename
+                self.current_file_encoding = encoding
 
-            with open(filename, "r", encoding=encoding) as f:
-                content = "".join(line for line in f)
-            self.text_edit.setPlainText(content)
-            self.set_current_file(filename)
-            # 将文件路径保存至最近打开
-            self.add_recent_file(filename)
-            # 更新窗口标题以显示文件路径、编码等信息
-            self.setWindowTitle(f"{self.app_name} - {encoding} - {filename}")
+                self.text_edit.setPlainText(content.decode(encoding))
+                self.set_current_file(filename)
+                self.add_recent_file(filename)
+                self.setWindowTitle(f"{self.app_name} - {encoding} - {filename}")
+                end_time = time.time()
+                print("读取文件时间：", end_time - start_time)
 
         except FileNotFoundError:
             QMessageBox.warning(self, "错误", "文件未找到，请检查路径是否正确！")
         except PermissionError:
             QMessageBox.warning(self, "错误", "没有足够的权限打开文件！")
-        except UnicodeDecodeError:
-            QMessageBox.warning(self, "错误", "文件编码无法识别，请尝试手动选择编码！")
         except Exception as e:
             QMessageBox.warning(self, "错误", f"打开文件时发生错误（很可能不支持该文件类型）:{e}")
 
@@ -949,7 +949,7 @@ class Notepad(QMainWindow):
                 text = infile.read()
             self.text_edit.setPlainText(text)
             self.current_file_encoding = coding
-            self.setWindowTitle(self.current_file_name + " - " + coding.upper() + " - " + self.app_name)
+            self.setWindowTitle(self.app_name+ " - " + coding.upper() + " - " +self.current_file_name  )
         except FileNotFoundError:
             QMessageBox.warning(self, "错误", "还没打开文件！")
 
@@ -1130,9 +1130,7 @@ class Notepad(QMainWindow):
         # 弹出颜色选择器
         QColorDialog.getColor(Qt.white, self, "点击 Pick Screen Color 拾取颜色")
 
-###############################################################################################
-#                             Notepad 类 代码结束                                              #
-###############################################################################################
+#======================================================================================
 
 def load_and_install_translator(resource_path, language_code):
     #此方法不要写到MyNotepad类中，翻译文件必须在图形界面初始化前启动

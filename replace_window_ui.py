@@ -8,22 +8,26 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect)
-from PySide6.QtGui import (QFont)
-from PySide6.QtWidgets import (QCheckBox, QGroupBox, QLabel,
-                               QLineEdit, QPushButton, QRadioButton)
-
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
+from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
+    QFont, QFontDatabase, QGradient, QIcon,
+    QImage, QKeySequence, QLinearGradient, QPainter,
+    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QGroupBox, QLabel,
+    QLineEdit, QPushButton, QRadioButton, QSizePolicy,
+    QWidget)
 
 class Ui_replace_window(object):
     def setupUi(self, replace_window):
         if not replace_window.objectName():
             replace_window.setObjectName(u"replace_window")
         replace_window.setEnabled(True)
-        replace_window.setFixedSize(530, 182)
-
+        replace_window.resize(530, 182)
         font = QFont()
         font.setFamilies([u"Microsoft YaHei"])
-        font.setPointSize(10)
+        font.setPointSize(9)
         replace_window.setFont(font)
         self.label_chazhao = QLabel(replace_window)
         self.label_chazhao.setObjectName(u"label_chazhao")
@@ -43,10 +47,10 @@ class Ui_replace_window(object):
         self.up_rdbtn = QRadioButton(self.direction_gbox)
         self.up_rdbtn.setObjectName(u"up_rdbtn")
         self.up_rdbtn.setGeometry(QRect(10, 30, 41, 20))
+        self.up_rdbtn.setChecked(True)
         self.down_rdbtn = QRadioButton(self.direction_gbox)
         self.down_rdbtn.setObjectName(u"down_rdbtn")
         self.down_rdbtn.setGeometry(QRect(80, 30, 51, 20))
-        self.down_rdbtn.setChecked(True)
         self.matchcase_check = QCheckBox(replace_window)
         self.matchcase_check.setObjectName(u"matchcase_check")
         self.matchcase_check.setGeometry(QRect(30, 110, 81, 30))
@@ -67,33 +71,31 @@ class Ui_replace_window(object):
         self.label_tihuan.setGeometry(QRect(30, 60, 41, 41))
         self.dotall_check = QCheckBox(replace_window)
         self.dotall_check.setObjectName(u"dotall_check")
-        self.dotall_check.setGeometry(QRect(170, 140, 81, 30))
-        # self.unicode_check = QCheckBox(replace_window)
-        # self.unicode_check.setObjectName(u"unicode_check")
-        # self.unicode_check.setGeometry(QRect(140, 110, 111, 31))
+        self.dotall_check.setGeometry(QRect(170, 140, 71, 30))
+        # self.selected_area_only_check = QCheckBox(replace_window)
+        # self.selected_area_only_check.setObjectName(u"selected_area_only_check")
+        # self.selected_area_only_check.setGeometry(QRect(150, 110, 91, 30))
 
         self.retranslateUi(replace_window)
 
         QMetaObject.connectSlotsByName(replace_window)
-
     # setupUi
 
     def retranslateUi(self, replace_window):
         replace_window.setWindowTitle(QCoreApplication.translate("replace_window", u"\u66ff\u6362", None))
         self.label_chazhao.setText(QCoreApplication.translate("replace_window", u"\u67e5  \u627e\uff1a", None))
-        self.multiline_check.setText(
-            QCoreApplication.translate("replace_window", u"^$\u5339\u914d\u884c\u5934\u884c\u5c3e", None))
+        self.multiline_check.setText(QCoreApplication.translate("replace_window", u"^$\u5339\u914d\u884c\u5934\u884c\u5c3e", None))
         self.findnext_btn.setText(QCoreApplication.translate("replace_window", u"\u4e0b\u4e00\u4e2a", None))
         self.direction_gbox.setTitle(QCoreApplication.translate("replace_window", u"\u65b9\u5411", None))
         self.up_rdbtn.setText(QCoreApplication.translate("replace_window", u"\u5411\u4e0a", None))
         self.down_rdbtn.setText(QCoreApplication.translate("replace_window", u"\u5411\u4e0b", None))
-        self.matchcase_check.setText(
-            QCoreApplication.translate("replace_window", u"\u533a\u5206\u5927\u5c0f\u5199", None))
+        self.matchcase_check.setText(QCoreApplication.translate("replace_window", u"\u533a\u5206\u5927\u5c0f\u5199", None))
         self.cancel_btn.setText(QCoreApplication.translate("replace_window", u"\u53d6\u6d88", None))
         self.replace_btn.setText(QCoreApplication.translate("replace_window", u"\u66ff\u6362", None))
         self.allreplace_btn.setText(QCoreApplication.translate("replace_window", u"\u5168\u90e8\u66ff\u6362", None))
         self.replacewith_text.setText("")
         self.label_tihuan.setText(QCoreApplication.translate("replace_window", u"\u66ff\u6362\u4e3a\uff1a", None))
         self.dotall_check.setText(QCoreApplication.translate("replace_window", u"\u8de8\u884c\u5339\u914d", None))
-        # self.unicode_check.setText(QCoreApplication.translate("replace_window", u"Unicode\u5168\u5339\u914d", None))
+        # self.selected_area_only_check.setText(QCoreApplication.translate("replace_window", u"\u4ec5\u4f5c\u4e8e\u4e8e\u9009\u533a", None))
     # retranslateUi
+
