@@ -3,7 +3,6 @@ import os
 import re
 import subprocess
 import sys
-import time
 from functools import partial
 
 import chardet
@@ -187,6 +186,12 @@ class Notepad(QMainWindow):
 
         # 用来记录当前是否打开文件
         self.set_current_file(None)
+
+        self.page_index = 0
+        self.timer = None
+        self.content = None
+        self.encoding = None
+
         # 用来记录文件编码，名字
         self.current_file_encoding = None
         # 记录当前是否打开文件
@@ -556,16 +561,14 @@ class Notepad(QMainWindow):
         return False
 
     def read_file(self, filename):
-        start_time=time.time()
         if not filename:
             return
         try:
+            # 打开文件用于读取二进制内容
             with open(filename, "rb") as f:
-                # 获取文件长度
-                file_size = os.path.getsize(filename)
-                # 读取文件的前10000个字节
-                content = f.read(min(10000, file_size))
-                encoding_info = chardet.detect(content)
+                # 读取前5000个字节用于编码检测
+                content_for_detection = f.read(5000)
+                encoding_info = chardet.detect(content_for_detection)
                 if encoding_info is None:
                     encoding = "utf-8"
                 else:
@@ -574,21 +577,31 @@ class Notepad(QMainWindow):
                         encoding = "utf-8"
                     if encoding.upper() in ["GB2312", "GBK"]:
                         encoding = "GB18030"
+                # 将文件指针移回文件开头
+                f.seek(0)
 
-                self.current_file_name = filename
-                self.current_file_encoding = encoding
+                # 读取并解码前5000个字节，用于立即显示
+                initial_content = content_for_detection.decode(encoding, 'ignore')
+                self.text_edit.setPlainText(initial_content)
 
-                self.text_edit.setPlainText(content.decode(encoding))
-                self.set_current_file(filename)
-                self.add_recent_file(filename)
-                self.setWindowTitle(f"{self.app_name} - {encoding} - {filename}")
-                end_time = time.time()
-                print("读取文件时间：", end_time - start_time)
+                # 读取并解码剩余内容
+                while True:
+                    chunk = f.read(1024 * 1024)  # 每次读取1MB的内容
+                    if not chunk:
+                        break
+                    self.text_edit.appendPlainText(chunk.decode(encoding, 'ignore'))
+
+                    # 设置当前文件等后续操作
+            self.set_current_file(filename)
+            self.add_recent_file(filename)
+            self.setWindowTitle(f"{self.app_name} - {encoding} - {filename}")
 
         except FileNotFoundError:
             QMessageBox.warning(self, "错误", "文件未找到，请检查路径是否正确！")
         except PermissionError:
             QMessageBox.warning(self, "错误", "没有足够的权限打开文件！")
+        except UnicodeDecodeError:
+            QMessageBox.warning(self, "错误", "文件编码无法识别，请尝试手动选择编码！")
         except Exception as e:
             QMessageBox.warning(self, "错误", f"打开文件时发生错误（很可能不支持该文件类型）:{e}")
 
