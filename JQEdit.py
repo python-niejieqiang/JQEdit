@@ -1,116 +1,4 @@
 # -*- coding: utf-8 -*-
-
-from PySide6.QtWidgets import (QDialog)
-
-from replace_window_ui import Ui_replace_window
-
-
-class FindReplaceDialog(QDialog, Ui_replace_window):
-    def __init__(self, text_edit, parent=None):
-        super().__init__(parent)
-        self.text_edit = text_edit
-        self.setupUi(self)
-        self.findnext_btn.clicked.connect(self.find_next)
-        self.replace_btn.clicked.connect(self.replace)
-        self.allreplace_btn.clicked.connect(self.replace_all)
-        self.cancel_btn.clicked.connect(self.close_dialog)
-        self.regex = None
-        self.original_text = None
-        self.loop_count = 0
-
-    def update_regex(self):
-        pattern = self.search_text.text()
-        options = QRegularExpression.PatternOption(0)
-
-        if self.matchcase_check.isChecked():
-            options &= ~QRegularExpression.CaseInsensitiveOption
-        else:
-            options |= QRegularExpression.CaseInsensitiveOption
-
-        if self.multiline_check.isChecked():
-            options |= QRegularExpression.MultilineOption
-        if self.dotall_check.isChecked():
-            options |= QRegularExpression.DotMatchesEverythingOption
-
-        try:
-            self.regex = QRegularExpression(pattern, options)
-        except QRegularExpression.SyntaxError:
-            QApplication.instance().beep()
-            QMessageBox.critical(self, "错误", "无效的正则表达式，请重新输入", QMessageBox.Ok)
-            self.regex = None
-
-    def find_next(self):
-        self.update_regex()
-        cursor = self.text_edit.textCursor()
-        plain_text = self.text_edit.toPlainText()
-
-        start = cursor.selectionStart() if cursor.hasSelection() else cursor.position()
-        end = cursor.selectionEnd() if cursor.hasSelection() else cursor.position()
-
-        if self.up_rdbtn.isChecked():
-            direction = -1
-            start, end = 0, start
-        else:
-            direction = 1
-            start, end = end, len(plain_text)
-
-        match_iter = self.regex.globalMatch(plain_text, start)
-
-        last_match = None
-        while match_iter.hasNext():
-            match = match_iter.next()
-            match_start = match.capturedStart()
-            match_end = match.capturedEnd()
-
-            if direction == -1:
-                if match_start >= end:
-                    if last_match:
-                        cursor.setPosition(last_match.capturedStart())
-                        cursor.setPosition(last_match.capturedEnd(), QTextCursor.KeepAnchor)
-                        self.text_edit.setTextCursor(cursor)
-                        return
-                    else:
-                        if self.loop_count == 0:
-                            QApplication.instance().beep()
-                            cursor.setPosition(len(plain_text))
-                            self.text_edit.setTextCursor(cursor)
-                            return
-                        else:
-                            self.loop_count = 0
-                            return self.find_next()  # 继续从头搜索
-                else:
-                    last_match = match
-            else:
-                if match_start >= start:
-                    cursor.setPosition(match_start)
-                    cursor.setPosition(match_end, QTextCursor.KeepAnchor)
-                    self.text_edit.setTextCursor(cursor)
-                    return
-
-        if direction == -1:
-            if last_match:
-                cursor.setPosition(last_match.capturedStart())
-                cursor.setPosition(last_match.capturedEnd(), QTextCursor.KeepAnchor)
-                self.text_edit.setTextCursor(cursor)
-            else:
-                if self.loop_count == 0:
-                    QApplication.instance().beep()
-                    cursor.setPosition(len(plain_text))
-                    self.text_edit.setTextCursor(cursor)
-                    return
-                else:
-                    self.loop_count = 0
-                    return self.find_next()  # 继续从头搜索
-        else:
-            if self.loop_count == 0:
-                QApplication.instance().beep()
-                cursor.setPosition(0)
-                self.text_edit.setTextCursor(cursor)
-                return
-            else:
-                self.loop_count = 0
-                return self.find_next()  # 
-# -*- coding: utf-8 -*-
 import json
 import os
 import re
@@ -1158,7 +1046,7 @@ class Notepad(QMainWindow):
         row = cursor.blockNumber() + 1  # blockNumber() 是从 0 开始的，所以需要加 1
         column = cursor.columnNumber() + 1  # columnNumber() 也是从 0 开始的，加 1 以符合常规的行列计数
         # 将行列信息格式化为字符串并显示在状态栏上
-        message = "  行 {}, 列 {}".format(row, column)
+        message = "     行 {} ,  列 {}".format(row, column)
         self.status_bar.showMessage(message)
 
     @Slot()
