@@ -1,3 +1,116 @@
+# -*- coding: utf-8 -*-
+
+from PySide6.QtWidgets import (QDialog)
+
+from replace_window_ui import Ui_replace_window
+
+
+class FindReplaceDialog(QDialog, Ui_replace_window):
+    def __init__(self, text_edit, parent=None):
+        super().__init__(parent)
+        self.text_edit = text_edit
+        self.setupUi(self)
+        self.findnext_btn.clicked.connect(self.find_next)
+        self.replace_btn.clicked.connect(self.replace)
+        self.allreplace_btn.clicked.connect(self.replace_all)
+        self.cancel_btn.clicked.connect(self.close_dialog)
+        self.regex = None
+        self.original_text = None
+        self.loop_count = 0
+
+    def update_regex(self):
+        pattern = self.search_text.text()
+        options = QRegularExpression.PatternOption(0)
+
+        if self.matchcase_check.isChecked():
+            options &= ~QRegularExpression.CaseInsensitiveOption
+        else:
+            options |= QRegularExpression.CaseInsensitiveOption
+
+        if self.multiline_check.isChecked():
+            options |= QRegularExpression.MultilineOption
+        if self.dotall_check.isChecked():
+            options |= QRegularExpression.DotMatchesEverythingOption
+
+        try:
+            self.regex = QRegularExpression(pattern, options)
+        except QRegularExpression.SyntaxError:
+            QApplication.instance().beep()
+            QMessageBox.critical(self, "错误", "无效的正则表达式，请重新输入", QMessageBox.Ok)
+            self.regex = None
+
+    def find_next(self):
+        self.update_regex()
+        cursor = self.text_edit.textCursor()
+        plain_text = self.text_edit.toPlainText()
+
+        start = cursor.selectionStart() if cursor.hasSelection() else cursor.position()
+        end = cursor.selectionEnd() if cursor.hasSelection() else cursor.position()
+
+        if self.up_rdbtn.isChecked():
+            direction = -1
+            start, end = 0, start
+        else:
+            direction = 1
+            start, end = end, len(plain_text)
+
+        match_iter = self.regex.globalMatch(plain_text, start)
+
+        last_match = None
+        while match_iter.hasNext():
+            match = match_iter.next()
+            match_start = match.capturedStart()
+            match_end = match.capturedEnd()
+
+            if direction == -1:
+                if match_start >= end:
+                    if last_match:
+                        cursor.setPosition(last_match.capturedStart())
+                        cursor.setPosition(last_match.capturedEnd(), QTextCursor.KeepAnchor)
+                        self.text_edit.setTextCursor(cursor)
+                        return
+                    else:
+                        if self.loop_count == 0:
+                            QApplication.instance().beep()
+                            cursor.setPosition(len(plain_text))
+                            self.text_edit.setTextCursor(cursor)
+                            return
+                        else:
+                            self.loop_count = 0
+                            return self.find_next()  # 继续从头搜索
+                else:
+                    last_match = match
+            else:
+                if match_start >= start:
+                    cursor.setPosition(match_start)
+                    cursor.setPosition(match_end, QTextCursor.KeepAnchor)
+                    self.text_edit.setTextCursor(cursor)
+                    return
+
+        if direction == -1:
+            if last_match:
+                cursor.setPosition(last_match.capturedStart())
+                cursor.setPosition(last_match.capturedEnd(), QTextCursor.KeepAnchor)
+                self.text_edit.setTextCursor(cursor)
+            else:
+                if self.loop_count == 0:
+                    QApplication.instance().beep()
+                    cursor.setPosition(len(plain_text))
+                    self.text_edit.setTextCursor(cursor)
+                    return
+                else:
+                    self.loop_count = 0
+                    return self.find_next()  # 继续从头搜索
+        else:
+            if self.loop_count == 0:
+                QApplication.instance().beep()
+                cursor.setPosition(0)
+                self.text_edit.setTextCursor(cursor)
+                return
+            else:
+                self.loop_count = 0
+                return self.find_next()  # 
+# -*- coding: utf-8 -*-
 import json
 import os
 import re
@@ -167,9 +280,41 @@ class Notepad(QMainWindow):
     def __init__(self, file_in_cmd=None):
         super().__init__()
 
+        # 用来记录文件编码，名字
+        self.current_file_encoding = None
+        # 记录当前文件名
+        self.current_file_name = ""
+        self.untitled_name = "Untitled.txt"
+
+        # UI初始化，菜单栏以及编辑器，状态栏，各个子菜单，自定义的右键菜单
+        self.setup_menu_and_actions()
+
+        # 最近打开的文件列表
+        self.action_connections = {}
+        # 使用os模块读取路径只是为了pyinstaller打包成exe的时候不会报错
+        self.recent_files_path = os.path.join(resource_path, "recent_files.json")
+        # 这个数组跟命令行参数处理一定要等recent_files_menu初始化才能正常运行
+        self.recent_files = []
+
+        # 把命令行第一个参数作为文件名打开
+        if file_in_cmd is not None:
+            self.read_file(file_in_cmd)
+        # 读取settings.json文件
+        self.json_file = os.path.join(resource_path, "settings.json")
+        self.set_window_file = os.path.join(resource_path, "window_size.json")
+        # 读取并设置启动窗口尺寸
+        self.read_startup_size()
+        # 读取主题字体等设置
+        self.load_settings()
+        # 读取最近打开文件记录，并更新“最近打开菜单”
+        self.load_recent_files()
+        self.update_recent_files_menu()
+
+    def setup_menu_and_actions(self):
+
         self.app_name = "JQEdit"
         self.setWindowTitle(self.app_name)
-        # 设置窗口的最小尺寸
+        # 设置窗口，用户点击退出最大化的最小尺寸
         self.resize(800,600)
 
         # 初始化界面，依次添加菜单栏，text_edit，status_bar
@@ -178,26 +323,12 @@ class Notepad(QMainWindow):
 
         self.text_edit = QPlainTextEdit()
         self.text_edit.cursorPositionChanged.connect(self.get_row_col)
+        # 如果没有打开文件，显示Untitled.txt
+        self.display_default_file_name(None)
         self.setCentralWidget(self.text_edit)
-
         # 添加底部状态栏
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
-
-        # 用来记录当前是否打开文件
-        self.set_current_file(None)
-
-        self.page_index = 0
-        self.timer = None
-        self.content = None
-        self.encoding = None
-
-        # 用来记录文件编码，名字
-        self.current_file_encoding = None
-        # 记录当前是否打开文件
-        self.current_file_name = None
-        # 记录是否需要保存
-        self.is_saved = False
 
         # 添加菜单项
         self.file_menu = QMenu("文件", self.menu_bar)
@@ -225,16 +356,6 @@ class Notepad(QMainWindow):
         self.clear_recent_files_action = QAction("清空记录", self)
         self.clear_recent_files_action.triggered.connect(self.clear_recent_files)
         self.recent_files_menu.addAction(self.clear_recent_files_action)
-        # 最近打开的文件列表
-        self.action_connections = {}
-        # 使用os模块读取路径只是为了pyinstaller打包成exe的时候不会报错
-        self.recent_files_path = os.path.join(resource_path,"recent_files.json")
-
-        #这个数组跟命令行参数处理一定要等recent_files_menu初始化才能正常运行
-        self.recent_files = []
-        # 把命令行第一个参数作为文件名打开
-        if file_in_cmd is not None:
-            self.read_file(file_in_cmd)
 
         self.new_file_action = QAction("新建(&N)", self)
         self.new_file_action.setShortcut("Ctrl+N")
@@ -328,8 +449,7 @@ class Notepad(QMainWindow):
         self.date_action.triggered.connect(self.get_date)
         self.edit_menu.addAction(self.date_action)
 
-        # 主题菜单
-        # 将主题样式存入数组全部设为未选中，当用户选中哪一个，就把哪一个设为True
+        # 主题菜单, 将主题样式存入数组全部设为未选中，当用户选中哪一个，就把哪一个设为True
         # 也就是点击哪个主题，哪个主题样式前面就显示打勾
         self.theme_actions = []
         self.def_theme_action = QAction("windows默认", self,checkable=True)
@@ -367,17 +487,6 @@ class Notepad(QMainWindow):
         self.set_startup_size_action = QAction("设置启动窗口尺寸", self)
         self.set_startup_size_action.triggered.connect(self.show_startup_size_dialog)
         self.theme_menu.addAction(self.set_startup_size_action)
-
-        # 读取settings.json文件
-        self.json_file = os.path.join(resource_path,"settings.json")
-        self.set_window_file=os.path.join(resource_path,"window_size.json")
-        # 读取并设置启动窗口尺寸
-        self.read_startup_size()
-        # 读取主题字体等设置
-        self.load_settings()
-        # 读取最近打开文件记录，并更新“最近打开菜单”
-        self.load_recent_files()
-        self.update_recent_files_menu()
 
         # 主窗口部分
         self.replace_action = QAction("查找/替换(&Z)", self)
@@ -470,7 +579,6 @@ class Notepad(QMainWindow):
         self.text_edit.setContextMenuPolicy(Qt.CustomContextMenu)
         self.text_edit.customContextMenuRequested.connect(self.show_contextmenu)
 
-
     # 点击关闭按钮时提示要不要保存（重写closeEvent）
     def closeEvent(self, event):
         if self.tip_to_save():
@@ -497,8 +605,8 @@ class Notepad(QMainWindow):
         # 如果不是 Ctrl+G，则调用默认的事件处理
         super().keyPressEvent(event)
 
-    def set_current_file(self, filename_):
-        # 如有打开文件，则显示文件名，没有则显示APP名
+    def display_default_file_name(self, filename_):
+        # 如有打开文件，则显示文件名，没有则显示APP名与默认的untitled.txt
         self.current_opened_file = filename_
         # 只需要设置文档的修改状态，窗口的修改状态会自动更新
         self.text_edit.document().setModified(False)
@@ -506,7 +614,7 @@ class Notepad(QMainWindow):
         if filename_:
             self.setWindowTitle(f"{self.app_name} - {filename_}")
         else:
-            self.setWindowTitle(self.app_name)
+            self.setWindowTitle(f"{self.app_name} - [{self.untitled_name}]")
 
     def tip_to_save(self):
         if self.text_edit.document().isModified():
@@ -518,7 +626,6 @@ class Notepad(QMainWindow):
                 # 如果用户选择取消，则不执行任何操作并返回 False
             return False
         return True
-
         # 提示保存对话框根据用户不同的选择返回不同的值
 
     def alert_dialog(self):
@@ -547,7 +654,8 @@ class Notepad(QMainWindow):
             with open(file_name, "w", encoding=self.current_file_encoding) as outfile:
                 text = self.text_edit.toPlainText()
                 outfile.write(text)
-            self.set_current_file(file_name)
+                self.text_edit.document().setModified(False)
+                self.setWindowTitle(f"{self.windowTitle()} - 保存成功")
             return True
         except IOError as e:
             # IO 错误，如文件无法创建或写入
@@ -591,10 +699,14 @@ class Notepad(QMainWindow):
                         break
                     self.text_edit.appendPlainText(chunk.decode(encoding, 'ignore'))
 
-                    # 设置当前文件等后续操作
-            self.set_current_file(filename)
+            # 记录当前文件名,编码
+            self.current_file_name=filename
+            self.current_file_encoding = encoding
+            # 将当前用户打开的文件标记为未修改。
+            self.text_edit.document().setModified(False)
+            # 将打开记录添加到最近打开
             self.add_recent_file(filename)
-            self.setWindowTitle(f"{self.app_name} - {encoding} - {filename}")
+            self.setWindowTitle(f"{self.app_name} - {encoding.upper()} - {filename}")
 
         except FileNotFoundError:
             QMessageBox.warning(self, "错误", "文件未找到，请检查路径是否正确！")
@@ -632,7 +744,7 @@ class Notepad(QMainWindow):
         # 添加最近打开的文件到菜单中
         self.action_connections.clear()  # 清空连接字典
         for file_path in self.recent_files:
-            action = QAction(os.path.basename(file_path), self)
+            action = QAction(file_path, self)
             new_connection = partial(self.read_file, file_path)
             action.triggered.connect(new_connection)
             self.action_connections[action] = new_connection
@@ -774,7 +886,6 @@ class Notepad(QMainWindow):
         self.dark_theme_action.setChecked(True)
         self.save_settings()
 
-
     def jump_to_line(self, line_number):
         # 创建 QTextCursor 对象
         cursor = self.text_edit.textCursor()
@@ -789,8 +900,8 @@ class Notepad(QMainWindow):
         self.text_edit.setTextCursor(cursor)
         # 确保光标所在的行是可见的
         self.text_edit.ensureCursorVisible()
-
     # 行号跳转功能结束
+
     def is_cursor_at_empty_line_start(self):
         cursor = self.text_edit.textCursor()
         # 获取光标所在位置的文本块
@@ -826,6 +937,11 @@ class Notepad(QMainWindow):
         layout.addWidget(button_ok)
 
         dialog.setLayout(layout)
+        # 读取先前保存的窗口尺寸信息并显示在对话框中
+        startup_size = self.read_startup_size()
+        width_edit.setText(str(startup_size["width"]))
+        height_edit.setText(str(startup_size["height"]))
+        maximize_checkbox.setChecked(startup_size["start_maximized"])
         dialog.exec()
 
     def on_maximize_checkbox_changed(self, state, width_edit, height_edit):
@@ -863,6 +979,8 @@ class Notepad(QMainWindow):
                     self.showMaximized()
                 else:
                     self.resize(int(width), int(height))
+
+                return {"width": int(width), "height": int(height), "start_maximized": is_maximized}
         except (FileNotFoundError, ValueError):
             # json文件不存在，或者值为空， 默认使用800x600的尺寸
             self.resize(800, 600)
@@ -941,14 +1059,21 @@ class Notepad(QMainWindow):
 
     @Slot()
     def use_code_save(self, cod, *args):
-        # 以该编码另存功能函数
-        filename, _ = QFileDialog.getSaveFileName()
+        default_filename = self.current_file_name if self.current_file_name else self.untitled_name
+        filename, _ = QFileDialog.getSaveFileName(None, "保存文件", default_filename,
+                                                  "所有文件类型(*.*);;文本文件 (*.txt)")
+        # 如果用户取消保存操作，直接返回
         if not filename:
             return
+        # 获取文件名输入框并选中文本
+        filename_lineedit = QApplication.focusWidget()
+        if isinstance(filename_lineedit, QLineEdit):
+            filename_lineedit.selectAll()
+
         try:
             with open(filename, "w", encoding=cod) as w:
                 w.write(self.text_edit.toPlainText())
-                # 更新窗口标题以显示保存成功
+            # 更新窗口标题以显示保存成功
             self.setWindowTitle(f"{self.windowTitle()} - 文件已保存")
         except Exception as e:
             # 在这里处理异常，例如通过日志记录或更新窗口标题来显示错误信息
@@ -962,7 +1087,7 @@ class Notepad(QMainWindow):
                 text = infile.read()
             self.text_edit.setPlainText(text)
             self.current_file_encoding = coding
-            self.setWindowTitle(self.app_name+ " - " + coding.upper() + " - " +self.current_file_name  )
+            self.setWindowTitle(self.app_name + " - " + coding.upper() + " - " + self.current_file_name)
         except FileNotFoundError:
             QMessageBox.warning(self, "错误", "还没打开文件！")
 
@@ -976,29 +1101,34 @@ class Notepad(QMainWindow):
     # 根据当前是否打开文件来决定是直接保存，还是另存至其他位置（）
     @Slot()
     def save(self):
-        if self.current_opened_file:
-            return self.save_file(self.current_opened_file)
+        if self.current_file_name:
+            return self.save_file(self.current_file_name)
         else:
             self.save_as()
 
     @Slot()
     def save_as(self):
-        filename, _ = QFileDialog.getSaveFileName(None, "保存文件", "Untitled.txt", "所有文件类型(*.*);;文本文件 (*.txt)")
+        default_filename = self.current_file_name if self.current_file_name else self.untitled_name
+        filename, _ = QFileDialog.getSaveFileName(None, "保存文件", default_filename,
+                                                  "所有文件类型(*.*);;文本文件 (*.txt)")
+
+        # 如果用户取消保存操作，直接返回 False
+        if not filename:
+            return False
+
         # 获取文件名输入框并选中文本
-        filename_lineedit = app.focusWidget()
+        filename_lineedit = QApplication.focusWidget()
         if isinstance(filename_lineedit, QLineEdit):
             filename_lineedit.selectAll()
 
-        if filename:
-            return self.save_file(filename)
-        return False
+        return self.save_file(filename)
 
     @Slot()
     def new_file(self):
         if self.tip_to_save():
             self.text_edit.clear()
-            self.current_file_name=None
-            self.setWindowTitle(self.app_name)
+            self.current_file_name=""
+            self.setWindowTitle(f"{self.app_name} - [{self.untitled_name}]")
 
     @Slot()
     def modify_font(self):
