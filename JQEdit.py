@@ -533,26 +533,17 @@ class Notepad(QMainWindow):
         # 取消操作不需要返回值，因为 tip_to_save 会根据返回值来判断
 
     def save_file(self, file_name):
-        """
-        将文本编辑器的内容保存到指定文件，并更新当前打开的文件名。
-        :param file_name: 要保存的文件名
-        :return: 如果保存成功返回 True，否则返回 False
-        """
         try:
             with open(file_name, "w", encoding=self.current_file_encoding) as outfile:
                 text = self.text_edit.toPlainText()
                 outfile.write(text)
                 self.text_edit.document().setModified(False)
-                self.setWindowTitle(f"{self.windowTitle()} - 保存成功")
             return True
         except IOError as e:
-            # IO 错误，如文件无法创建或写入
             QMessageBox.warning(self, self.app_name, f"文件 {file_name} 保存失败:\n{e}")
         except UnicodeEncodeError as e:
-            # 编码错误，如文本包含无法在当前编码中表示的字符
             QMessageBox.warning(self, self.app_name, f"编码错误，文件 {file_name} 保存失败:\n{e}")
         except Exception as e:
-            # 其他未知异常
             QMessageBox.warning(self, self.app_name, f"文件 {file_name} 保存时发生未知错误:\n{e}")
         return False
 
@@ -560,6 +551,9 @@ class Notepad(QMainWindow):
         if not filename:
             return
         try:
+            # 清空文本编辑器内容
+            self.text_edit.clear()
+
             # 打开文件用于读取二进制内容
             with open(filename, "rb") as f:
                 # 读取前5000个字节用于编码检测
@@ -573,8 +567,6 @@ class Notepad(QMainWindow):
                         encoding = "utf-8"
                     if encoding.upper() in ["GB2312", "GBK"]:
                         encoding = "GB18030"
-                # 将文件指针移回文件开头
-                f.seek(0)
 
                 # 读取并解码前5000个字节，用于立即显示
                 initial_content = content_for_detection.decode(encoding, 'ignore')
@@ -585,10 +577,11 @@ class Notepad(QMainWindow):
                     chunk = f.read(1024 * 1024)  # 每次读取1MB的内容
                     if not chunk:
                         break
-                    self.text_edit.appendPlainText(chunk.decode(encoding, 'ignore'))
+                    self.text_edit.moveCursor(QTextCursor.End)  # 移动光标到文本末尾
+                    self.text_edit.insertPlainText(chunk.decode(encoding, 'ignore'))
 
             # 记录当前文件名,编码
-            self.current_file_name=filename
+            self.current_file_name = filename
             self.current_file_encoding = encoding
             # 将当前用户打开的文件标记为未修改。
             self.text_edit.document().setModified(False)
@@ -990,9 +983,13 @@ class Notepad(QMainWindow):
     @Slot()
     def save(self):
         if self.current_file_name:
-            return self.save_file(self.current_file_name)
+            saved = self.save_file(self.current_file_name)
+            if saved:
+                self.setWindowTitle(f"{self.windowTitle()} - 保存成功")
         else:
-            self.save_as()
+            saved_file = self.save_as()
+            if saved_file:
+                self.setWindowTitle(f"{self.windowTitle()} - 保存成功")
 
     @Slot()
     def save_as(self):
@@ -1009,8 +1006,12 @@ class Notepad(QMainWindow):
         if isinstance(filename_lineedit, QLineEdit):
             filename_lineedit.selectAll()
 
-        return self.save_file(filename)
-
+        saved = self.save_file(filename)
+        if saved:
+            self.current_file_name = filename
+            return True
+        else:
+            return False
     @Slot()
     def new_file(self):
         if self.tip_to_save():
