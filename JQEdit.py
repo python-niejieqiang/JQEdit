@@ -4,6 +4,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from functools import partial
 
 import chardet
@@ -551,9 +552,6 @@ class Notepad(QMainWindow):
         if not filename:
             return
         try:
-            # 清空文本编辑器内容
-            self.text_edit.clear()
-
             # 打开文件用于读取二进制内容
             with open(filename, "rb") as f:
                 # 读取前5000个字节用于编码检测
@@ -571,23 +569,21 @@ class Notepad(QMainWindow):
                 # 读取并解码前5000个字节，用于立即显示
                 initial_content = content_for_detection.decode(encoding, 'ignore')
                 self.text_edit.setPlainText(initial_content)
+                self.setWindowTitle(f"{self.app_name} - {encoding.upper()} - {filename}")
 
                 # 读取并解码剩余内容
                 while True:
                     chunk = f.read(1024 * 1024)  # 每次读取1MB的内容
                     if not chunk:
                         break
-                    self.text_edit.moveCursor(QTextCursor.End)  # 移动光标到文本末尾
-                    self.text_edit.insertPlainText(chunk.decode(encoding, 'ignore'))
-
-            # 记录当前文件名,编码
-            self.current_file_name = filename
-            self.current_file_encoding = encoding
-            # 将当前用户打开的文件标记为未修改。
-            self.text_edit.document().setModified(False)
-            # 将打开记录添加到最近打开
-            self.add_recent_file(filename)
-            self.setWindowTitle(f"{self.app_name} - {encoding.upper()} - {filename}")
+                    self.text_edit.appendPlainText(chunk.decode(encoding, 'ignore'))
+                # 将当前用户打开的文件标记为未修改。
+                self.text_edit.document().setModified(False)
+                # 记录当前文件名,编码
+                self.current_file_name = filename
+                self.current_file_encoding = encoding
+                # 将打开记录添加到最近打开
+                self.add_recent_file(filename)
 
         except FileNotFoundError:
             QMessageBox.warning(self, "错误", "文件未找到，请检查路径是否正确！")
