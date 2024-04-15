@@ -10,7 +10,7 @@ from functools import partial
 import chardet
 from PySide6 import QtGui
 from PySide6.QtCore import QTranslator, Qt, QUrl, Slot, QRegularExpression
-from PySide6.QtGui import QAction, QIcon, QFont, QTextCursor, QDesktopServices, QKeyEvent
+from PySide6.QtGui import QAction, QIcon, QFont, QTextOption, QTextCursor, QDesktopServices, QKeyEvent
 from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QLineEdit, QCheckBox, QVBoxLayout, QPushButton,
                                QFileDialog, QMainWindow, QFontDialog, QPlainTextEdit,
                                QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
@@ -570,7 +570,6 @@ class Notepad(QMainWindow):
                 initial_content = content_for_detection.decode(encoding, 'ignore')
                 self.text_edit.setPlainText(initial_content)
                 self.setWindowTitle(f"{self.app_name} - {encoding.upper()} - {filename}")
-
                 # 读取并解码剩余内容
                 while True:
                     chunk = f.read(1024 * 1024)  # 每次读取1MB的内容
@@ -658,6 +657,10 @@ class Notepad(QMainWindow):
         font_properties.update({k: settings.get(k, v) for k, v in font_properties.items()})
 
         self.font = QFont(font_properties["font_family"], font_properties["pointSize"])
+        # 设置默认抗锯齿和平滑
+        self.font.setStyleStrategy(QFont.PreferAntialias)  # 设置抗锯齿
+        option = QTextOption()
+        self.text_edit.document().setDefaultTextOption(option)  # 启用平滑
         self.font.setBold(font_properties["bold"])
         self.font.setItalic(font_properties["italic"])
         self.font.setUnderline(font_properties["underline"])
@@ -951,7 +954,15 @@ class Notepad(QMainWindow):
             with open(filename, "w", encoding=cod) as w:
                 w.write(self.text_edit.toPlainText())
             # 更新窗口标题以显示保存成功
-            self.setWindowTitle(f"{self.windowTitle()} - 文件已保存")
+            QMessageBox.information(self, "提示",
+                                f"文件{filename}已经使用 {cod.upper()} 编码另存至指定位置！")
+
+            # 如果用户选择覆盖当前打开的文件，则更新窗口标题(编辑器内容没必要更新)
+            if filename == self.current_file_name:
+                self.current_file_name = filename
+                self.current_file_encoding = cod
+                self.setWindowTitle(f"{self.app_name} - {cod.upper()} - {filename}")
+
         except Exception as e:
             # 在这里处理异常，例如通过日志记录或更新窗口标题来显示错误信息
             print(f"保存文件时出错：{e}")
