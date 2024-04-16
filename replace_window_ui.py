@@ -66,9 +66,9 @@ class Ui_replace_window(object):
         self.dotall_check = QCheckBox(replace_window)
         self.dotall_check.setObjectName(u"dotall_check")
         self.dotall_check.setGeometry(QRect(170, 140, 71, 30))
-        self.selected_area_only_check = QCheckBox(replace_window)
-        self.selected_area_only_check.setObjectName(u"selected_area_only_check")
-        self.selected_area_only_check.setGeometry(QRect(150, 110, 91, 30))
+        # self.selected_area_only_check = QCheckBox(replace_window)
+        # self.selected_area_only_check.setObjectName(u"selected_area_only_check")
+        # self.selected_area_only_check.setGeometry(QRect(150, 110, 91, 30))
 
         self.retranslateUi(replace_window)
 
@@ -90,6 +90,6 @@ class Ui_replace_window(object):
         self.replacewith_text.setText("")
         self.label_tihuan.setText(QCoreApplication.translate("replace_window", u"\u66ff\u6362\u4e3a\uff1a", None))
         self.dotall_check.setText(QCoreApplication.translate("replace_window", u"\u8de8\u884c\u5339\u914d", None))
-        self.selected_area_only_check.setText(QCoreApplication.translate("replace_window", u"\u4ec5\u4f5c\u4e8e\u4e8e\u9009\u533a", None))
+        # self.selected_area_only_check.setText(QCoreApplication.translate("replace_window", u"\u4ec5\u4f5c\u4e8e\u4e8e\u9009\u533a", None))
     # retranslateUi
 

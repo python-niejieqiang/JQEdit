@@ -4,18 +4,81 @@ import os
 import re
 import subprocess
 import sys
-import time
 from functools import partial
 
 import chardet
 from PySide6 import QtGui
-from PySide6.QtCore import QTranslator, Qt, QUrl, Slot, QRegularExpression
-from PySide6.QtGui import QAction, QIcon, QFont, QTextOption, QTextCursor, QDesktopServices, QKeyEvent
+from PySide6.QtCore import QTranslator, Qt, QThread, Signal, QUrl, Slot, QRegularExpression
+from PySide6.QtGui import QAction, QSyntaxHighlighter, QColor, QTextCharFormat, QIcon, QFont, QTextOption, QTextCursor, \
+    QDesktopServices, QKeyEvent
 from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QLineEdit, QCheckBox, QVBoxLayout, QPushButton,
                                QFileDialog, QMainWindow, QFontDialog, QPlainTextEdit,
                                QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
 
 from replace_window_ui import Ui_replace_window
+
+
+class FileLoader(QThread):
+    contentLoaded = Signal(str)
+
+    def __init__(self, filename, encoding):
+        super().__init__()
+        self.filename = filename
+        self.encoding = encoding
+
+    def run(self):
+        try:
+            with open(self.filename, "r", encoding=self.encoding) as f:
+                while True:
+                    chunk = f.read(1024 * 1024)  # 每次读取1MB的内容
+                    if not chunk:
+                        break
+                    self.contentLoaded.emit(chunk)
+        except Exception as e:
+            print(f"Error loading file: {e}")
+
+class PythonHighlighter(QSyntaxHighlighter):
+    def __init__(self, parent,file_extension):
+        super().__init__(parent)
+        self.file_extension = file_extension
+
+        # 预定义格式
+        self.keyword_format = QTextCharFormat()
+        self.keyword_format.setForeground(QColor(200, 120, 50))
+
+        self.string_format = QTextCharFormat()
+        self.string_format.setForeground(QColor(42, 161, 152))
+
+        self.comment_format = QTextCharFormat()
+        self.comment_format.setForeground(QColor(150,150,150))
+
+        self.operator_format = QTextCharFormat()
+        self.operator_format.setForeground(QColor(200, 120, 50))
+
+        # 预编译正则表达式
+        self.highlight_rules = [
+
+            (QRegularExpression(r"[\/\*\.\-\+\=\:\|\,\?\&\%]"),self.operator_format),
+
+            (QRegularExpression(r"\b(and|as|assert|break|class|continue|def|del|elif|else|except|"
+                                r"False|finally|for|from|global|if|import|in|is|lambda|None|nonlocal|"
+                                r"not|or|pass|raise|return|True|try|while|with|yield)\b"),self.keyword_format),
+
+            (QRegularExpression(r"\".*?\"|\'.*?\'"),self.string_format),
+
+            (QRegularExpression(r"#.*$"),self.comment_format)
+        ]
+
+    def highlightBlock(self, text):
+        # 只有当文件类型为 '.py' 时才应用语法高亮
+        if self.file_extension == '.py':
+            for expression, format_ in self.highlight_rules:
+                it = expression.globalMatch(text)
+                while it.hasNext():
+                    match = it.next()
+                    start = match.capturedStart()
+                    length = match.capturedLength()
+                    self.setFormat(start, length, format_)
 
 
 class FindReplaceDialog(QDialog, Ui_replace_window):
@@ -171,6 +234,7 @@ class Notepad(QMainWindow):
 
         # 用来记录文件编码，名字
         self.current_file_encoding = None
+        self.highlighter = None
         # 记录当前文件名
         self.current_file_name = ""
         self.untitled_name = "Untitled.txt"
@@ -549,6 +613,11 @@ class Notepad(QMainWindow):
         return False
 
     def read_file(self, filename):
+
+        # 关闭语法高亮
+        if self.highlighter:
+            self.highlighter.deleteLater()
+            self.highlighter = None
         if not filename:
             return
         try:
@@ -566,23 +635,22 @@ class Notepad(QMainWindow):
                     if encoding.upper() in ["GB2312", "GBK"]:
                         encoding = "GB18030"
 
-                # 读取并解码前5000个字节，用于立即显示
-                initial_content = content_for_detection.decode(encoding, 'ignore')
-                self.text_edit.setPlainText(initial_content)
-                self.setWindowTitle(f"{self.app_name} - {encoding.upper()} - {filename}")
-                # 读取并解码剩余内容
-                while True:
-                    chunk = f.read(1024 * 1024)  # 每次读取1MB的内容
-                    if not chunk:
-                        break
-                    self.text_edit.appendPlainText(chunk.decode(encoding, 'ignore'))
-                # 将当前用户打开的文件标记为未修改。
-                self.text_edit.document().setModified(False)
-                # 记录当前文件名,编码
-                self.current_file_name = filename
-                self.current_file_encoding = encoding
-                # 将打开记录添加到最近打开
-                self.add_recent_file(filename)
+            # 读取并解码前5000个字节，用于立即显示
+            initial_content = content_for_detection.decode(encoding, 'ignore')
+            self.text_edit.setPlainText(initial_content)
+
+            # 记录当前文件名,编码
+            self.current_file_name = filename
+            self.current_file_encoding = encoding
+            # 将打开记录添加到最近打开
+            self.add_recent_file(filename)
+            if self.current_file_name and self.current_file_name.endswith(".py"):
+                self.highlighter = PythonHighlighter(self.text_edit.document(),".py")
+
+            # 启动文件加载线程
+            self.file_loader = FileLoader(filename, encoding)
+            self.file_loader.contentLoaded.connect(self.append_content)
+            self.file_loader.start()
 
         except FileNotFoundError:
             QMessageBox.warning(self, "错误", "文件未找到，请检查路径是否正确！")
@@ -592,6 +660,10 @@ class Notepad(QMainWindow):
             QMessageBox.warning(self, "错误", "文件编码无法识别，请尝试手动选择编码！")
         except Exception as e:
             QMessageBox.warning(self, "错误", f"打开文件时发生错误（很可能不支持该文件类型）:{e}")
+
+    def append_content(self, chunk):
+        self.text_edit.appendPlainText(chunk)
+        self.text_edit.document().setModified(False)
 
     def add_recent_file(self, file_path):
         # 添加最近打开的文件路径到列表中
@@ -728,7 +800,7 @@ class Notepad(QMainWindow):
                 selection-background-color: rgb(100, 149, 237);
                 selection-color: white;
                 border:none
-            }            
+            }  
           """)
         self.theme = "default"
         self.clear_checked()
@@ -1189,7 +1261,6 @@ def get_file_argument():
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-
     # 获取当前程序的绝对路径
     current_directory = os.path.dirname(os.path.abspath(__file__))
     # 构建资源文件夹的绝对路径（资源文件夹在可执行文件内部是 'resources/'）
