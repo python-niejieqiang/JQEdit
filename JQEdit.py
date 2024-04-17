@@ -29,6 +29,8 @@ class FileLoader(QThread):
     def run(self):
         try:
             with open(self.filename, "r", encoding=self.encoding) as f:
+                # 直接从上次读取的位置开始加载
+                f.seek(5000)
                 while True:
                     chunk = f.read(1024 * 1024)  # 每次读取1MB的内容
                     if not chunk:
@@ -621,6 +623,9 @@ class Notepad(QMainWindow):
         if not filename:
             return
         try:
+            # 清空文本编辑器内容
+            self.text_edit.clear()
+
             # 打开文件用于读取二进制内容
             with open(filename, "rb") as f:
                 # 读取前5000个字节用于编码检测
@@ -638,6 +643,7 @@ class Notepad(QMainWindow):
             # 读取并解码前5000个字节，用于立即显示
             initial_content = content_for_detection.decode(encoding, 'ignore')
             self.text_edit.setPlainText(initial_content)
+            self.setWindowTitle(f"{self.app_name} - {encoding.upper()} - {filename}")
 
             # 记录当前文件名,编码
             self.current_file_name = filename
@@ -645,7 +651,7 @@ class Notepad(QMainWindow):
             # 将打开记录添加到最近打开
             self.add_recent_file(filename)
             if self.current_file_name and self.current_file_name.endswith(".py"):
-                self.highlighter = PythonHighlighter(self.text_edit.document(),".py")
+                self.highlighter = PythonHighlighter(self.text_edit.document(), ".py")
 
             # 启动文件加载线程
             self.file_loader = FileLoader(filename, encoding)
