@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import codecs
 import json
 import os
 import re
@@ -28,9 +29,8 @@ class FileLoader(QThread):
 
     def run(self):
         try:
-            with open(self.filename, "r", encoding=self.encoding) as f:
-                # 直接从上次读取的位置开始加载
-                f.seek(5000)
+            with codecs.open(self.filename, "r", encoding=self.encoding) as f:
+                f.seek(1024*20)
                 while True:
                     chunk = f.read(1024 * 1024)  # 每次读取1MB的内容
                     if not chunk:
@@ -615,7 +615,6 @@ class Notepad(QMainWindow):
         return False
 
     def read_file(self, filename):
-
         # 关闭语法高亮
         if self.highlighter:
             self.highlighter.deleteLater()
@@ -623,13 +622,10 @@ class Notepad(QMainWindow):
         if not filename:
             return
         try:
-            # 清空文本编辑器内容
-            self.text_edit.clear()
-
-            # 打开文件用于读取二进制内容
-            with open(filename, "rb") as f:
+            with codecs.open(filename, "rb") as f:
+                FILE_SIZE_THRESHOLD = 1024*20
                 # 读取前5000个字节用于编码检测
-                content_for_detection = f.read(5000)
+                content_for_detection = f.read(FILE_SIZE_THRESHOLD)
                 encoding_info = chardet.detect(content_for_detection)
                 if encoding_info is None:
                     encoding = "utf-8"
@@ -643,8 +639,7 @@ class Notepad(QMainWindow):
             # 读取并解码前5000个字节，用于立即显示
             initial_content = content_for_detection.decode(encoding, 'ignore')
             self.text_edit.setPlainText(initial_content)
-            self.setWindowTitle(f"{self.app_name} - {encoding.upper()} - {filename}")
-
+            self.setWindowTitle(f"{self.app_name}-{encoding.upper()}-{filename}")
             # 记录当前文件名,编码
             self.current_file_name = filename
             self.current_file_encoding = encoding
@@ -653,11 +648,9 @@ class Notepad(QMainWindow):
             if self.current_file_name and self.current_file_name.endswith(".py"):
                 self.highlighter = PythonHighlighter(self.text_edit.document(), ".py")
 
-            # 启动文件加载线程
-            self.file_loader = FileLoader(filename, encoding)
-            self.file_loader.contentLoaded.connect(self.append_content)
-            self.file_loader.start()
-
+            # 判断是否需要启动文件加载线程
+            if os.path.getsize(filename) > FILE_SIZE_THRESHOLD:
+                self.start_file_loader(filename, encoding)
         except FileNotFoundError:
             QMessageBox.warning(self, "错误", "文件未找到，请检查路径是否正确！")
         except PermissionError:
@@ -667,8 +660,17 @@ class Notepad(QMainWindow):
         except Exception as e:
             QMessageBox.warning(self, "错误", f"打开文件时发生错误（很可能不支持该文件类型）:{e}")
 
+    def start_file_loader(self, filename, encoding):
+        # 启动文件加载线程
+        self.file_loader = FileLoader(filename, encoding)
+        self.file_loader.contentLoaded.connect(self.append_content)
+        self.file_loader.start()
+
     def append_content(self, chunk):
-        self.text_edit.appendPlainText(chunk)
+        cursor = self.text_edit.textCursor()
+        cursor.movePosition(QTextCursor.End)  # 将光标移动到文本末尾
+        self.text_edit.setTextCursor(cursor)
+        self.text_edit.insertPlainText(chunk)
         self.text_edit.document().setModified(False)
 
     def add_recent_file(self, file_path):
@@ -845,20 +847,19 @@ class Notepad(QMainWindow):
         self.save_settings()
 
     def jump_to_line(self, line_number):
-        # 创建 QTextCursor 对象
-        cursor = self.text_edit.textCursor()
-        # 移动到指定行的开始位置
-        cursor.movePosition(QTextCursor.Start)
-        for _ in range(line_number):
-            # 使用 NextBlock 跳转到下一行
-            if not cursor.movePosition(QTextCursor.NextBlock):
-                # 如果已经到达文档末尾，则不执行任何操作
-                break
-                # 将光标设置到文本编辑器中
-        self.text_edit.setTextCursor(cursor)
-        # 确保光标所在的行是可见的
-        self.text_edit.ensureCursorVisible()
-    # 行号跳转功能结束
+        # 获取文档对象
+        doc = self.text_edit.document()
+        # 查找指定行号对应的文本块
+        block = doc.findBlockByLineNumber(line_number)
+        if block.isValid():
+            # 创建 QTextCursor 对象
+            cursor = QTextCursor(block)
+            # 移动到块的开始位置
+            cursor.movePosition(QTextCursor.StartOfBlock)
+            # 将光标设置到文本编辑器中
+            self.text_edit.setTextCursor(cursor)
+            # 确保光标所在的行是可见的
+            self.text_edit.ensureCursorVisible()
 
     def is_cursor_at_empty_line_start(self):
         cursor = self.text_edit.textCursor()
