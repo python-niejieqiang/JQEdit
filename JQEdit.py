@@ -9,7 +9,7 @@ from functools import partial
 
 import chardet
 from PySide6 import QtGui
-from PySide6.QtCore import QTranslator, Qt, QRect, QThread, Signal, QUrl, Slot, QRegularExpression
+from PySide6.QtCore import QTranslator, Qt,QEvent, QRect, QThread, Signal, QUrl, Slot, QRegularExpression
 from PySide6.QtGui import QAction, QSyntaxHighlighter, QColor, QTextCharFormat, QIcon, QFont, QTextOption, QTextCursor, \
     QDesktopServices, QKeyEvent
 from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QLineEdit, QCheckBox, QVBoxLayout, QPushButton,
@@ -95,6 +95,23 @@ class FindReplaceDialog(QDialog, Ui_replace_window):
         self.regex = None
         self.original_text = None
         self.loop_count = 0
+
+        # 为搜索文本框和替换文本框安装事件过滤器
+        self.search_text.installEventFilter(self)
+        self.replacewith_text.installEventFilter(self)
+
+        # 设置初始焦点
+        self.search_text.setFocus()
+
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.KeyPress and event.key() == Qt.Key_Tab:
+            if obj == self.search_text:
+                self.replacewith_text.setFocus()
+                return True
+            elif obj == self.replacewith_text:
+                self.matchcase_check.setFocus()
+                return True
+        return super().eventFilter(obj, event)
 
     def update_regex(self):
         pattern = self.search_text.text()
@@ -253,6 +270,23 @@ class SelectionReplaceDialog(QDialog, Ui_replace_window):
         self.allreplace_btn.clicked.connect(self.replace_all)
         self.cancel_btn.clicked.connect(self.close_dialog)
 
+        # 为搜索文本框和替换文本框安装事件过滤器
+        self.search_text.installEventFilter(self)
+        self.replacewith_text.installEventFilter(self)
+
+        # 设置初始焦点
+        self.search_text.setFocus()
+
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.KeyPress and event.key() == Qt.Key_Tab:
+            if obj == self.search_text:
+                self.replacewith_text.setFocus()
+                return True
+            elif obj == self.replacewith_text:
+                self.matchcase_check.setFocus()
+                return True
+        return super().eventFilter(obj, event)
+
     def replace_all(self):
         selected_text = self.text_edit.textCursor().selectedText()
         if selected_text:
@@ -267,7 +301,7 @@ class SelectionReplaceDialog(QDialog, Ui_replace_window):
             if not matchcase:
                 flags |= re.IGNORECASE
             if multiline:
-                flags &= re.MULTILINE
+                flags |= re.MULTILINE
             if dotall:
                 flags |= re.DOTALL
 

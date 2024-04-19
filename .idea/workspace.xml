@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="增加选区替换功能。">
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="优化设置窗口尺寸体验">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
@@ -222,7 +222,15 @@
       <option name="project" value="LOCAL" />
       <updated>1713536648842</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="优化设置窗口尺寸体验">
+      <option name="closed" value="true" />
+      <created>1713542768952</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1713542768952</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -258,6 +266,7 @@
     <MESSAGE value="打包脚本优化，安装包体积小了2M- -！" />
     <MESSAGE value="优化行号跳转效率,大文件读取修复分块读取不能无缝衔接bug" />
     <MESSAGE value="增加选区替换功能。" />
-    <option name="LAST_COMMIT_MESSAGE" value="增加选区替换功能。" />
+    <MESSAGE value="优化设置窗口尺寸体验" />
+    <option name="LAST_COMMIT_MESSAGE" value="优化设置窗口尺寸体验" />
   </component>
 </project>
