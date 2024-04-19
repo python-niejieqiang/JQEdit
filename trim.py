@@ -11,8 +11,8 @@ def search_files(directory, files_to_keep):
         for file in files:
             file_path = os.path.join(root, file)
             if file_path not in files_to_keep and os.path.isfile(file_path):
-                os.remove(file_path)
-                # print("即将被删除：", file_path)
+                # os.remove(file_path)
+                print("即将被删除：", file_path)
             else:
                 pass
 

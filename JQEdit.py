@@ -9,12 +9,13 @@ from functools import partial
 
 import chardet
 from PySide6 import QtGui
-from PySide6.QtCore import QTranslator, Qt, QThread, Signal, QUrl, Slot, QRegularExpression
+from PySide6.QtCore import QTranslator, Qt, QRect, QThread, Signal, QUrl, Slot, QRegularExpression
 from PySide6.QtGui import QAction, QSyntaxHighlighter, QColor, QTextCharFormat, QIcon, QFont, QTextOption, QTextCursor, \
     QDesktopServices, QKeyEvent
 from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QLineEdit, QCheckBox, QVBoxLayout, QPushButton,
                                QFileDialog, QMainWindow, QFontDialog, QPlainTextEdit,
                                QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
+
 from replace_window_ui import Ui_replace_window
 
 
@@ -228,6 +229,57 @@ class FindReplaceDialog(QDialog, Ui_replace_window):
 
     def close_dialog(self):
         self.close()
+
+class SelectionReplaceDialog(QDialog, Ui_replace_window):
+    def __init__(self,text_edit, parent=None):
+        super().__init__(parent)
+        self.text_edit = text_edit
+        self.setupUi(self)
+        self.setWindowTitle(f" 选区替换")
+
+        # 隐藏查找按钮和单个替换按钮
+        self.findnext_btn.hide()
+        self.replace_btn.hide()
+        self.multiline_check.hide()
+        # 移除方向选择组
+        self.direction_gbox.setParent(None)
+        # 微调按钮位置，将全部替换按钮的位置和大小设置为与查找按钮相同
+        self.allreplace_btn.setGeometry(self.findnext_btn.geometry())
+        self.cancel_btn.setGeometry(QRect(400, 80, 101, 31))
+        self.matchcase_check.setGeometry(QRect(190, 120, 81, 30))
+        self.dotall_check.setGeometry(QRect(85, 120, 71, 30))
+        # self.multiline_check.setGeometry(QRect(50, 120, 111, 30))
+
+        self.allreplace_btn.clicked.connect(self.replace_all)
+        self.cancel_btn.clicked.connect(self.close_dialog)
+
+    def replace_all(self):
+        selected_text = self.text_edit.textCursor().selectedText()
+        if selected_text:
+            pattern = self.search_text.text()
+            replacement = self.replacewith_text.text()
+
+            matchcase = self.matchcase_check.isChecked()
+            multiline = self.multiline_check.isChecked()
+            dotall = self.dotall_check.isChecked()
+
+            flags = 0
+            if not matchcase:
+                flags |= re.IGNORECASE
+            if multiline:
+                flags &= re.MULTILINE
+            if dotall:
+                flags |= re.DOTALL
+
+            cursor = self.text_edit.textCursor()
+            cursor.beginEditBlock()
+            new_text = re.sub(pattern, replacement, selected_text, flags=flags)
+            cursor.insertText(new_text)
+            cursor.endEditBlock()
+
+    def close_dialog(self):
+        self.close()
+
 
 class Notepad(QMainWindow):
     def __init__(self, file_in_cmd=None):
@@ -446,10 +498,13 @@ class Notepad(QMainWindow):
 
         # 主窗口部分
         self.replace_action = QAction("查找/替换(&Z)", self)
-        # 创建查找对话框的实例,暂时不显示,点击查找替换才显示在display_replace函数中使用
-        self.find_replace_dialog = FindReplaceDialog(self.text_edit, self)
         self.replace_action.triggered.connect(self.display_replace)
         self.find_menu.addAction(self.replace_action)
+
+        self.selection_replace_action = QAction("选区替换", self)
+        self.selection_replace_action.triggered.connect(self.show_replace_dialog)
+        self.find_menu.addAction(self.selection_replace_action)
+
         # 编码菜单
         encodings = ["utf-8", "gb18030", "utf-32-le", "utf-32-be", "utf-16le", "utf-16be", "iso-8859-1", "ascii",
                      "euc_jisx0213",
@@ -487,6 +542,11 @@ class Notepad(QMainWindow):
         self.undo_context = QAction("撤销", self)
         self.undo_context.triggered.connect(self.undo)
         self.context_menu.addAction(self.undo_context)
+
+        self.selection_replace_context = QAction("选区替换", self)
+        self.selection_replace_context.triggered.connect(self.show_replace_dialog)
+        self.context_menu.addAction(self.selection_replace_context)
+
         # 添加菜单分割线
         self.context_menu.addSeparator()
         self.copy_context = QAction("复制", self)
@@ -534,6 +594,15 @@ class Notepad(QMainWindow):
 
         self.text_edit.setContextMenuPolicy(Qt.CustomContextMenu)
         self.text_edit.customContextMenuRequested.connect(self.show_contextmenu)
+
+    def show_replace_dialog(self):
+        selected_text = self.text_edit.textCursor().selectedText()
+        if selected_text:
+            selection_replace_dialog = SelectionReplaceDialog(self.text_edit, self)
+            selection_replace_dialog.exec()
+        else:
+            QMessageBox.warning(self, "错误", "先选中文本才能替换！")
+            pass
 
     # 点击关闭按钮时提示要不要保存（重写closeEvent）
     def closeEvent(self, event):
@@ -968,6 +1037,8 @@ class Notepad(QMainWindow):
     def display_replace(self):
         # 点击替换弹出查找对话框,如果有选中文字则直接显示至搜索框
         # 获取选中的文本
+        # 创建查找对话框的实例,暂时不显示,点击查找替换才显示在display_replace函数中使用
+        self.find_replace_dialog = FindReplaceDialog(self.text_edit, self)
         selected_text = self.text_edit.textCursor().selectedText()
         if selected_text:
             # 如果有选中的文本，则将其填充到查找对话框的搜索框中
