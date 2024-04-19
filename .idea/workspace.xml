@@ -4,8 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="打包脚本优化，安装包体积小了2M- -！">
-      <change afterPath="$PROJECT_DIR$/JQEdit.spec" afterDir="false" />
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="优化行号跳转效率,大文件读取修复分块读取不能无缝衔接bug">
       <change afterPath="$PROJECT_DIR$/build/JQEdit/Analysis-00.toc" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/build/JQEdit/COLLECT-00.toc" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/build/JQEdit/EXE-00.toc" afterDir="false" />
@@ -18,147 +17,16 @@
       <change afterPath="$PROJECT_DIR$/build/JQEdit/warn-JQEdit.txt" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/build/JQEdit/xref-JQEdit.html" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/dist/JQEdit/JQEdit.exe" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/MSVCP140.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/MSVCP140_1.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/MSVCP140_2.dll" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/Qt6Core.dll" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/Qt6Gui.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/Qt6Network.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/Qt6OpenGL.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/Qt6Pdf.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/Qt6Qml.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/Qt6QmlModels.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/Qt6Quick.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/Qt6Svg.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/Qt6VirtualKeyboard.dll" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/Qt6Widgets.dll" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/QtCore.pyd" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/QtGui.pyd" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/QtNetwork.pyd" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/QtWidgets.pyd" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/VCRUNTIME140.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/VCRUNTIME140_1.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/generic/qtuiotouchplugin.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/iconengines/qsvgicon.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/imageformats/qgif.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/imageformats/qicns.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/imageformats/qico.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/imageformats/qjpeg.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/imageformats/qpdf.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/imageformats/qsvg.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/imageformats/qtga.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/imageformats/qtiff.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/imageformats/qwbmp.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/imageformats/qwebp.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/networkinformation/qnetworklistmanager.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/platforminputcontexts/qtvirtualkeyboardplugin.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/platforms/qdirect2d.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/platforms/qminimal.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/platforms/qoffscreen.dll" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/platforms/qwindows.dll" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/styles/qwindowsvistastyle.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/tls/qcertonlybackend.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/tls/qopensslbackend.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/plugins/tls/qschannelbackend.dll" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/pyside6.abi3.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_ar.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_bg.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_ca.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_cs.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_da.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_de.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_en.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_es.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_fa.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_fi.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_fr.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_gd.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_gl.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_he.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_ar.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_bg.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_ca.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_cs.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_da.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_de.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_en.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_es.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_fr.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_gl.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_hr.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_hu.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_it.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_ja.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_ko.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_nl.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_nn.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_pl.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_pt_BR.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_ru.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_sk.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_sl.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_tr.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_uk.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_zh_CN.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_help_zh_TW.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_hr.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_hu.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_it.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_ja.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_ko.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_lt.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_lv.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_nl.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_nn.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_pl.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_pt_BR.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_pt_PT.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_ru.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_sk.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_sl.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_sv.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_tr.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_uk.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_zh_CN.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qt_zh_TW.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_ar.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_bg.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_ca.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_cs.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_da.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_de.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_en.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_es.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_fa.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_fi.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_fr.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_gd.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_he.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_hr.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_hu.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_it.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_ja.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_ko.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_lv.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_nl.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_nn.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_pl.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_pt_BR.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_ru.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_sk.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_tr.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_uk.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_zh_CN.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/translations/qtbase_zh_TW.qm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/VCRUNTIME140.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/VCRUNTIME140_1.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/_bz2.pyd" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/_decimal.pyd" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/_hashlib.pyd" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/_lzma.pyd" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/_socket.pyd" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/base_library.zip" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/libcrypto-3.dll" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/python3.dll" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/python311.dll" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/resources/JQEdit.ico" afterDir="false" />
@@ -169,13 +37,9 @@
       <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/resources/settings.json" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/resources/widgets.qm" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/resources/window_size.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/select.pyd" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/shiboken6/MSVCP140.dll" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/shiboken6/Shiboken.pyd" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/shiboken6/VCRUNTIME140.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/shiboken6/VCRUNTIME140_1.dll" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/shiboken6/shiboken6.abi3.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/unicodedata.pyd" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/trim.py" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/venv/Lib/site-packages/_distutils_hack/__init__.py" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/venv/Lib/site-packages/_distutils_hack/override.py" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/venv/Lib/site-packages/distutils-precedence.pth" afterDir="false" />
@@ -955,10 +819,13 @@
       <change afterPath="$PROJECT_DIR$/venv/Scripts/python.exe" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/venv/Scripts/pythonw.exe" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/venv/pyvenv.cfg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/JQEdit.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/JQEdit.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/dist/JQEdit/_internal/PySide6/opengl32sw.dll" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_setup.exe" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/build_exe.bat" beforeDir="false" afterPath="$PROJECT_DIR$/build_exe.bat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inno_setup.iss" beforeDir="false" afterPath="$PROJECT_DIR$/inno_setup.iss" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -994,6 +861,7 @@
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
     <option name="RESET_MODE" value="HARD" />
+    <option name="UPDATE_TYPE" value="REBASE" />
   </component>
   <component name="GiteePullRequestSearchHistory">{
   &quot;history&quot;: [
@@ -1017,9 +885,9 @@
   </component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/1.py" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/2.py" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/JQEdit.py" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/replace_window_ui.py" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/trim.py" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
@@ -1133,7 +1001,15 @@
       <option name="project" value="LOCAL" />
       <updated>1713330948263</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="优化行号跳转效率,大文件读取修复分块读取不能无缝衔接bug">
+      <option name="closed" value="true" />
+      <created>1713448660109</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1713448660109</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -1167,6 +1043,7 @@
     <MESSAGE value="实现循环查找，解决GB18030正则查找失效，替换未实现，全部替换只勉强实现undo_stack，替换后按CTRL-Z只能恢复删除内容，点击撤销才能恢复替换内容" />
     <MESSAGE value="修复不能逐项替换，修复全部替换不能无法撤销恢复bug" />
     <MESSAGE value="打包脚本优化，安装包体积小了2M- -！" />
-    <option name="LAST_COMMIT_MESSAGE" value="打包脚本优化，安装包体积小了2M- -！" />
+    <MESSAGE value="优化行号跳转效率,大文件读取修复分块读取不能无缝衔接bug" />
+    <option name="LAST_COMMIT_MESSAGE" value="优化行号跳转效率,大文件读取修复分块读取不能无缝衔接bug" />
   </component>
 </project>

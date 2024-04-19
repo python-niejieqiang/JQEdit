@@ -15,7 +15,6 @@ from PySide6.QtGui import QAction, QSyntaxHighlighter, QColor, QTextCharFormat, 
 from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QLineEdit, QCheckBox, QVBoxLayout, QPushButton,
                                QFileDialog, QMainWindow, QFontDialog, QPlainTextEdit,
                                QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
-
 from replace_window_ui import Ui_replace_window
 
 
@@ -30,7 +29,7 @@ class FileLoader(QThread):
     def run(self):
         try:
             with codecs.open(self.filename, "r", encoding=self.encoding) as f:
-                f.seek(1024*20)
+                f.seek(1024*100)
                 while True:
                     chunk = f.read(1024 * 1024)  # 每次读取1MB的内容
                     if not chunk:
@@ -239,6 +238,8 @@ class Notepad(QMainWindow):
         self.highlighter = None
         # 记录当前文件名
         self.current_file_name = ""
+        # 记录文件所在目录名，打开命令行时就可以切换到该目录
+        self.work_dir = ""
         self.untitled_name = "Untitled.txt"
 
         # UI初始化，菜单栏以及编辑器，状态栏，各个子菜单，自定义的右键菜单
@@ -623,8 +624,8 @@ class Notepad(QMainWindow):
             return
         try:
             with codecs.open(filename, "rb") as f:
-                FILE_SIZE_THRESHOLD = 1024*20
-                # 读取前5000个字节用于编码检测
+                FILE_SIZE_THRESHOLD = 1024*100
+                # 读取前100KB用于编码检测
                 content_for_detection = f.read(FILE_SIZE_THRESHOLD)
                 encoding_info = chardet.detect(content_for_detection)
                 if encoding_info is None:
@@ -640,15 +641,16 @@ class Notepad(QMainWindow):
             initial_content = content_for_detection.decode(encoding, 'ignore')
             self.text_edit.setPlainText(initial_content)
             self.setWindowTitle(f"{self.app_name}-{encoding.upper()}-{filename}")
-            # 记录当前文件名,编码
+            # 记录当前文件名,编码,以及当前目录
             self.current_file_name = filename
             self.current_file_encoding = encoding
+            self.work_dir = os.path.dirname(os.path.abspath(filename))
             # 将打开记录添加到最近打开
             self.add_recent_file(filename)
             if self.current_file_name and self.current_file_name.endswith(".py"):
                 self.highlighter = PythonHighlighter(self.text_edit.document(), ".py")
 
-            # 判断是否需要启动文件加载线程
+            # 文本大于100kb，启动文件加载线程
             if os.path.getsize(filename) > FILE_SIZE_THRESHOLD:
                 self.start_file_loader(filename, encoding)
         except FileNotFoundError:
@@ -982,32 +984,13 @@ class Notepad(QMainWindow):
 
     @Slot()
     def open_terminal(self):
-        # 获取当前工作目录
-        current_dir = os.getcwd()
         try:
-            if sys.platform.startswith('win'):
-                # 对于Windows系统
-                cmd_command = f'start cmd /K cd /D "{current_dir}"'
-                subprocess.Popen(cmd_command, shell=True)
-            elif sys.platform.startswith('linux'):
-                # 对于Linux系统
-                # 尝试使用 xdg-open 来打开默认的终端模拟器
-                try:
-                    term_command = ['xdg-open', '--', 'terminator', '--working-directory', current_dir]
-                    subprocess.Popen(term_command)
-                except FileNotFoundError:
-                    # 如果 terminator 不存在，尝试其他终端
-                    try:
-                        subprocess.Popen(['gnome-terminal', '--working-directory', current_dir])
-                    except FileNotFoundError:
-                        # 作为最后的手段，使用 xterm
-                        subprocess.Popen(['xterm', '-e', 'bash', '-c', f'cd "{current_dir}" && exec bash'])
-            elif sys.platform == 'darwin':
-                # 对于macOS系统
-                term_command = ['osascript', '-e', f'tell app "Terminal" to do script "cd {current_dir}"']
-                subprocess.Popen(term_command)
-            else:
-                raise Exception("当前系统无法识别，找不到命令行!")
+            # 如果self.work_dir不为空，切换到相应的目录
+            if self.work_dir:
+                os.chdir(self.work_dir)
+            # 对于Windows系统
+            cmd_command = f'start cmd /K cd /D "{self.work_dir}"'
+            subprocess.Popen(cmd_command, shell=True)
         except Exception as e:
             QMessageBox.warning(self, "发生错误", str(e))
 
@@ -1068,24 +1051,26 @@ class Notepad(QMainWindow):
     # 根据当前是否打开文件来决定是直接保存，还是另存至其他位置（）
     @Slot()
     def save(self):
-        if self.current_file_name:
-            saved = self.save_file(self.current_file_name)
-            if saved:
-                self.setWindowTitle(f"{self.windowTitle()} - 保存成功")
+        if self.text_edit.document().isModified():  # 检查文档是否被修改过
+            if self.current_file_name:
+                saved = self.save_file(self.current_file_name)
+                if saved:
+                    self.setWindowTitle(f"{self.windowTitle()} - 保存成功")
+            else:
+                saved_file = self.save_as()
+                if saved_file:
+                    self.setWindowTitle(f"{self.windowTitle()} - 保存成功")
         else:
-            saved_file = self.save_as()
-            if saved_file:
-                self.setWindowTitle(f"{self.windowTitle()} - 保存成功")
+            print("文档未修改，无需保存")
 
     @Slot()
     def save_as(self):
         default_filename = self.current_file_name if self.current_file_name else self.untitled_name
         filename, _ = QFileDialog.getSaveFileName(None, "保存文件", default_filename,
                                                   "所有文件类型(*.*);;文本文件 (*.txt)")
-
-        # 如果用户取消保存操作，直接返回 False
+        # 如果用户取消保存操作，直接返回 None
         if not filename:
-            return False
+            return None
 
         # 获取文件名输入框并选中文本
         filename_lineedit = QApplication.focusWidget()
@@ -1098,6 +1083,7 @@ class Notepad(QMainWindow):
             return True
         else:
             return False
+
     @Slot()
     def new_file(self):
         if self.tip_to_save():
