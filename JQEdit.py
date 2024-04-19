@@ -982,8 +982,8 @@ class Notepad(QMainWindow):
     def save_startup_size(self, dialog, width, height, is_maximized):
         try:
             if is_maximized:
-                width = 0
-                height = 0
+                width = 800
+                height = 600
             else:
                 width = int(width)
                 height = int(height)
