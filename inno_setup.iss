@@ -86,3 +86,29 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
+[Tasks]
+Name: addPath; Description: "将程序添加到PATH环境变量"
+
+[Code]
+function ShouldAddToPath: Boolean;
+begin
+  // 返回复选框的状态，True表示选中，False表示未选中
+  Result := WizardForm.TasksList.Checked[0];
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  ResultCode: Integer; // 声明ResultCode变量
+begin
+  // 在"安装"步骤之后执行添加到PATH环境变量的操作
+  if CurStep = ssPostInstall then
+  begin
+    // 如果复选框被选中，则执行添加到PATH环境变量的操作
+    if ShouldAddToPath then
+    begin
+      // 执行添加到PATH环境变量的操作
+      Exec('cmd.exe', '/c setx PATH "%PATH%;"' + ExpandConstant('{app}'), '', SW_HIDE,
+        ewWaitUntilTerminated, ResultCode);
+    end;
+  end;
+end;
