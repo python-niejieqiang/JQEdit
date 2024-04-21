@@ -463,9 +463,13 @@ REM 计算删除的文件数量并输出信息
 
 echo 精简了 %count% 个文件。
 timeout /t 2 > nul
+echo 准备将vista风格文件复制到程序目录
+timeout /t 2 > nul
 REM 复制当前目录中的 qwindowsvistastyle.dll 到 _internal\PySide6\plugins\styles 目录
 copy qwindowsvistastyle.dll dist\JQEdit\_internal\PySide6\plugins\styles
 timeout /t 2 > nul
 echo 瘦身完成，开始封装安装包
 timeout /t 2 > nul
 Compil32 /cc inno_setup.iss
+timeout /t 2 > nul
+echo 安装包制作完成

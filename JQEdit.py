@@ -10,7 +10,7 @@ from functools import partial
 import chardet
 from PySide6.QtCore import (QTranslator, Qt, QEvent, QRect, QThread, Signal, QUrl, Slot, QRegularExpression)
 from PySide6.QtGui import (QAction, QIntValidator, QSyntaxHighlighter, QColor, QTextCharFormat, QIcon, QFont,
-                           QTextOption, QTextCursor, QDesktopServices, QKeyEvent)
+                           QTextCursor, QDesktopServices, QKeyEvent)
 from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QLineEdit, QCheckBox, QVBoxLayout, QPushButton,
                                QFileDialog, QMainWindow, QFontDialog, QPlainTextEdit,
                                QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
@@ -338,17 +338,13 @@ class Notepad(QMainWindow):
             self.read_file(file_in_cmd)
         # 读取settings.json文件
         self.json_file = os.path.join(resource_path, "settings.json")
-        self.set_window_file = os.path.join(resource_path, "window_size.json")
-        # 读取并设置启动窗口尺寸
-        self.read_startup_size()
-        # 读取主题字体等设置
+        # 读取并设置启动窗口尺寸,主题字体等设置
         self.load_settings()
         # 读取最近打开文件记录，并更新“最近打开菜单”
         self.load_recent_files()
         self.update_recent_files_menu()
 
     def setup_menu_and_actions(self):
-
         self.app_name = "JQEdit"
         self.setWindowTitle(self.app_name)
         # 设置窗口，用户点击退出最大化的最小尺寸
@@ -489,10 +485,10 @@ class Notepad(QMainWindow):
         # 主题菜单, 将主题样式存入数组全部设为未选中，当用户选中哪一个，就把哪一个设为True
         # 也就是点击哪个主题，哪个主题样式前面就显示打勾
         self.theme_actions = []
-        self.def_theme_action = QAction("windows默认", self,checkable=True)
-        self.def_theme_action.triggered.connect(self.set_default_style)
-        self.theme_menu.addAction(self.def_theme_action)
-        self.theme_actions.append(self.def_theme_action)
+        self.default_theme_action = QAction("windows默认", self, checkable=True)
+        self.default_theme_action.triggered.connect(self.set_default_style)
+        self.theme_menu.addAction(self.default_theme_action)
+        self.theme_actions.append(self.default_theme_action)
 
         self.dark_theme_action = QAction("Dark", self,checkable=True)
         self.dark_theme_action.triggered.connect(self.set_dark_style)
@@ -818,46 +814,6 @@ class Notepad(QMainWindow):
         with open(self.recent_files_path, "w") as f:
             json.dump(self.recent_files, f)
 
-    def load_settings(self):
-        with open(self.json_file, "r") as f:
-            settings = json.load(f)
-
-        font_properties = {
-            "font_family": "Courier New",
-            "pointSize": 12,
-            "bold": False,
-            "italic": False,
-            "underline": False,
-            "strikeOut": False
-        }
-
-        font_properties.update({k: settings.get(k, v) for k, v in font_properties.items()})
-
-        self.font = QFont(font_properties["font_family"], font_properties["pointSize"])
-        # 设置默认抗锯齿和平滑
-        self.font.setStyleStrategy(QFont.PreferAntialias)  # 设置抗锯齿
-        option = QTextOption()
-        self.text_edit.document().setDefaultTextOption(option)  # 启用平滑
-        self.font.setBold(font_properties["bold"])
-        self.font.setItalic(font_properties["italic"])
-        self.font.setUnderline(font_properties["underline"])
-        self.font.setStrikeOut(font_properties["strikeOut"])
-
-        self.text_edit.setFont(self.font)
-        #加载用户字体选择结束
-
-        # 加载用户主题设置
-        self.theme = settings.get("theme", "default")
-
-        # 加载用户状态栏，自动换行设置，如果json文件中没有值，使用备选值True
-        self.wrap_lines = settings.get("wrap_lines", True)
-        self.statusbar_shown = settings.get("statusbar_shown", True)
-
-        self.apply_theme()  # 应用用户的主题选择
-        self.apply_wrap_status()  # 应用用户的状态栏，自动换行设置
-        self.wrap_action.setChecked(self.wrap_lines)
-        self.statusbar_action.setChecked(self.statusbar_shown)
-
     def apply_wrap_status(self):
         if self.wrap_lines:
             self.text_edit.setLineWrapMode(QPlainTextEdit.WidgetWidth)
@@ -877,8 +833,62 @@ class Notepad(QMainWindow):
         elif self.theme == "dark":
             self.set_dark_style()
 
+    def load_settings(self):
+        try:
+            # 读取现有的设置
+            with open(self.json_file, "r") as f:
+                settings = json.load(f)
+        except FileNotFoundError:
+            settings = {}  # 如果文件不存在，创建一个空字典
+
+        font_properties = {
+            "font_family": "Courier New",
+            "pointSize": 12,
+            "bold": False,
+            "italic": False,
+            "underline": False,
+            "strikeOut": False
+        }
+
+        # 更新字体设置
+        font_properties.update({k: settings.get(k, v) for k, v in font_properties.items()})
+        self.font = QFont(font_properties["font_family"], font_properties["pointSize"])
+        self.font.setBold(font_properties["bold"])
+        self.font.setItalic(font_properties["italic"])
+        self.font.setUnderline(font_properties["underline"])
+        self.font.setStrikeOut(font_properties["strikeOut"])
+        self.text_edit.setFont(self.font)
+
+        # 更新主题设置
+        self.theme = settings.get("theme", "default")
+
+        # 更新状态栏，自动换行设置
+        self.wrap_lines = settings.get("wrap_lines", True)
+        self.statusbar_shown = settings.get("statusbar_shown", True)
+
+        # 读取窗口大小设置
+        startup_size = settings.get("startup_size", {})
+        width = startup_size.get("width", 800)
+        height = startup_size.get("height", 600)
+        is_maximized = startup_size.get("start_maximized", False)
+        if is_maximized:
+            self.showMaximized()
+        else:
+            self.resize(int(width), int(height))
+
+        self.apply_theme()  # 应用主题选择
+        self.apply_wrap_status()  # 应用状态栏，自动换行设置
+
     def save_settings(self):
-        settings = {
+        try:
+            # 读取现有的设置
+            with open(self.json_file, "r") as f:
+                existing_settings = json.load(f)
+        except FileNotFoundError:
+            existing_settings = {}  # 如果文件不存在，创建一个空字典
+
+        # 更新现有设置
+        existing_settings.update({
             "font_family": self.font.family(),
             "pointSize": self.font.pointSize(),
             "bold": self.font.bold(),
@@ -887,10 +897,13 @@ class Notepad(QMainWindow):
             "strikeOut": self.font.strikeOut(),
             "theme": self.theme,
             "wrap_lines": self.wrap_lines,
-            "statusbar_shown": self.statusbar_shown
-        }
+            "statusbar_shown": self.statusbar_shown,
+            "startup_size": {"width": self.width(), "height": self.height(), "start_maximized": self.isMaximized()}
+        })
+
+        # 保存更新后的设置到文件
         with open(self.json_file, "w") as f:
-            json.dump(settings, f, indent=4)
+            json.dump(existing_settings, f, indent=4)
 
     def clear_checked(self):
         # 清除主题样式菜单项的选中状态
@@ -909,7 +922,7 @@ class Notepad(QMainWindow):
           """)
         self.theme = "default"
         self.clear_checked()
-        self.def_theme_action.setChecked(True)
+        self.default_theme_action.setChecked(True)
         self.save_settings()
 
     def set_light_style(self):
@@ -1016,15 +1029,19 @@ class Notepad(QMainWindow):
             QMessageBox.critical(self, "错误", "请输入有效的数字", QMessageBox.Ok)
             return
 
-        # 保存启动窗口尺寸及最大化状态到settings.json
-        with open(self.set_window_file, 'w') as f:
-            json.dump({"startup_size": {"width": width, "height": height, "start_maximized": is_maximized}}, f)
+        # 保存启动窗口尺寸及最大化状态到 settings.json
+        with open(self.json_file, 'r+') as f:
+            settings = json.load(f)
+            settings["startup_size"] = {"width": width, "height": height, "start_maximized": is_maximized}
+            f.seek(0)  # 将文件指针移到文件开头
+            json.dump(settings, f, indent=4)
+            f.truncate()  # 截断文件，删除多余的内容
         dialog.close()
 
     def read_startup_size(self):
         try:
-            # set_window_size.json读取启动窗口尺寸及最大化状态
-            with open(self.set_window_file, 'r') as f:
+            # 从 settings.json 文件读取启动窗口尺寸及最大化状态
+            with open(self.json_file, 'r') as f:
                 settings = json.load(f)
                 startup_size = settings.get("startup_size", {})
                 width = startup_size.get("width", 800)
@@ -1037,7 +1054,7 @@ class Notepad(QMainWindow):
 
                 return {"width": int(width), "height": int(height), "start_maximized": is_maximized}
         except (FileNotFoundError, ValueError):
-            # json文件不存在，或者值为空， 默认使用800x600的尺寸
+            # json 文件不存在，或者值为空，默认使用 800x600 的尺寸
             self.resize(800, 600)
 
     @Slot()
