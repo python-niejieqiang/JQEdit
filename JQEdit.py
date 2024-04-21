@@ -8,10 +8,9 @@ import sys
 from functools import partial
 
 import chardet
-from PySide6 import QtGui
-from PySide6.QtCore import QTranslator, Qt,QEvent, QRect, QThread, Signal, QUrl, Slot, QRegularExpression
-from PySide6.QtGui import QAction, QSyntaxHighlighter, QColor, QTextCharFormat, QIcon, QFont, QTextOption, QTextCursor, \
-    QDesktopServices, QKeyEvent
+from PySide6.QtCore import (QTranslator, Qt, QEvent, QRect, QThread, Signal, QUrl, Slot, QRegularExpression)
+from PySide6.QtGui import (QAction, QIntValidator, QSyntaxHighlighter, QColor, QTextCharFormat, QIcon, QFont,
+                           QTextOption, QTextCursor, QDesktopServices, QKeyEvent)
 from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QLineEdit, QCheckBox, QVBoxLayout, QPushButton,
                                QFileDialog, QMainWindow, QFontDialog, QPlainTextEdit,
                                QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
@@ -265,7 +264,6 @@ class SelectionReplaceDialog(QDialog, Ui_replace_window):
         self.cancel_btn.setGeometry(QRect(400, 80, 101, 31))
         self.matchcase_check.setGeometry(QRect(190, 120, 81, 30))
         self.dotall_check.setGeometry(QRect(85, 120, 71, 30))
-        # self.multiline_check.setGeometry(QRect(50, 120, 111, 30))
 
         self.allreplace_btn.clicked.connect(self.replace_all)
         self.cancel_btn.clicked.connect(self.close_dialog)
@@ -277,16 +275,6 @@ class SelectionReplaceDialog(QDialog, Ui_replace_window):
         # 设置初始焦点
         self.search_text.setFocus()
 
-    def eventFilter(self, obj, event):
-        if event.type() == QEvent.KeyPress and event.key() == Qt.Key_Tab:
-            if obj == self.search_text:
-                self.replacewith_text.setFocus()
-                return True
-            elif obj == self.replacewith_text:
-                self.matchcase_check.setFocus()
-                return True
-        return super().eventFilter(obj, event)
-
     def replace_all(self):
         selected_text = self.text_edit.textCursor().selectedText()
         if selected_text:
@@ -294,26 +282,32 @@ class SelectionReplaceDialog(QDialog, Ui_replace_window):
             replacement = self.replacewith_text.text()
 
             matchcase = self.matchcase_check.isChecked()
-            multiline = self.multiline_check.isChecked()
             dotall = self.dotall_check.isChecked()
 
             flags = 0
             if not matchcase:
                 flags |= re.IGNORECASE
-            if multiline:
-                flags |= re.MULTILINE
             if dotall:
                 flags |= re.DOTALL
 
             cursor = self.text_edit.textCursor()
             cursor.beginEditBlock()
+            # 获取选区的开始和结束位置
+            selection_start = cursor.selectionStart()
+            selection_end = cursor.selectionEnd()
+
+            # 执行替换操作
             new_text = re.sub(pattern, replacement, selected_text, flags=flags)
+            cursor.removeSelectedText()
             cursor.insertText(new_text)
             cursor.endEditBlock()
+            # 重新设置选区
+            cursor.setPosition(selection_start, QTextCursor.MoveAnchor)
+            cursor.setPosition(selection_end, QTextCursor.KeepAnchor)
+            self.text_edit.setTextCursor(cursor)
 
     def close_dialog(self):
         self.close()
-
 
 class Notepad(QMainWindow):
     def __init__(self, file_in_cmd=None):
@@ -325,7 +319,8 @@ class Notepad(QMainWindow):
         # 记录当前文件名
         self.current_file_name = ""
         # 记录文件所在目录名，打开命令行时就可以切换到该目录
-        self.work_dir = ""
+        self.desktop_dir = os.path.join(os.path.expanduser('~'), 'Desktop')
+        self.work_dir = self.desktop_dir
         self.untitled_name = "Untitled.txt"
 
         # UI初始化，菜单栏以及编辑器，状态栏，各个子菜单，自定义的右键菜单
@@ -646,22 +641,19 @@ class Notepad(QMainWindow):
             event.ignore()  # 用户选择取消保存，不关闭窗口
 
     def keyPressEvent(self, event: QKeyEvent):
-        #  Ctrl+F 弹出查找对话框，如果有选中文字则搜索框直接显示
+        # 处理组合键 Ctrl+F
         if event.key() == Qt.Key_F and event.modifiers() & Qt.ControlModifier:
             self.display_replace()
             event.accept()
             return
-
-            # 检测 Ctrl+G 组合键
+        # 处理组合键 Ctrl+G
         if event.key() == Qt.Key_G and event.modifiers() & Qt.ControlModifier:
-            # 弹出输入框
             line_number, ok = QInputDialog.getInt(self, "跳转到行", "请输入行号:")
             if ok and line_number > 0:
-                # 跳转到指定行
                 self.jump_to_line(line_number - 1)  # 行号从1开始计数，但QTextCursor从0开始
             event.accept()
-            return  # 阻止默认事件处理
-        # 如果不是 Ctrl+G，则调用默认的事件处理
+            return
+        # 默认情况下，调用父类的事件处理函数
         super().keyPressEvent(event)
 
     def display_default_file_name(self, filename_):
@@ -980,11 +972,10 @@ class Notepad(QMainWindow):
 
         width_label = QLabel("宽度:", dialog)
         width_edit = QLineEdit(dialog)
-        width_edit.setValidator(QtGui.QIntValidator())
-
+        width_edit.setValidator(QIntValidator())
         height_label = QLabel("高度:", dialog)
         height_edit = QLineEdit(dialog)
-        height_edit.setValidator(QtGui.QIntValidator())
+        height_edit.setValidator(QIntValidator())
 
         maximize_checkbox = QCheckBox("启动最大化", dialog)
         maximize_checkbox.stateChanged.connect(lambda state: self.on_maximize_checkbox_changed(state, width_edit, height_edit))
@@ -998,7 +989,7 @@ class Notepad(QMainWindow):
         layout.addWidget(height_label)
         layout.addWidget(height_edit)
         layout.addWidget(maximize_checkbox)
-        layout.addWidget(button_ok)
+        layout.addWidget(button_ok,alignment=Qt.AlignCenter)
 
         dialog.setLayout(layout)
         # 读取先前保存的窗口尺寸信息并显示在对话框中
@@ -1194,6 +1185,7 @@ class Notepad(QMainWindow):
         if self.tip_to_save():
             self.text_edit.clear()
             self.current_file_name=""
+            self.work_dir = self.desktop_dir
             self.setWindowTitle(f"{self.app_name} - [{self.untitled_name}]")
 
     @Slot()
@@ -1223,9 +1215,15 @@ class Notepad(QMainWindow):
         cursor = self.text_edit.textCursor()
         row = cursor.blockNumber() + 1  # blockNumber() 是从 0 开始的，所以需要加 1
         column = cursor.columnNumber() + 1  # columnNumber() 也是从 0 开始的，加 1 以符合常规的行列计数
-        # 将行列信息格式化为字符串并显示在状态栏上
-        message = "     行 {} ,  列 {}".format(row, column)
-        self.status_bar.showMessage(message)
+        # 获取文本编辑器中总的行数
+        total_lines = self.text_edit.document().blockCount()
+        # 定义左下角信息字符串模板，指定数字部分占据至少五个字符的宽度
+        left_message_template = "  行 {:d} , 列 {:d} , 总行数 {:d}"
+        # 使用模板并填入实际值
+        left_message = left_message_template.format(row, column, total_lines)
+
+        # 在左下角状态栏显示信息
+        self.status_bar.showMessage(left_message.format(row, column, total_lines))
 
     @Slot()
     def get_date(self):
@@ -1262,12 +1260,16 @@ class Notepad(QMainWindow):
         comment_char = "#"
         # 选取文本注释，在换行符后添加 “ # ”
         cursor = self.text_edit.textCursor()
+        # 获取用户当前选区的起始和结束位置
+        initial_selection_start = cursor.selectionStart()
+        initial_selection_end = cursor.selectionEnd()
+
         has_selection = cursor.hasSelection()
 
         if has_selection:
+            # 切换注释
             selection_start = cursor.selectionStart()
             selection_end = cursor.selectionEnd()
-            #
             cursor.setPosition(selection_start)
             while cursor.position() < selection_end:
                 cursor.movePosition(QTextCursor.StartOfLine)
@@ -1279,6 +1281,11 @@ class Notepad(QMainWindow):
                     # 否则，添加注释
                     cursor.insertText(f"{comment_char}")
                 cursor.movePosition(QTextCursor.NextBlock)
+
+            # 重新设置选区为初始位置
+            cursor.setPosition(initial_selection_start)
+            cursor.setPosition(initial_selection_end, QTextCursor.KeepAnchor)
+            self.text_edit.setTextCursor(cursor)
         else:
             # 若无选区，注释或取消注释当前行
             cursor.movePosition(QTextCursor.StartOfLine)
@@ -1287,7 +1294,11 @@ class Notepad(QMainWindow):
                 cursor.removeSelectedText()
             else:
                 cursor.insertText(f"{comment_char}")
-        self.text_edit.setTextCursor(cursor)
+
+            # 重新设置光标位置为初始位置
+            cursor.setPosition(initial_selection_start)
+            self.text_edit.setTextCursor(cursor)
+
         self.text_edit.ensureCursorVisible()
 
     @Slot()
