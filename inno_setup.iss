@@ -39,7 +39,7 @@ WizardStyle=modern
 Name: "chinesesimp"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checkablealone
 
 [Files]
 Source: "D:\迅雷下载\JQEdit\dist\JQEdit\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
@@ -67,9 +67,9 @@ Root: HKA; Subkey: "Software\Classes\.c"; ValueType: string; ValueName: ""; Valu
 Root: HKA; Subkey: "Software\Classes\.ini"; ValueType: string; ValueName: ""; ValueData: "{#MyAppAssocKey}"; Flags: uninsdeletekey
 
 ; 添加命令项，使右键菜单项能够执行编辑器程序
-Root: HKCR; Subkey: "*\shell\用JQEdit编辑\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""; Flags: uninsdeletekey
+Root: HKCR; Subkey: "*\shell\用 JQEdit编辑\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""; Flags: uninsdeletekey
 ; 添加图标路径
-Root: HKCR; Subkey: "*\shell\用JQEdit编辑"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\_internal\resources\JQEdit.ico"; Flags: uninsdeletekey
+Root: HKCR; Subkey: "*\shell\用 JQEdit编辑"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\resources\JQEdit.ico"; Flags: uninsdeletekey
 
 
 Root: HKA; Subkey: "Software\Classes\{#MyAppAssocExt}\OpenWithProgids"; ValueType: string; ValueName: "{#MyAppAssocKey}"; ValueData: ""; Flags: uninsdeletevalue
