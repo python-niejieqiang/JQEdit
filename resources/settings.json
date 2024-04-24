@@ -9,8 +9,9 @@
     "wrap_lines": true,
     "statusbar_shown": true,
     "startup_size": {
-        "width": 800,
-        "height": 600,
-        "start_maximized": false
-    }
+        "width": 1366,
+        "height": 697,
+        "start_maximized": true
+    },
+    "show_line_numbers": true
 }

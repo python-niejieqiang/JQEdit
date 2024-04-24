@@ -8,14 +8,109 @@ import sys
 from functools import partial
 
 import chardet
-from PySide6.QtCore import (QTranslator,QTimer,QDateTime,QFileInfo, Qt, QEvent, QRect, QThread, Signal, QUrl, Slot, QRegularExpression)
-from PySide6.QtGui import (QAction, QIntValidator, QTextDocument,QSyntaxHighlighter, QColor, QTextCharFormat, QIcon, QFont,
+from PySide6.QtCore import (QTranslator, QTimer, QSize, QFileInfo, Qt, QEvent, QRect, QThread, Signal, QUrl, Slot,
+                            QRegularExpression)
+from PySide6.QtGui import (QAction, QIntValidator, QPalette, QPainter, QSyntaxHighlighter, QColor, QTextCharFormat,
+                           QIcon, QFont,
                            QTextCursor, QDesktopServices, QKeyEvent)
-from PySide6.QtWidgets import (QApplication,QDialog, QLabel, QLineEdit, QCheckBox, QVBoxLayout, QPushButton,
+from PySide6.QtWidgets import (QApplication, QDialog, QWidget, QLabel, QLineEdit, QCheckBox, QVBoxLayout, QPushButton,
                                QFileDialog, QMainWindow, QFontDialog, QPlainTextEdit,
                                QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
 
 from replace_window_ui import Ui_replace_window
+
+
+class LineNumberArea(QWidget):
+    def __init__(self, editor):
+        super().__init__(editor)
+        self.editor = editor  # 保存与之关联的文本编辑器实例
+
+    def sizeHint(self):
+        return QSize(self.editor.line_number_area_width(), 0)  # 返回建议的尺寸
+
+    def paintEvent(self, event):
+        if not self.editor.show_line_numbers:  # 检查是否应该显示行号
+            return
+
+        painter = QPainter(self)
+        text_color = self.editor.palette().color(QPalette.Text)
+        painter.setPen(text_color)  # 使用文本颜色绘制行号
+        painter.fillRect(event.rect(), self.editor.palette().color(QPalette.Base))  # 绘制背景色
+
+        block = self.editor.firstVisibleBlock()
+        block_number = block.blockNumber()
+        top = int(self.editor.blockBoundingGeometry(block).translated(self.editor.contentOffset()).top())
+        bottom = top + int(self.editor.blockBoundingRect(block).height())
+
+        while block.isValid() and top <= event.rect().bottom():
+            if block.isVisible() and bottom >= event.rect().top():
+                number = str(block_number + 1)
+                # 在行号区域绘制行号
+                painter.drawText(0, top, self.width(), self.editor.fontMetrics().height(),
+                                 Qt.AlignCenter, number)
+
+            block = block.next()
+            top = bottom
+            bottom = top + int(self.editor.blockBoundingRect(block).height())
+            block_number += 1
+
+
+class TextEditor(QPlainTextEdit):
+    def __init__(self, notepad_instance):
+        super().__init__()
+        self.notepad = notepad_instance  # 保存与之关联的记事本实例
+        self.show_line_numbers = self.notepad.show_line_numbers  # 添加此行，保存行号显示状态
+        self.line_number_area = LineNumberArea(self)  # 创建行号区域实例
+
+        # 连接文本块计数变化和更新请求信号到对应槽函数
+        self.blockCountChanged.connect(self.update_line_number_area_width)
+        self.updateRequest.connect(self.update_line_number_area)
+
+        self.update_line_number_area_width()  # 初始化行号区域的宽度
+
+    def line_number_area_width(self):
+        digits = len(str(self.blockCount()))  # 计算当前文本行数的位数
+        return 3 + self.fontMetrics().horizontalAdvance('9') * digits  # 返回行号区域的宽度
+
+    def update_line_number_area_width(self):
+        if self.show_line_numbers:
+            self.setViewportMargins(self.line_number_area_width(), 1, 1, 1)  # 设置视口边距
+        else:
+            self.setViewportMargins(0, 0, 0, 0)
+
+    def update_line_number_area(self, rect, dy):
+        if dy:
+            self.line_number_area.scroll(dy, 0)
+        else:
+            self.line_number_area.update(0, rect.y(), self.line_number_area.width(),
+                                          rect.height())
+
+        if rect.contains(self.viewport().rect()):
+            self.update_line_number_area_width()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        cr = self.viewport().rect()
+        if self.show_line_numbers:
+            self.line_number_area.setGeometry(QRect(cr.left(), cr.top(),
+                                                     self.line_number_area_width(), cr.height()))
+
+    def setFont(self, font):
+        super().setFont(font)
+        self.line_number_area.setFont(font)
+
+    def update_line_number_display(self,checked):
+        self.show_line_numbers = checked # 切换行号显示状态
+        self.update_line_number_area_width()
+        if self.show_line_numbers:
+            self.line_number_area.setGeometry(QRect(self.viewport().rect().left(), self.viewport().rect().top(),
+                                                     self.line_number_area_width(), self.viewport().rect().height()))
+        self.line_number_area.setVisible(self.show_line_numbers)
+        self.notepad.show_line_numbers = self.show_line_numbers  # 更新记事本的行号显示状态
+        self.notepad.save_settings()  # 保存设置到文件
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
 
 
 class FileLoader(QThread):
@@ -80,7 +175,6 @@ class PythonHighlighter(QSyntaxHighlighter):
                     start = match.capturedStart()
                     length = match.capturedLength()
                     self.setFormat(start, length, format_)
-
 
 class FindReplaceDialog(QDialog, Ui_replace_window):
     def __init__(self, text_edit, parent=None):
@@ -342,6 +436,8 @@ class Notepad(QMainWindow):
         self.timer.timeout.connect(self.check_file_modification)
         self.timer.start(2000)  # 每2秒检查一次
 
+        # 读取settings.json文件
+        self.settings_file = os.path.join(resource_path, "settings.json")
         # UI初始化，菜单栏以及编辑器，状态栏，各个子菜单，自定义的右键菜单
         self.setup_menu_and_actions()
 
@@ -355,8 +451,7 @@ class Notepad(QMainWindow):
         # 把命令行第一个参数作为文件名打开
         if file_in_cmd is not None:
             self.read_file(file_in_cmd)
-        # 读取settings.json文件
-        self.json_file = os.path.join(resource_path, "settings.json")
+
         # 读取并设置启动窗口尺寸,主题字体等设置
         self.load_settings()
         # 读取最近打开文件记录，并更新“最近打开菜单”
@@ -373,7 +468,9 @@ class Notepad(QMainWindow):
         self.menu_bar = QMenuBar(self)
         self.setMenuBar(self.menu_bar)
 
-        self.text_edit = QPlainTextEdit()
+        self.load_line_numbers()
+
+        self.text_edit = TextEditor(self)
         self.text_edit.cursorPositionChanged.connect(self.get_row_col)
         # 如果没有打开文件，显示Untitled.txt
         self.display_default_file_name(None)
@@ -524,6 +621,12 @@ class Notepad(QMainWindow):
         self.font_action.triggered.connect(self.modify_font)
         self.theme_menu.addAction(self.font_action)
 
+        #添加一个操作来切换行号的可见性
+        self.line_numbers_action = QAction("行号", self, checkable=True)
+        self.line_numbers_action.setChecked(self.show_line_numbers)
+        self.line_numbers_action.triggered.connect(self.toggle_line_numbers)
+        self.theme_menu.addAction(self.line_numbers_action)
+
         self.wrap_action = QAction("自动换行(&W)", self, checkable=True)
         self.wrap_action.setChecked(True)
         self.wrap_action.setShortcut("Alt+W")
@@ -638,6 +741,9 @@ class Notepad(QMainWindow):
 
         self.text_edit.setContextMenuPolicy(Qt.CustomContextMenu)
         self.text_edit.customContextMenuRequested.connect(self.show_contextmenu)
+
+    def toggle_line_numbers(self, checked):
+        self.text_edit.update_line_number_display(checked)
 
     def check_file_modification(self):
         if self.current_file_name:
@@ -831,6 +937,16 @@ class Notepad(QMainWindow):
         # 保存最近打开文件列表
         self.save_recent_files()
 
+    def load_line_numbers(self):
+        try:
+            # 读取现有的设置
+            with open(self.settings_file, "r") as f:
+                existing_settings = json.load(f)
+        except FileNotFoundError:
+            existing_settings = {}  # 如果文件不存在，创建一个空字典
+        # 加载行号显示状态
+        self.show_line_numbers = existing_settings.get("show_line_numbers", True)
+
     def update_recent_files_menu(self):
         # 清空最近打开的文件菜单
         self.recent_files_menu.clear()
@@ -881,7 +997,7 @@ class Notepad(QMainWindow):
     def load_settings(self):
         try:
             # 读取现有的设置
-            with open(self.json_file, "r") as f:
+            with open(self.settings_file, "r") as f:
                 settings = json.load(f)
         except FileNotFoundError:
             settings = {}  # 如果文件不存在，创建一个空字典
@@ -927,7 +1043,7 @@ class Notepad(QMainWindow):
     def save_settings(self):
         try:
             # 读取现有的设置
-            with open(self.json_file, "r") as f:
+            with open(self.settings_file, "r") as f:
                 existing_settings = json.load(f)
         except FileNotFoundError:
             existing_settings = {}  # 如果文件不存在，创建一个空字典
@@ -943,11 +1059,12 @@ class Notepad(QMainWindow):
             "theme": self.theme,
             "wrap_lines": self.wrap_lines,
             "statusbar_shown": self.statusbar_shown,
-            "startup_size": {"width": self.width(), "height": self.height(), "start_maximized": self.isMaximized()}
+            "startup_size": {"width": self.width(), "height": self.height(), "start_maximized": self.isMaximized()},
+            "show_line_numbers": self.show_line_numbers
         })
 
         # 保存更新后的设置到文件
-        with open(self.json_file, "w") as f:
+        with open(self.settings_file, "w") as f:
             json.dump(existing_settings, f, indent=4)
 
     def clear_checked(self):
@@ -1075,7 +1192,7 @@ class Notepad(QMainWindow):
             return
 
         # 保存启动窗口尺寸及最大化状态到 settings.json
-        with open(self.json_file, 'r+') as f:
+        with open(self.settings_file, 'r+') as f:
             settings = json.load(f)
             settings["startup_size"] = {"width": width, "height": height, "start_maximized": is_maximized}
             f.seek(0)  # 将文件指针移到文件开头
@@ -1086,7 +1203,7 @@ class Notepad(QMainWindow):
     def read_startup_size(self):
         try:
             # 从 settings.json 文件读取启动窗口尺寸及最大化状态
-            with open(self.json_file, 'r') as f:
+            with open(self.settings_file, 'r') as f:
                 settings = json.load(f)
                 startup_size = settings.get("startup_size", {})
                 width = startup_size.get("width", 800)
