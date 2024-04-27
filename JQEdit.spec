@@ -5,6 +5,7 @@ block_cipher = None
 
 
 a = Analysis(
+
     ['JQEdit.py'],
     pathex=[],
     binaries=[],

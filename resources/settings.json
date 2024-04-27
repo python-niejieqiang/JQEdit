@@ -1,6 +1,6 @@
 {
-    "font_family": "\u5fae\u8f6f\u96c5\u9ed1",
-    "pointSize": 12,
+    "font_family": "JetBrains Mono",
+    "pointSize": 14,
     "bold": false,
     "italic": false,
     "underline": false,
@@ -9,9 +9,9 @@
     "wrap_lines": true,
     "statusbar_shown": true,
     "startup_size": {
-        "width": 1366,
-        "height": 697,
-        "start_maximized": true
+        "width": 800,
+        "height": 600,
+        "start_maximized": false
     },
     "show_line_numbers": true
 }

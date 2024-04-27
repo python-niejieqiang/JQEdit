@@ -10,15 +10,14 @@ from functools import partial
 import chardet
 from PySide6.QtCore import (QTranslator, QTimer, QSize, QFileInfo, Qt, QEvent, QRect, QThread, Signal, QUrl, Slot,
                             QRegularExpression)
-from PySide6.QtGui import (QAction, QIntValidator, QPalette, QPainter, QSyntaxHighlighter, QColor, QTextCharFormat,
+from PySide6.QtGui import (QAction, QIntValidator,QTextFormat, QPalette, QPainter, QSyntaxHighlighter, QColor, QTextCharFormat,
                            QIcon, QFont,
                            QTextCursor, QDesktopServices, QKeyEvent)
-from PySide6.QtWidgets import (QApplication, QDialog, QWidget, QLabel, QLineEdit, QCheckBox, QVBoxLayout, QPushButton,
+from PySide6.QtWidgets import (QApplication, QDialog,QWidget, QLabel, QLineEdit, QCheckBox, QVBoxLayout, QPushButton,
                                QFileDialog, QMainWindow, QFontDialog, QPlainTextEdit,
-                               QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
+                               QMenu, QInputDialog,QTextEdit, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
 
 from replace_window_ui import Ui_replace_window
-
 
 class LineNumberArea(QWidget):
     def __init__(self, editor):
@@ -54,7 +53,6 @@ class LineNumberArea(QWidget):
             bottom = top + int(self.editor.blockBoundingRect(block).height())
             block_number += 1
 
-
 class TextEditor(QPlainTextEdit):
     def __init__(self, notepad_instance):
         super().__init__()
@@ -67,6 +65,22 @@ class TextEditor(QPlainTextEdit):
         self.updateRequest.connect(self.update_line_number_area)
 
         self.update_line_number_area_width()  # 初始化行号区域的宽度
+
+    @Slot()
+    def get_row_col(self):
+        # 获取光标所在的行和列
+        cursor = self.textCursor()
+        row = cursor.blockNumber() + 1  # blockNumber() 是从 0 开始的，所以需要加 1
+        column = cursor.columnNumber() + 1  # columnNumber() 也是从 0 开始的，加 1 以符合常规的行列计数
+        # 获取文本编辑器中总的行数
+        total_lines = self.document().blockCount()
+        # 定义左下角信息字符串模板，指定数字部分占据至少五个字符的宽度
+        left_message_template = "  行 {:d} , 列 {:d} , 总行数 {:d}"
+        # 使用模板并填入实际值
+        left_message = left_message_template.format(row, column, total_lines)
+
+        # 在左下角状态栏显示信息
+        self.notepad.status_bar.showMessage(left_message.format(row, column, total_lines))
 
     def line_number_area_width(self):
         digits = len(str(self.blockCount()))  # 计算当前文本行数的位数
@@ -112,6 +126,146 @@ class TextEditor(QPlainTextEdit):
     def paintEvent(self, event):
         super().paintEvent(event)
 
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Backspace:
+            cursor = self.textCursor()
+            if cursor.hasSelection():
+                # 如果有选中的文本，则删除选中文本
+                cursor.removeSelectedText()
+            else:
+                # 否则获取当前光标所在行的文本
+                current_line = cursor.block().text()
+                # 如果当前行以四个空格开头，则删除这四个空格
+                if current_line.startswith(" " * 4):
+                    cursor.movePosition(QTextCursor.StartOfLine)
+                    cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 4)
+                    cursor.removeSelectedText()
+                    self.setTextCursor(cursor)
+                    return
+
+        if event.key() == Qt.Key_Tab and not event.modifiers():
+            self.indent()
+            event.accept()
+        elif event.key() == Qt.Key_Backtab:
+            self.shift_unindent()
+            event.accept()
+        elif event.key() == Qt.Key_Tab and event.modifiers() & Qt.ShiftModifier:
+            self.shift_unindent()
+            event.accept()
+        else:
+            super().keyPressEvent(event)
+
+    def indent(self):
+        # 定义注释符号，在此例中使用空格
+        four_spaces = " " * 4
+
+        # 获取文本编辑器的光标
+        cursor = self.textCursor()
+        # 获取选定文本的起始和结束位置
+        initial_selection_start = cursor.selectionStart()
+        initial_selection_end = cursor.selectionEnd()
+        # 检查是否有选定文本
+        if cursor.hasSelection():
+            # 开始编辑操作
+            cursor.beginEditBlock()
+            # 判断选中文本是否全为空格
+            if cursor.selectedText().isspace():
+                # 如果选中文本全为空格，则删除选中文本并插入4个空格
+                cursor.removeSelectedText()
+                cursor.insertText(four_spaces)
+                self.setTextCursor(cursor)
+                return
+            # 移动光标到选定文本的起始位置
+            cursor.setPosition(initial_selection_start)
+            num = 0
+            # 循环处理每一行
+            while cursor.position() < initial_selection_end:
+                # 移动到行开头
+                cursor.movePosition(QTextCursor.StartOfLine)
+
+                # 插入4个空格
+                cursor.insertText(four_spaces)
+                num += 1
+                # 移动到下一行
+                cursor.movePosition(QTextCursor.NextBlock)
+            # 结束编辑操作
+            cursor.endEditBlock()
+
+            # 重新设置选区为初始位置
+            cursor.setPosition(initial_selection_start+4)
+            cursor.setPosition(initial_selection_end+num*4, QTextCursor.KeepAnchor)
+            # self.setTextCursor(cursor)
+
+        else:
+            cursor.insertText(" " * 4)
+            self.setTextCursor(cursor)
+
+    def shift_unindent(self):
+        cursor = self.textCursor()
+        # 获取选定文本的起始和结束位置
+        initial_selection_start = cursor.selectionStart()
+        initial_selection_end = cursor.selectionEnd()
+        if cursor.hasSelection():
+            # 开始编辑操作
+            cursor.beginEditBlock()
+
+            # 移动光标到选定文本的起始位置
+            cursor.setPosition(initial_selection_start)
+            num = 0
+            # 循环处理每行文本
+            while cursor.position() < initial_selection_end:
+                # 移动到行开头
+                cursor.movePosition(QTextCursor.StartOfLine)
+
+                # 获取当前行文本
+                cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor)
+                line_text = cursor.selectedText()
+
+                # 如果当前行以四个空格开头，则删除这四个空格
+                if line_text.startswith(" " * 4):
+                    # 移动到行开头
+                    cursor.movePosition(QTextCursor.StartOfLine)
+                    # 向右选择4个字符
+                    cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 4)
+                    cursor.removeSelectedText()
+                else:
+                    # 如果当前行没有以四个空格开头，则退出循环
+                    break
+                num += 1
+                # 移动到下一行
+                cursor.movePosition(QTextCursor.NextBlock)
+
+            # 结束编辑操作
+            cursor.endEditBlock()
+
+            # 重新设置选区为初始位置
+            cursor.setPosition(initial_selection_start - 4)
+            cursor.setPosition(initial_selection_end - num * 4, QTextCursor.KeepAnchor)
+            self.setTextCursor(cursor)
+        else:
+            cursor_position = cursor.position()
+
+            # Move to the start of the current line
+            cursor.movePosition(QTextCursor.StartOfLine)
+
+            # Get the current line text
+            cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor)
+            line_text = cursor.selectedText()
+
+            # Count leading spaces
+            leading_spaces = len(line_text) - len(line_text.lstrip())
+
+            # Determine the number of spaces to remove
+            spaces_to_remove = min(4, leading_spaces)
+
+            # Replace the leading spaces with tabs
+            cursor.removeSelectedText()
+            cursor.insertText(line_text[spaces_to_remove:])
+
+            # Move the cursor back to its original position
+            cursor.setPosition(cursor_position - min(cursor_position, spaces_to_remove))
+
+            self.setTextCursor(cursor)
 
 class FileLoader(QThread):
     contentLoaded = Signal(str)
@@ -124,7 +278,7 @@ class FileLoader(QThread):
     def run(self):
         try:
             with codecs.open(self.filename, "r", encoding=self.encoding) as f:
-                f.seek(1024*100)
+                f.seek(1024*200)
                 while True:
                     chunk = f.read(1024 * 1024)  # 每次读取1MB的内容
                     if not chunk:
@@ -133,11 +287,392 @@ class FileLoader(QThread):
         except Exception as e:
             print(f"Error loading file: {e}")
 
-class PythonHighlighter(QSyntaxHighlighter):
+class HighlighterFactory:
+    @staticmethod
+    def create_highlighter(file_extension):
+        if file_extension == '.py':
+            return PythonHighlighter
+        elif file_extension == '.bat':
+            return BatchHighlighter
+        elif file_extension == '.sh':
+            return BashHighlighter
+        elif file_extension == '.sql':
+            return SQLHighlighter
+        elif file_extension == '.xml':
+            return XmlHighlighter
+        elif file_extension == '.java':
+            return JavaHighlighter
+        elif file_extension == '.pl':
+            return PerlHighlighter
+        elif file_extension == '.kt':
+            return KotlinHighlighter
+        elif file_extension == '.c':
+            return CHighlighter
+        elif file_extension == '.cpp':
+            return CppHighlighter
+        elif file_extension == '.js':
+            return JavaScriptHighlighter
+        # 添加其他文件类型的处理逻辑
+        else:
+            return None
+
+class BatchHighlighter(QSyntaxHighlighter):
+    def __init__(self, parent,file_extension):
+        super().__init__(parent)
+        self.file_extension = file_extension
+        # 定义格式
+        self.keyword_format = QTextCharFormat()
+        self.keyword_format.setForeground(QColor(200, 120, 50))
+
+        self.string_format = QTextCharFormat()
+        self.string_format.setForeground(QColor(42, 161, 152))
+
+        self.comment_format = QTextCharFormat()
+        self.comment_format.setForeground(QColor(150, 150, 150))
+
+        self.operator_format = QTextCharFormat()
+        self.operator_format.setForeground(QColor(200, 120, 50))
+
+        # 定义批处理文件的语法规则
+        self.highlight_rules = [
+            (QRegularExpression(r"\b(rem|echo|set|call|cd|pause|exit)\b"), self.keyword_format),  # 关键字
+            (QRegularExpression(r"\".*?\"|\'.*?\'"), self.string_format),  # 字符串
+            (QRegularExpression(r"::.*$"), self.comment_format),  # 注释
+            (QRegularExpression(r"%.*?%"), self.operator_format),  # 变量
+        ]
+
+    def highlightBlock(self, text):
+        # 应用语法高亮
+        for expression, format_ in self.highlight_rules:
+            it = expression.globalMatch(text)
+            while it.hasNext():
+                match = it.next()
+                start = match.capturedStart()
+                length = match.capturedLength()
+                self.setFormat(start, length, format_)
+
+class BashHighlighter(QSyntaxHighlighter):
     def __init__(self, parent,file_extension):
         super().__init__(parent)
         self.file_extension = file_extension
 
+        self.keyword_format = QTextCharFormat()
+        self.keyword_format.setForeground(QColor(200, 120, 50))
+
+        self.string_format = QTextCharFormat()
+        self.string_format.setForeground(QColor(42, 161, 152))
+
+        self.comment_format = QTextCharFormat()
+        self.comment_format.setForeground(QColor(150, 150, 150))
+
+        self.operator_format = QTextCharFormat()
+        self.operator_format.setForeground(QColor(200, 120, 50))
+
+        self.highlight_rules = [
+            (QRegularExpression(r"\b(if|else|while|for|do|done|case|esac|function|return|true|false|"
+                                r"echo|read|export|alias|local)\b"), self.keyword_format),
+            (QRegularExpression(r"\".*?\"|\'.*?\'"), self.string_format),
+            (QRegularExpression(r"\#.*$"), self.comment_format),
+            (QRegularExpression(r"[\/\*\.\-\+\=\:\|\,\?\&\%]"), self.operator_format)
+        ]
+
+    def highlightBlock(self, text):
+        for expression, format_ in self.highlight_rules:
+            it = expression.globalMatch(text)
+            while it.hasNext():
+                match = it.next()
+                start = match.capturedStart()
+                length = match.capturedLength()
+                self.setFormat(start, length, format_)
+
+class SQLHighlighter(QSyntaxHighlighter):
+    def __init__(self, parent,file_extension):
+        super().__init__(parent)
+        self.file_extension = file_extension
+        self.keyword_format = QTextCharFormat()
+        self.keyword_format.setForeground(QColor(200, 120, 50))
+
+        self.string_format = QTextCharFormat()
+        self.string_format.setForeground(QColor(42, 161, 152))
+
+        self.comment_format = QTextCharFormat()
+        self.comment_format.setForeground(QColor(150, 150, 150))
+
+        self.operator_format = QTextCharFormat()
+        self.operator_format.setForeground(QColor(200, 120, 50))
+
+        self.highlight_rules = [
+            (QRegularExpression(r"\b(SELECT|FROM|WHERE|ORDER\sBY|GROUP\sBY|HAVING|INSERT\sINTO|VALUES|UPDATE|SET|"
+                                r"DELETE\sFROM|CREATE\sTABLE|ALTER\sTABLE|DROP\sTABLE|PRIMARY\sKEY|FOREIGN\sKEY|"
+                                r"REFERENCES|INDEX|VIEW|JOIN|INNER\sJOIN|LEFT\sJOIN|RIGHT\sJOIN|OUTER\sJOIN|"
+                                r"UNION|INTERSECT|EXCEPT|CASE|WHEN|THEN|ELSE|END|AS)\b"), self.keyword_format),
+            (QRegularExpression(r"\".*?\"|\'.*?\'"), self.string_format),
+            (QRegularExpression(r"\-\-.*$|\/\*(?:.|[\n\r])*?\*\/"), self.comment_format),
+            (QRegularExpression(r"[\/\*\.\-\+\=\:\|\,\?\&\%]"), self.operator_format)
+        ]
+
+    def highlightBlock(self, text):
+        for expression, format_ in self.highlight_rules:
+            it = expression.globalMatch(text)
+            while it.hasNext():
+                match = it.next()
+                start = match.capturedStart()
+                length = match.capturedLength()
+                self.setFormat(start, length, format_)
+
+class JavaScriptHighlighter(QSyntaxHighlighter):
+    def __init__(self, parent,file_extension):
+        super().__init__(parent)
+        self.file_extension = file_extension
+
+        # 定义格式
+        self.keyword_format = QTextCharFormat()
+        self.keyword_format.setForeground(QColor(200, 120, 50))  # 设置关键字颜色
+
+        self.comment_format = QTextCharFormat()
+        self.comment_format.setForeground(QColor(150, 150, 150))  # 设置注释颜色
+
+        self.quotation_format = QTextCharFormat()
+        self.quotation_format.setForeground(QColor(42, 161, 152))  # 设置引号颜色
+
+        # 定义 JavaScript 的语法规则
+        self.highlight_rules = [
+            (QRegularExpression(r"\b(break|case|catch|class|const|continue|debugger|default|delete|do|else|export|"
+                                r"extends|finally|for|function|if|import|in|instanceof|new|return|super|switch|this|"
+                                r"throw|try|typeof|var|void|while|with|yield)\b"),
+             self.keyword_format),  # 关键字
+            (QRegularExpression(r"\".*?\"|\'.*?\'"), self.quotation_format),  # 引号
+            (QRegularExpression(r"\/\/[^\n]*"), self.comment_format),  # 单行注释
+            (QRegularExpression(r"\/\*.*?\*\/"), self.comment_format),  # 多行注释
+        ]
+
+    def highlightBlock(self, text):
+        # 应用语法高亮
+        for expression, format_ in self.highlight_rules:
+            it = expression.globalMatch(text)
+            while it.hasNext():
+                match = it.next()
+                start = match.capturedStart()
+                length = match.capturedLength()
+                self.setFormat(start, length, format_)
+
+class CHighlighter(QSyntaxHighlighter):
+    def __init__(self, parent,file_extension):
+        super().__init__(parent)
+
+        # 定义格式
+        self.keyword_format = QTextCharFormat()
+        self.keyword_format.setForeground(QColor(200, 120, 50))  # 设置关键字颜色
+
+        self.comment_format = QTextCharFormat()
+        self.comment_format.setForeground(QColor(150, 150, 150))  # 设置注释颜色
+
+        self.quotation_format = QTextCharFormat()
+        self.quotation_format.setForeground(QColor(42, 161, 152))  # 设置引号颜色
+
+        # 定义 C 语言的语法规则
+        self.highlight_rules = [
+            (QRegularExpression(r"\b(auto|double|int|struct|break|else|long|switch|case|enum|register|typedef|char|"
+                                r"extern|return|union|const|float|short|unsigned|continue|for|signed|void|default|"
+                                r"goto|sizeof|volatile|do|if|while|static|_Bool|_Complex|_Imaginary)\b"),
+             self.keyword_format),  # 关键字
+            (QRegularExpression(r"\".*?\"|\'.*?\'"), self.quotation_format),  # 引号
+            (QRegularExpression(r"\/\/[^\n]*"), self.comment_format),  # 单行注释
+            (QRegularExpression(r"\/\*.*?\*\/"), self.comment_format),  # 多行注释
+        ]
+
+    def highlightBlock(self, text):
+        # 应用语法高亮
+        for expression, format_ in self.highlight_rules:
+            it = expression.globalMatch(text)
+            while it.hasNext():
+                match = it.next()
+                start = match.capturedStart()
+                length = match.capturedLength()
+                self.setFormat(start, length, format_)
+
+class CppHighlighter(QSyntaxHighlighter):
+    def __init__(self, parent,file_extension):
+        super().__init__(parent)
+
+        # 定义格式
+        self.keyword_format = QTextCharFormat()
+        self.keyword_format.setForeground(QColor(200, 120, 50))  # 设置关键字颜色
+
+        self.comment_format = QTextCharFormat()
+        self.comment_format.setForeground(QColor(150, 150, 150))  # 设置注释颜色
+
+        self.quotation_format = QTextCharFormat()
+        self.quotation_format.setForeground(QColor(42, 161, 152))  # 设置引号颜色
+
+        # 定义 C++ 的语法规则
+        self.highlight_rules = [
+            (QRegularExpression(r"\b(alignas|alignof|and|and_eq|asm|auto|bitand|bitor|bool|break|case|catch|char|"
+                                r"char16_t|char32_t|class|compl|const|constexpr|const_cast|continue|decltype|"
+                                r"default|delete|do|double|dynamic_cast|else|enum|explicit|export|extern|false|"
+                                r"float|for|friend|goto|if|inline|int|long|mutable|namespace|new|noexcept|not|"
+                                r"not_eq|nullptr|operator|or|or_eq|private|protected|public|register|reinterpret_cast|"
+                                r"requires|return|short|signed|sizeof|static|static_assert|static_cast|struct|switch|"
+                                r"synchronized|template|this|thread_local|throw|true|try|typedef|typeid|typename|"
+                                r"union|unsigned|using|virtual|void|volatile|wchar_t|while|xor|xor_eq)\b"),
+             self.keyword_format),  # 关键字
+            (QRegularExpression(r"\".*?\"|\'.*?\'"), self.quotation_format),  # 引号
+            (QRegularExpression(r"\/\/[^\n]*"), self.comment_format),  # 单行注释
+            (QRegularExpression(r"\/\*.*?\*\/"), self.comment_format),  # 多行注释
+        ]
+
+    def highlightBlock(self, text):
+        # 应用语法高亮
+        for expression, format_ in self.highlight_rules:
+            it = expression.globalMatch(text)
+            while it.hasNext():
+                match = it.next()
+                start = match.capturedStart()
+                length = match.capturedLength()
+                self.setFormat(start, length, format_)
+
+class JavaHighlighter(QSyntaxHighlighter):
+    def __init__(self, parent,file_extension):
+        super().__init__(parent)
+        self.file_extension = file_extension
+
+        self.keyword_format = QTextCharFormat()
+        self.keyword_format.setForeground(QColor(200, 120, 50))
+
+        self.string_format = QTextCharFormat()
+        self.string_format.setForeground(QColor(42, 161, 152))
+
+        self.comment_format = QTextCharFormat()
+        self.comment_format.setForeground(QColor(150, 150, 150))
+
+        self.operator_format = QTextCharFormat()
+        self.operator_format.setForeground(QColor(200, 120, 50))
+
+        self.highlight_rules = [
+            (QRegularExpression(r"\b(if|else|while|for|class|public|private|protected|static|void|int|float|"
+                                r"double|long|short|byte|return|true|false|new|try|catch|finally|throws|import|"
+                                r"package)\b"), self.keyword_format),
+            (QRegularExpression(r"\".*?\"|\'.*?\'"), self.string_format),
+            (QRegularExpression(r"\/\/.*$|\/\*(?:.|[\n\r])*?\*\/"), self.comment_format),
+            (QRegularExpression(r"[\/\*\.\-\+\=\:\|\,\?\&\%]"), self.operator_format)
+        ]
+
+    def highlightBlock(self, text):
+        for expression, format_ in self.highlight_rules:
+            it = expression.globalMatch(text)
+            while it.hasNext():
+                match = it.next()
+                start = match.capturedStart()
+                length = match.capturedLength()
+                self.setFormat(start, length, format_)
+
+class PerlHighlighter(QSyntaxHighlighter):
+    def __init__(self, parent,file_extension):
+        super().__init__(parent)
+        self.file_extension = file_extension
+
+        # Define formats
+        self.keyword_format = QTextCharFormat()
+        self.keyword_format.setForeground(QColor(200, 120, 50))
+
+        self.string_format = QTextCharFormat()
+        self.string_format.setForeground(QColor(42, 161, 152))
+
+        self.comment_format = QTextCharFormat()
+        self.comment_format.setForeground(QColor(150, 150, 150))
+
+        self.operator_format = QTextCharFormat()
+        self.operator_format.setForeground(QColor(200, 120, 50))
+
+        # Define Perl syntax rules
+        self.highlight_rules = [
+            (QRegularExpression(r"\b(my|use|if|else|while|foreach|sub|return|print|open|close|chdir)\b"), self.keyword_format),
+            (QRegularExpression(r"\".*?\"|\'.*?\'"), self.string_format),
+            (QRegularExpression(r"\#.*$"), self.comment_format),
+            (QRegularExpression(r"[\/\*\.\-\+\=\:\|\,\?\&\%]"), self.operator_format)
+        ]
+
+    def highlightBlock(self, text):
+        for expression, format_ in self.highlight_rules:
+            it = expression.globalMatch(text)
+            while it.hasNext():
+                match = it.next()
+                start = match.capturedStart()
+                length = match.capturedLength()
+                self.setFormat(start, length, format_)
+
+class XmlHighlighter(QSyntaxHighlighter):
+    def __init__(self, parent,file_extension):
+        super().__init__(parent)
+        self.file_extension = file_extension
+
+        # Define formats
+        self.tag_format = QTextCharFormat()
+        self.tag_format.setForeground(QColor(200, 120, 50))
+
+        self.attribute_format = QTextCharFormat()
+        self.attribute_format.setForeground(QColor(42, 161, 152))
+
+        self.value_format = QTextCharFormat()
+        self.value_format.setForeground(QColor(150, 150, 150))
+
+        # Define XML syntax rules
+        self.highlight_rules = [
+            (QRegularExpression(r"<[a-zA-Z0-9_!\/\?]+"), self.tag_format),
+            (QRegularExpression(r"\b[A-Za-z0-9_\-]+(?=\=)"), self.attribute_format),
+            (QRegularExpression(r"\".*?\"|\'.*?\'"), self.value_format),
+            (QRegularExpression(r">"), self.tag_format)
+        ]
+
+    def highlightBlock(self, text):
+        for expression, format_ in self.highlight_rules:
+            it = expression.globalMatch(text)
+            while it.hasNext():
+                match = it.next()
+                start = match.capturedStart()
+                length = match.capturedLength()
+                self.setFormat(start, length, format_)
+
+class KotlinHighlighter(QSyntaxHighlighter):
+    def __init__(self, parent,file_extension):
+        super().__init__(parent)
+        self.file_extension = file_extension
+
+        # Define formats
+        self.keyword_format = QTextCharFormat()
+        self.keyword_format.setForeground(QColor(200, 120, 50))
+
+        self.string_format = QTextCharFormat()
+        self.string_format.setForeground(QColor(42, 161, 152))
+
+        self.comment_format = QTextCharFormat()
+        self.comment_format.setForeground(QColor(150, 150, 150))
+
+        self.operator_format = QTextCharFormat()
+        self.operator_format.setForeground(QColor(200, 120, 50))
+
+        # Define Kotlin syntax rules
+        self.highlight_rules = [
+            (QRegularExpression(r"\b(if|else|while|for|class|fun|val|var|return|true|false|package|import|"
+                                r"throw|try|catch|finally)\b"), self.keyword_format),
+            (QRegularExpression(r"\".*?\"|\'.*?\'"), self.string_format),
+            (QRegularExpression(r"\/\/.*$|\/\*(?:.|[\n\r])*?\*\/"), self.comment_format),
+            (QRegularExpression(r"[\/\*\.\-\+\=\:\|\,\?\&\%]"), self.operator_format)
+        ]
+
+    def highlightBlock(self, text):
+        for expression, format_ in self.highlight_rules:
+            it = expression.globalMatch(text)
+            while it.hasNext():
+                match = it.next()
+                start = match.capturedStart()
+                length = match.capturedLength()
+                self.setFormat(start, length, format_)
+
+class PythonHighlighter(QSyntaxHighlighter):
+    def __init__(self, parent, file_extension):
+        super().__init__(parent)
+        self.file_extension = file_extension
         # 预定义格式
         self.keyword_format = QTextCharFormat()
         self.keyword_format.setForeground(QColor(200, 120, 50))
@@ -166,15 +701,14 @@ class PythonHighlighter(QSyntaxHighlighter):
         ]
 
     def highlightBlock(self, text):
-        # 只有当文件类型为 '.py' 时才应用语法高亮
-        if self.file_extension == '.py':
-            for expression, format_ in self.highlight_rules:
-                it = expression.globalMatch(text)
-                while it.hasNext():
-                    match = it.next()
-                    start = match.capturedStart()
-                    length = match.capturedLength()
-                    self.setFormat(start, length, format_)
+        # 应用语法高亮
+        for expression, format_ in self.highlight_rules:
+            it = expression.globalMatch(text)
+            while it.hasNext():
+                match = it.next()
+                start = match.capturedStart()
+                length = match.capturedLength()
+                self.setFormat(start, length, format_)
 
 class FindReplaceDialog(QDialog, Ui_replace_window):
     def __init__(self, text_edit, parent=None):
@@ -417,9 +951,15 @@ class SelectionReplaceDialog(QDialog, Ui_replace_window):
         self.close()
 
 class Notepad(QMainWindow):
-    def __init__(self, file_in_cmd=None):
-        super().__init__()
+    _instance = None
 
+    def __new__(cls, *args, **kwargs):
+        if not isinstance(cls._instance, cls):
+            cls._instance = super(Notepad, cls).__new__(cls, *args, **kwargs)
+        return cls._instance
+
+    def __init__(self):
+        super().__init__()
         # 用来记录文件编码，名字
         self.current_file_encoding = None
         self.highlighter = None
@@ -448,10 +988,6 @@ class Notepad(QMainWindow):
         # 这个数组跟命令行参数处理一定要等recent_files_menu初始化才能正常运行
         self.recent_files = []
 
-        # 把命令行第一个参数作为文件名打开
-        if file_in_cmd is not None:
-            self.read_file(file_in_cmd)
-
         # 读取并设置启动窗口尺寸,主题字体等设置
         self.load_settings()
         # 读取最近打开文件记录，并更新“最近打开菜单”
@@ -471,7 +1007,7 @@ class Notepad(QMainWindow):
         self.load_line_numbers()
 
         self.text_edit = TextEditor(self)
-        self.text_edit.cursorPositionChanged.connect(self.get_row_col)
+        self.text_edit.cursorPositionChanged.connect(self.text_edit.get_row_col)
         # 如果没有打开文件，显示Untitled.txt
         self.display_default_file_name(None)
         self.setCentralWidget(self.text_edit)
@@ -865,7 +1401,7 @@ class Notepad(QMainWindow):
             return
         try:
             with codecs.open(filename, "rb") as f:
-                FILE_SIZE_THRESHOLD = 1024*100
+                FILE_SIZE_THRESHOLD = 1024*200
                 # 读取前100KB用于编码检测
                 content_for_detection = f.read(FILE_SIZE_THRESHOLD)
                 encoding_info = chardet.detect(content_for_detection)
@@ -878,7 +1414,6 @@ class Notepad(QMainWindow):
                     if encoding.upper() in ["GB2312", "GBK"]:
                         encoding = "GB18030"
 
-            # 读取并解码前5000个字节，用于立即显示
             initial_content = content_for_detection.decode(encoding, 'ignore')
             self.text_edit.setPlainText(initial_content)
             self.setWindowTitle(f"{self.app_name} - {encoding.upper()} - {filename}")
@@ -889,12 +1424,18 @@ class Notepad(QMainWindow):
             self.work_dir = os.path.dirname(os.path.abspath(filename))
             # 将打开记录添加到最近打开
             self.add_recent_file(filename)
-            if self.current_file_name and self.current_file_name.endswith(".py"):
-                self.highlighter = PythonHighlighter(self.text_edit.document(), ".py")
+
+            # 获取文件扩展名
+            file_extension = os.path.splitext(filename)[1]
+            # 使用工厂类创建语法高亮器实例
+            highlighter_class = HighlighterFactory.create_highlighter(file_extension)
+            if highlighter_class:
+                # 创建语法高亮器实例并应用
+                self.highlighter = highlighter_class(self.text_edit.document(), file_extension)
 
             # 文本大于100kb，启动文件加载线程
-            if os.path.getsize(filename) > FILE_SIZE_THRESHOLD:
-                self.start_file_loader(filename, encoding)
+            # if os.path.getsize(filename) > FILE_SIZE_THRESHOLD:
+            self.start_file_loader(filename, encoding)
         except FileNotFoundError:
             QMessageBox.warning(self, "错误", "文件未找到，请检查路径是否正确！")
         except PermissionError:
@@ -1079,7 +1620,7 @@ class Notepad(QMainWindow):
                 color: black;
                 selection-background-color: rgb(100, 149, 237);
                 selection-color: white;
-                border:none
+                border: 1px
             }  
           """)
         self.theme = "default"
@@ -1094,7 +1635,7 @@ class Notepad(QMainWindow):
                 color: rgb(38, 38, 38);
                 selection-background-color: rgb(184, 221, 224);
                 selection-color: rgb(38, 38, 38);
-                border:none
+                border: 1px
             }
           """)
         self.theme = "light"
@@ -1109,7 +1650,7 @@ class Notepad(QMainWindow):
                 color: rgb(168, 153, 132);
                 selection-background-color: rgb(53, 65, 72);
                 selection-color: rgb(168, 153, 132);
-                border:none
+                border: 1px
             }
 
         """)
@@ -1393,22 +1934,6 @@ class Notepad(QMainWindow):
         self.save_settings()
 
     @Slot()
-    def get_row_col(self):
-        # 获取光标所在的行和列
-        cursor = self.text_edit.textCursor()
-        row = cursor.blockNumber() + 1  # blockNumber() 是从 0 开始的，所以需要加 1
-        column = cursor.columnNumber() + 1  # columnNumber() 也是从 0 开始的，加 1 以符合常规的行列计数
-        # 获取文本编辑器中总的行数
-        total_lines = self.text_edit.document().blockCount()
-        # 定义左下角信息字符串模板，指定数字部分占据至少五个字符的宽度
-        left_message_template = "  行 {:d} , 列 {:d} , 总行数 {:d}"
-        # 使用模板并填入实际值
-        left_message = left_message_template.format(row, column, total_lines)
-
-        # 在左下角状态栏显示信息
-        self.status_bar.showMessage(left_message.format(row, column, total_lines))
-
-    @Slot()
     def get_date(self):
         date_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         self.text_edit.insertPlainText(date_time)
@@ -1440,7 +1965,7 @@ class Notepad(QMainWindow):
     @Slot()
     def comment_selected_text(self):
         # 定义注释符号，python中是 “ # ”
-        comment_char = "#"
+        comment_char = "# "
         # 选取文本注释，在换行符后添加 “ # ”
         cursor = self.text_edit.textCursor()
         # 获取用户当前选区的起始和结束位置
@@ -1454,20 +1979,34 @@ class Notepad(QMainWindow):
             selection_start = cursor.selectionStart()
             selection_end = cursor.selectionEnd()
             cursor.setPosition(selection_start)
+            num = 0
+            comment_delta = 0
             while cursor.position() < selection_end:
                 cursor.movePosition(QTextCursor.StartOfLine)
                 if cursor.block().text().startswith(comment_char):
                     # 如果行已注释，则去除注释
                     cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, len(comment_char))
                     cursor.removeSelectedText()
+                    num -= 1
+                    comment_delta -= len(comment_char)  # 减去注释符号的长度
                 else:
                     # 否则，添加注释
                     cursor.insertText(f"{comment_char}")
+                    num += 1
+                    comment_delta += len(comment_char)  # 增加注释符号的长度
+
+                # # 检查是否到达文本末尾，如果到达，退出循环
+                if cursor.atEnd():
+                    break
+
                 cursor.movePosition(QTextCursor.NextBlock)
 
-            # 重新设置选区为初始位置
-            cursor.setPosition(initial_selection_start)
-            cursor.setPosition(initial_selection_end, QTextCursor.KeepAnchor)
+            # 重新设置选区为初始位置，确保在文本范围内
+            new_selection_start = max(0, initial_selection_start + comment_delta)
+            new_selection_end = min(self.text_edit.document().characterCount() - 1,
+                                    initial_selection_end + num * len(comment_char))
+            cursor.setPosition(new_selection_start, QTextCursor.MoveAnchor)
+            cursor.setPosition(new_selection_end, QTextCursor.KeepAnchor)
             self.text_edit.setTextCursor(cursor)
         else:
             # 若无选区，注释或取消注释当前行
@@ -1484,7 +2023,6 @@ class Notepad(QMainWindow):
 
         self.text_edit.ensureCursorVisible()
 
-    @Slot()
     def delete_line(self):
         cursor = self.text_edit.textCursor()
         # 删除整行包括换行符
@@ -1535,19 +2073,14 @@ class Notepad(QMainWindow):
 
 #======================================================================================
 def get_file_argument():
-    """
-    获取命令行参数中的文件路径
-    """
     if len(sys.argv) > 1:
-        return os.path.abspath(sys.argv[1])
+        return sys.argv[1]
     else:
         return None
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    # 获取当前程序的绝对路径
     current_directory = os.path.dirname(os.path.abspath(__file__))
-    # 构建资源文件夹的绝对路径（资源文件夹在可执行文件内部是 'resources/'）
     resource_path = os.path.join(sys._MEIPASS if hasattr(sys, '_MEIPASS') else current_directory, 'resources')
 
     translator = QTranslator()
@@ -1557,9 +2090,17 @@ if __name__ == "__main__":
 
     icon_path = os.path.join(resource_path, "JQEdit.png")
     app.setWindowIcon(QIcon(icon_path))
-    # 如果有参数就传给记事本打开（这样打包成exe双击txt就能被记事本打开），否则创建空窗口
-    filename = get_file_argument()
 
-    JQEdit = Notepad(filename) if filename else Notepad()
+    # 如果有参数就传给记事本打开（这样打包成exe双击txt就能被记事本打开），否则创建空窗口
+    if Notepad._instance is None:
+        JQEdit = Notepad()
+    else:
+        JQEdit = Notepad._instance
+
+        # Get filename from command line argument and open the file
+    filename = get_file_argument()
+    if filename:
+        JQEdit.read_file(filename)
+
     JQEdit.show()
     sys.exit(app.exec())
