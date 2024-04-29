@@ -1,0 +1,7 @@
+QPlainTextEdit {
+    background-color:rgb(41,42,47);
+    color: rgb(255,255,255);
+    selection-background-color:rgb(81,91,112) ;
+    selection-color: rgb(255,255,255);
+    border: 1px
+}

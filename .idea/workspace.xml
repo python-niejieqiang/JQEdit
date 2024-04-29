@@ -4,12 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="改为单例模式，增加按tab缩进，选区缩进等功能（仍有bug待解决）">
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="增加 C,C++,Javascript,Java,SQL,Perl,Bash,Bat,XML,Kotlin关键字高亮">
+      <change afterPath="$PROJECT_DIR$/resources/dark_style.qss" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/default_style.qss" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/light_style.qss" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/syntax_highlighter_file.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/xcode_style.qss" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/JQEdit.spec" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.spec" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_setup.exe" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -124,29 +127,7 @@
       <recent name="D:\迅雷下载\code\resources" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.JQEdit">
-    <configuration name="1" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="JQEdit" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/1.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
+  <component name="RunManager">
     <configuration name="JQEdit" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="JQEdit" />
       <option name="ENV_FILES" value="" />
@@ -169,56 +150,8 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="file_find" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="JQEdit" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/file_find.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="trim" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="JQEdit" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/trim.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.JQEdit" />
-        <item itemvalue="Python.1" />
-        <item itemvalue="Python.trim" />
-        <item itemvalue="Python.file_find" />
         <item itemvalue="Python.JQEdit" />
       </list>
     </recent_temporary>
@@ -327,7 +260,23 @@
       <option name="project" value="LOCAL" />
       <updated>1714131169228</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="增加 C,C++,Javascript,Java,SQL,Perl,Bash,Bat,XML,Kotlin关键字高亮">
+      <option name="closed" value="true" />
+      <created>1714193187002</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1714193187002</updated>
+    </task>
+    <task id="LOCAL-00013" summary="增加 C,C++,Javascript,Java,SQL,Perl,Bash,Bat,XML,Kotlin关键字高亮">
+      <option name="closed" value="true" />
+      <created>1714193251357</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1714193251357</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -350,7 +299,27 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="master" />
+                      </list>
+                    </value>
+                  </entry>
+                  <entry key="date">
+                    <value>
+                      <list>
+                        <option value="1714275675519" />
+                        <option value="" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
           </value>
         </entry>
       </map>
@@ -369,7 +338,8 @@
     <MESSAGE value="移除window_size.json" />
     <MESSAGE value="加入行号功能" />
     <MESSAGE value="改为单例模式，增加按tab缩进，选区缩进等功能（仍有bug待解决）" />
-    <option name="LAST_COMMIT_MESSAGE" value="改为单例模式，增加按tab缩进，选区缩进等功能（仍有bug待解决）" />
+    <MESSAGE value="增加 C,C++,Javascript,Java,SQL,Perl,Bash,Bat,XML,Kotlin关键字高亮" />
+    <option name="LAST_COMMIT_MESSAGE" value="增加 C,C++,Javascript,Java,SQL,Perl,Bash,Bat,XML,Kotlin关键字高亮" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>
