@@ -4,16 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="增加 C,C++,Javascript,Java,SQL,Perl,Bash,Bat,XML,Kotlin关键字高亮">
-      <change afterPath="$PROJECT_DIR$/resources/dark_style.qss" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/resources/default_style.qss" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/resources/light_style.qss" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/resources/syntax_highlighter_file.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/resources/xcode_style.qss" afterDir="false" />
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="增加语法高亮配置文件，QSS配置文件，配色方案高度自定义，关键字在不同的主题中有不同表现">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_setup.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/default_style.qss" beforeDir="false" afterPath="$PROJECT_DIR$/resources/intellijlight_style.qss" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/light_style.qss" beforeDir="false" afterPath="$PROJECT_DIR$/resources/gerrylight_style.qss" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/syntax_highlighter_file.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/syntax_highlighter_file.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -41,6 +39,19 @@
         </map>
       </branch-storage>
     </excluded-from-favorite>
+    <favorite-branches>
+      <branch-storage>
+        <map>
+          <entry type="REMOTE">
+            <value>
+              <list>
+                <branch-info repo="$PROJECT_DIR$" source="JQEdit_in_GITEE/master" />
+              </list>
+            </value>
+          </entry>
+        </map>
+      </branch-storage>
+    </favorite-branches>
     <option name="PUSH_TAGS">
       <GitPushTagMode>
         <option name="argument" value="--tags" />
@@ -104,9 +115,9 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "master",
-    "last_opened_file_path": "D:/迅雷下载/JQEdit/resources",
+    "last_opened_file_path": "D:/迅雷下载/csdn/zh-6.1.jar",
     "run.code.analysis.last.selected.profile": "pProject Default",
-    "settings.editor.selected.configurable": "preferences.pluginManager"
+    "settings.editor.selected.configurable": "preferences.lookFeel"
   },
   "keyToStringList": {
     "ChangesTree.GroupingKeys": [
@@ -159,7 +170,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-09665e90c3a7-d3b881c8e49f-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-233.15026.15" />
+        <option value="bundled-python-sdk-0509580d9d50-746f403e7f0c-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-241.14494.241" />
       </set>
     </attachedChunks>
   </component>
@@ -276,7 +287,15 @@
       <option name="project" value="LOCAL" />
       <updated>1714193251357</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="增加语法高亮配置文件，QSS配置文件，配色方案高度自定义，关键字在不同的主题中有不同表现">
+      <option name="closed" value="true" />
+      <created>1714389459506</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1714389459506</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -339,7 +358,8 @@
     <MESSAGE value="加入行号功能" />
     <MESSAGE value="改为单例模式，增加按tab缩进，选区缩进等功能（仍有bug待解决）" />
     <MESSAGE value="增加 C,C++,Javascript,Java,SQL,Perl,Bash,Bat,XML,Kotlin关键字高亮" />
-    <option name="LAST_COMMIT_MESSAGE" value="增加 C,C++,Javascript,Java,SQL,Perl,Bash,Bat,XML,Kotlin关键字高亮" />
+    <MESSAGE value="增加语法高亮配置文件，QSS配置文件，配色方案高度自定义，关键字在不同的主题中有不同表现" />
+    <option name="LAST_COMMIT_MESSAGE" value="增加语法高亮配置文件，QSS配置文件，配色方案高度自定义，关键字在不同的主题中有不同表现" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>

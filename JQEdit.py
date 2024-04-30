@@ -6,7 +6,6 @@ import re
 import subprocess
 import sys
 from functools import partial
-
 import chardet
 from PySide6.QtCore import (QTranslator, QFile, QTextStream, QTimer, QSize, QFileInfo, Qt, QEvent, QRect, QThread,
                             Signal, QUrl, Slot,
@@ -19,7 +18,6 @@ from PySide6.QtWidgets import (QApplication, QDialog, QWidget, QLabel, QLineEdit
                                QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
 
 from replace_window_ui import Ui_replace_window
-
 
 class LineNumberArea(QWidget):
     def __init__(self, editor):
@@ -58,7 +56,9 @@ class LineNumberArea(QWidget):
 class TextEditor(QPlainTextEdit):
     def __init__(self, notepad_instance):
         super().__init__()
+        self.untitled_name = "Untitled.txt"
         self.notepad = notepad_instance  # 保存与之关联的记事本实例
+
         self.show_line_numbers = self.notepad.show_line_numbers  # 添加此行，保存行号显示状态
         self.line_number_area = LineNumberArea(self)  # 创建行号区域实例
 
@@ -67,6 +67,37 @@ class TextEditor(QPlainTextEdit):
         self.updateRequest.connect(self.update_line_number_area)
 
         self.update_line_number_area_width()  # 初始化行号区域的宽度
+
+        self.cursorPositionChanged.connect(self.get_row_col)
+        self.display_default_file_name(self.notepad.current_file_name)
+
+        self.setFont(self.notepad.font) # 设置文本区域字体
+        self.init_context_menu()
+
+    def display_default_file_name(self, filename_):
+        # 只需要设置文档的修改状态，窗口的修改状态会自动更新
+        self.document().setModified(False)
+        # 合并条件判断，并设置窗口标题
+        if filename_:
+            self.notepad.setWindowTitle(f"{self.notepad.app_name} - {filename_}")
+        else:
+            self.notepad.setWindowTitle(f"{self.notepad.app_name} - [{self.untitled_name}]")
+
+    @Slot()
+    def get_row_col(self):
+        # 获取光标所在的行和列
+        cursor = self.textCursor()
+        row = cursor.blockNumber() + 1  # blockNumber() 是从 0 开始的，所以需要加 1
+        column = cursor.columnNumber() + 1  # columnNumber() 也是从 0 开始的，加 1 以符合常规的行列计数
+        # 获取文本编辑器中总的行数
+        total_lines = self.document().blockCount()
+        # 定义左下角信息字符串模板，指定数字部分占据至少五个字符的宽度
+        left_message_template = "  行 {:d} , 列 {:d} , 总行数 {:d}"
+        # 使用模板并填入实际值
+        left_message = left_message_template.format(row, column, total_lines)
+
+        # 在左下角状态栏显示信息
+        self.notepad.status_bar.showMessage(left_message.format(row, column, total_lines))
 
     def line_number_area_width(self):
         digits = len(str(self.blockCount()))  # 计算当前文本行数的位数
@@ -135,6 +166,16 @@ class TextEditor(QPlainTextEdit):
                     # 如果光标位置不足以删除四个空格，则不做处理，保持默认行为
 
         if event.key() == Qt.Key_Tab and not event.modifiers():
+            cursor = self.textCursor()
+            if cursor.hasSelection():
+                selected_text = cursor.selectedText().strip()
+                if selected_text == "":
+                    # 如果选中的是空格或空行，删除选中内容
+                    cursor.removeSelectedText()
+                    cursor.insertText(" "*4)
+                    self.setTextCursor(cursor)
+                    event.accept()  # 接受事件以阻止默认的Tab行为
+                    return
             self.indent()
             event.accept()
         elif event.key() == Qt.Key_Backtab:
@@ -147,125 +188,165 @@ class TextEditor(QPlainTextEdit):
             super().keyPressEvent(event)
 
     def indent(self):
-        # 定义注释符号，在此例中使用空格
-        four_spaces = " " * 4
-
-        # 获取文本编辑器的光标
         cursor = self.textCursor()
-        # 获取选定文本的起始和结束位置
-        initial_selection_start = cursor.selectionStart()
-        initial_selection_end = cursor.selectionEnd()
-        # 检查是否有选定文本
-        if cursor.hasSelection():
-            # 开始编辑操作
-            cursor.beginEditBlock()
-            # 判断选中文本是否全为空格
-            if cursor.selectedText().isspace():
-                # 如果选中文本全为空格，则删除选中文本并插入4个空格
-                cursor.removeSelectedText()
-                cursor.insertText(four_spaces)
-                self.setTextCursor(cursor)
-                return
-            # 移动光标到选定文本的起始位置
-            cursor.setPosition(initial_selection_start)
-            num = 0
-            # 循环处理每一行
-            while cursor.position() < initial_selection_end:
-                # 移动到行开头
-                cursor.movePosition(QTextCursor.StartOfLine)
-
-                # 插入4个空格
-                cursor.insertText(four_spaces)
-                num += 1
-                # 移动到下一行
-                cursor.movePosition(QTextCursor.NextBlock)
-            # 结束编辑操作
-            cursor.endEditBlock()
-
-            new_selection_start = max(initial_selection_start + 4, initial_selection_start)
-            new_selection_end = initial_selection_end + num * 4
-            # 确保新的选区末端不超过文档长度
-            doc_length = self.document().characterCount()
-            new_selection_end = min(new_selection_end, doc_length)
-            cursor.setPosition(new_selection_start)
-            cursor.setPosition(new_selection_end, QTextCursor.KeepAnchor)
-            self.setTextCursor(cursor)
-
-        else:
+        if not cursor.hasSelection():
             cursor.insertText(" " * 4)
             self.setTextCursor(cursor)
+            return
+
+        cursor.beginEditBlock()
+
+        # 获取选区的起始和结束位置
+        initial_start_pos = cursor.selectionStart()
+        initial_end_pos = cursor.selectionEnd()
+        # 移动光标到选区起始位置
+        cursor.setPosition(initial_start_pos)
+        # 遍历选中区域的每一行
+        num = 0
+        while cursor.position() < initial_end_pos:
+            # 确保在行首
+            cursor.movePosition(QTextCursor.StartOfLine)
+
+            # 插入缩进（例如4个空格）
+            cursor.insertText(" " * 4)
+            num +=1
+            # 移动到下一行的开始，注意NextBlock会包括换行符
+            cursor.movePosition(QTextCursor.Down)
+        cursor.endEditBlock()
+
+        # 更新选区，确保选区跟随文本一起缩进
+        cursor.setPosition(initial_start_pos + 4)
+        cursor.setPosition(initial_end_pos + 4*num, QTextCursor.KeepAnchor)
+        self.setTextCursor(cursor)
 
     def shift_unindent(self):
         cursor = self.textCursor()
-        # 获取选定文本的起始和结束位置
         initial_selection_start = cursor.selectionStart()
         initial_selection_end = cursor.selectionEnd()
         if cursor.hasSelection():
-            # 开始编辑操作
             cursor.beginEditBlock()
 
-            # 移动光标到选定文本的起始位置
             cursor.setPosition(initial_selection_start)
             num = 0
-            # 循环处理每行文本
-            while cursor.position() < initial_selection_end:
-                # 移动到行开头
+            while cursor.position() < initial_selection_end and not cursor.atEnd():
                 cursor.movePosition(QTextCursor.StartOfLine)
 
-                # 获取当前行文本
                 cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor)
                 line_text = cursor.selectedText()
 
-                # 如果当前行以四个空格开头，则删除这四个空格
                 if line_text.startswith(" " * 4):
-                    # 移动到行开头
+                    # 记录是否所有行都以四个空格开头
+                    num += 1
+                    # 删除前四个空格
                     cursor.movePosition(QTextCursor.StartOfLine)
-                    # 向右选择4个字符
                     cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 4)
                     cursor.removeSelectedText()
-                else:
-                    # 如果当前行没有以四个空格开头，则退出循环
-                    break
-                num += 1
                 # 移动到下一行
                 cursor.movePosition(QTextCursor.NextBlock)
 
-            # 结束编辑操作
+                # 检查是否已经到达选区的结束位置
+                if cursor.position() >= initial_selection_end:
+                    break
+
             cursor.endEditBlock()
 
-            new_selection_start = max(initial_selection_start - 4, 0)  # 确保选区起始位置不小于0
-            new_selection_end = initial_selection_end - num * 4
-            # 确保新的选区起始和末端都在文档范围内
-            doc_length = self.document().characterCount()
-            new_selection_start = min(new_selection_start, doc_length)
-            new_selection_end = min(new_selection_end, doc_length)
-            cursor.setPosition(new_selection_start)
-            cursor.setPosition(new_selection_end, QTextCursor.KeepAnchor)
-            self.setTextCursor(cursor)
+            if num > 0:
+                # 调整选区的起始位置
+                new_selection_start = max(initial_selection_start - 4, 0)
+                new_selection_end = initial_selection_end - 4 * num
+                cursor.setPosition(new_selection_start)
+                cursor.setPosition(new_selection_end, QTextCursor.KeepAnchor)
+                self.setTextCursor(cursor)
         else:
+            # 处理未选中文本的情况
             cursor_position = cursor.position()
 
-            # Move to the start of the current line
             cursor.movePosition(QTextCursor.StartOfLine)
-
-            # Get the current line text
             cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor)
             line_text = cursor.selectedText()
 
-            # Count leading spaces
             leading_spaces = len(line_text) - len(line_text.lstrip())
-
-            # Determine the number of spaces to remove
             spaces_to_remove = min(4, leading_spaces)
 
-            # Replace the leading spaces with tabs
             cursor.removeSelectedText()
             cursor.insertText(line_text[spaces_to_remove:])
 
-            # Move the cursor back to its original position
             cursor.setPosition(cursor_position - min(cursor_position, spaces_to_remove))
 
             self.setTextCursor(cursor)
+
+    def init_context_menu(self):
+        #   自定义右键菜单
+        self.context_menu = QMenu()
+        self.undo_context = QAction("撤销", self)
+        self.undo_context.triggered.connect(self.notepad.undo)
+        self.context_menu.addAction(self.undo_context)
+
+        self.selection_replace_context = QAction("选区替换", self)
+        self.selection_replace_context.triggered.connect(self.notepad.show_replace_dialog)
+        self.context_menu.addAction(self.selection_replace_context)
+
+        # 添加菜单分割线
+        self.context_menu.addSeparator()
+        self.copy_context = QAction("复制", self)
+        self.copy_context.triggered.connect(self.notepad.copy)
+        self.context_menu.addAction(self.copy_context)
+
+        self.paste_context = QAction("粘贴", self)
+        self.paste_context.triggered.connect(self.notepad.paste)
+        self.context_menu.addAction(self.paste_context)
+
+        self.cut_context = QAction("剪切", self)
+        self.cut_context.triggered.connect(self.notepad.cut)
+        self.context_menu.addAction(self.cut_context)
+
+        self.del_context = QAction("删除", self)
+        self.del_context.triggered.connect(self.notepad.delete)
+        self.context_menu.addAction(self.del_context)
+        # 添加菜单分割线
+        self.context_menu.addSeparator()
+
+        self.cp_line_context = QAction("复制行", self)
+        self.cp_line_context.triggered.connect(self.notepad.copy_line)
+        self.context_menu.addAction(self.cp_line_context)
+
+        self.del_line_ = QAction("删除行", self)
+        self.del_line_.triggered.connect(self.notepad.delete_line)
+        self.context_menu.addAction(self.del_line_)
+
+        self.empty_context = QAction("清空行", self)
+        self.empty_context.triggered.connect(self.notepad.empty_line)
+        self.context_menu.addAction(self.empty_context)
+        # 添加菜单分割线
+        self.context_menu.addSeparator()
+
+        self.search_action = QAction("百度搜索", self)
+        self.search_action.triggered.connect(self.search_in_baidu)
+        self.context_menu.addAction(self.search_action)
+
+        self.redo_context = QAction("重做", self)
+        self.redo_context.triggered.connect(self.notepad.redo)
+        self.context_menu.addAction(self.redo_context)
+
+        self.select_context = QAction("全选", self)
+        self.select_context.triggered.connect(self.notepad.select_all)
+        self.context_menu.addAction(self.select_context)
+
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_contextmenu)
+
+    @Slot()
+    def search_in_baidu(self):
+        cursor = self.textCursor()
+        if cursor.hasSelection():
+            keyword = cursor.selectedText()
+            url = QUrl("https://www.baidu.com/s?wd=" + keyword)
+            QDesktopServices.openUrl(url)
+
+    @Slot()
+    def show_contextmenu(self, pos):
+        # text_edit中的右键菜单
+        self.context_menu.exec(self.mapToGlobal(pos))
 
 class FileLoader(QThread):
     contentLoaded = Signal(str)
@@ -350,6 +431,7 @@ class BatchHighlighter(SyntaxHighlighterBase):
             (QRegularExpression(r"(?i)\b(rem|call|echo|set|cd|if|else|goto|pause|exit|exist)\b"), self.keyword_format),
             (QRegularExpression(r"(?i)(\:\:|REM).*?$"), self.comment_format)
         ]
+
 class CHighlighter(SyntaxHighlighterBase):
     def __init__(self, parent=None, theme_name="dark"):
         super().__init__(parent, theme_name=theme_name)
@@ -365,7 +447,7 @@ class CHighlighter(SyntaxHighlighterBase):
                                 r"try|typedef|typeid|typename|union|unsigned|using|virtual|void|"
                                 r"volatile|while)\b"), self.keyword_format),
             (QRegularExpression(r"\".*?\"|\'.*?\'"), self.string_format),
-            (QRegularExpression(r"\/\*.*?\*\/|\#.*?$"), self.comment_format)
+            (QRegularExpression(r"\/\*[\s\S]*?\*\/|\/\/.*"), self.comment_format)
         ]
 
 class SQLHighlighter(SyntaxHighlighterBase):
@@ -395,7 +477,7 @@ class JavaHighlighter(SyntaxHighlighterBase):
                                 r"super|switch|synchronized|this|throw|throws|transient|try|void|"
                                 r"volatile|while)\b"), self.keyword_format),
             (QRegularExpression(r"\".*?\"|\'.*?\'"), self.string_format),
-            (QRegularExpression(r"\/\*.*?\*\/|\#.*?$"), self.comment_format)
+            (QRegularExpression(r"\/\*.*?\*\/|\/\/.*"), self.comment_format)
         ]
 
 class PerlHighlighter(SyntaxHighlighterBase):
@@ -418,7 +500,7 @@ class PerlHighlighter(SyntaxHighlighterBase):
 
             # 单行注释和多行注释
             (QRegularExpression(r'\#.*?$'), self.comment_format),  # 单行注释
-            (QRegularExpression(r'/\*.*?\*/', QRegularExpression.PatternOption.DotMatchesEverythingOption),
+            (QRegularExpression(r'/\*.*?\*/'),
              self.comment_format),  # 多行注释，注意这里简单处理，可能不完全准确匹配Perl的所有多行注释情况
         ]
 
@@ -444,7 +526,7 @@ class JavaScriptHighlighter(SyntaxHighlighterBase):
                                 r"instanceof|new|null|return|super|switch|this|throw|true|try|typeof|"
                                 r"var|void|while|with|yield)\b"), self.keyword_format),
             (QRegularExpression(r"\".*?\"|\'.*?\'"), self.string_format),
-            (QRegularExpression(r"\/\*.*?\*\/|\#.*?$"), self.comment_format)
+            (QRegularExpression(r"\/\*.*?\*\/|\/\/.*$",QRegularExpression.PatternOption.DotMatchesEverythingOption), self.comment_format)
         ]
 
 class HighlighterFactory:
@@ -721,7 +803,6 @@ class Notepad(QMainWindow):
     def __init__(self):
         super().__init__()
         self.app_name = "JQEdit"
-        self.setWindowTitle(self.app_name)
         self.resize(800,600)
         # 用来记录文件编码，名字
         self.current_file_encoding = None
@@ -731,7 +812,6 @@ class Notepad(QMainWindow):
         # 记录文件所在目录名，打开命令行时就可以切换到该目录
         self.desktop_dir = os.path.join(os.path.expanduser('~'), 'Desktop')
         self.work_dir = self.desktop_dir
-        self.untitled_name = "Untitled.txt"
 
         self.last_modified_time = None
         self.timer = QTimer()
@@ -739,8 +819,8 @@ class Notepad(QMainWindow):
         self.timer.start(2000)  # 每2秒检查一次
 
         self.dark_style_file = os.path.join(resource_path,"dark_style.qss")
-        self.default_style_file = os.path.join(resource_path,"default_style.qss")
-        self.light_style_file = os.path.join(resource_path,"light_style.qss")
+        self.intellijlight_style_file = os.path.join(resource_path, "intellijlight_style.qss")
+        self.gerrylight_style_file = os.path.join(resource_path, "gerrylight_style.qss")
         self.xcode_style_file = os.path.join(resource_path,"xcode_style.qss")
 
         self.theme_changed.connect(self.on_theme_changed)  # 连接主题改变信号到槽函数
@@ -773,9 +853,6 @@ class Notepad(QMainWindow):
         self.setMenuBar(self.menu_bar)
 
         self.text_edit = TextEditor(self)
-        self.text_edit.setFont(self.font)
-        self.text_edit.cursorPositionChanged.connect(self.get_row_col)
-        self.display_default_file_name(None)
         self.setCentralWidget(self.text_edit)
 
         # 添加底部状态栏
@@ -904,8 +981,8 @@ class Notepad(QMainWindow):
         # 主题菜单, 将主题样式存入数组全部设为未选中，当用户选中哪一个，就把哪一个设为True
         # 也就是点击哪个主题，哪个主题样式前面就显示打勾
         self.theme_actions = []
-        self.default_theme_action = QAction("Intelij Light", self, checkable=True)
-        self.default_theme_action.triggered.connect(self.set_default_style)
+        self.default_theme_action = QAction("Intellij Light", self, checkable=True)
+        self.default_theme_action.triggered.connect(self.set_intellijlight_style)
         self.theme_menu.addAction(self.default_theme_action)
         self.theme_actions.append(self.default_theme_action)
 
@@ -914,8 +991,8 @@ class Notepad(QMainWindow):
         self.theme_menu.addAction(self.dark_theme_action)
         self.theme_actions.append(self.dark_theme_action)
 
-        self.light_theme_action = QAction("light", self,checkable=True)
-        self.light_theme_action.triggered.connect(self.set_light_style)
+        self.light_theme_action = QAction("Gerry Light", self,checkable=True)
+        self.light_theme_action.triggered.connect(self.set_gerrylight_style)
         self.theme_menu.addAction(self.light_theme_action)
         self.theme_actions.append(self.light_theme_action)
 
@@ -992,64 +1069,6 @@ class Notepad(QMainWindow):
         self.help_action.triggered.connect(self.help_info)
         self.tool_menu.addAction(self.help_action)
 
-        #  自定义右键菜单
-        self.context_menu = QMenu()
-        self.undo_context = QAction("撤销", self)
-        self.undo_context.triggered.connect(self.undo)
-        self.context_menu.addAction(self.undo_context)
-
-        self.selection_replace_context = QAction("选区替换", self)
-        self.selection_replace_context.triggered.connect(self.show_replace_dialog)
-        self.context_menu.addAction(self.selection_replace_context)
-
-        # 添加菜单分割线
-        self.context_menu.addSeparator()
-        self.copy_context = QAction("复制", self)
-        self.copy_context.triggered.connect(self.copy)
-        self.context_menu.addAction(self.copy_context)
-        self.paste_context = QAction("粘贴", self)
-        self.paste_context.triggered.connect(self.paste)
-        self.context_menu.addAction(self.paste_context)
-
-        self.cut_context = QAction("剪切", self)
-        self.cut_context.triggered.connect(self.cut)
-        self.context_menu.addAction(self.cut_context)
-
-        self.del_context = QAction("删除", self)
-        self.del_context.triggered.connect(self.delete)
-        self.context_menu.addAction(self.del_context)
-        # 添加菜单分割线
-        self.context_menu.addSeparator()
-
-        self.cp_line_context = QAction("复制行", self)
-        self.cp_line_context.triggered.connect(self.copy_line)
-        self.context_menu.addAction(self.cp_line_context)
-
-        self.del_line_ = QAction("删除行", self)
-        self.del_line_.triggered.connect(self.delete_line)
-        self.context_menu.addAction(self.del_line_)
-
-        self.empty_context = QAction("清空行", self)
-        self.empty_context.triggered.connect(self.empty_line)
-        self.context_menu.addAction(self.empty_context)
-        # 添加菜单分割线
-        self.context_menu.addSeparator()
-
-        self.search_action = QAction("百度搜索", self)
-        self.search_action.triggered.connect(self.search_in_baidu)
-        self.context_menu.addAction(self.search_action)
-
-        self.redo_context = QAction("重做", self)
-        self.redo_context.triggered.connect(self.redo)
-        self.context_menu.addAction(self.redo_context)
-
-        self.select_context = QAction("全选", self)
-        self.select_context.triggered.connect(self.select_all)
-        self.context_menu.addAction(self.select_context)
-
-        self.text_edit.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.text_edit.customContextMenuRequested.connect(self.show_contextmenu)
-
     def on_theme_changed(self, new_theme):
         # 获取当前文件的扩展名
         file_extension = os.path.splitext(self.current_file_name)[1]
@@ -1057,22 +1076,6 @@ class Notepad(QMainWindow):
 
     def toggle_line_numbers(self, checked):
         self.text_edit.update_line_number_display(checked)
-
-    @Slot()
-    def get_row_col(self):
-        # 获取光标所在的行和列
-        cursor = self.text_edit.textCursor()
-        row = cursor.blockNumber() + 1  # blockNumber() 是从 0 开始的，所以需要加 1
-        column = cursor.columnNumber() + 1  # columnNumber() 也是从 0 开始的，加 1 以符合常规的行列计数
-        # 获取文本编辑器中总的行数
-        total_lines = self.text_edit.document().blockCount()
-        # 定义左下角信息字符串模板，指定数字部分占据至少五个字符的宽度
-        left_message_template = "  行 {:d} , 列 {:d} , 总行数 {:d}"
-        # 使用模板并填入实际值
-        left_message = left_message_template.format(row, column, total_lines)
-
-        # 在左下角状态栏显示信息
-        self.status_bar.showMessage(left_message.format(row, column, total_lines))
 
     def check_file_modification(self):
         if self.current_file_name:
@@ -1117,17 +1120,6 @@ class Notepad(QMainWindow):
             return
         # 默认情况下，调用父类的事件处理函数
         super().keyPressEvent(event)
-
-    def display_default_file_name(self, filename_):
-        # 如有打开文件，则显示文件名，没有则显示APP名与默认的untitled.txt
-        self.current_opened_file = filename_
-        # 只需要设置文档的修改状态，窗口的修改状态会自动更新
-        self.text_edit.document().setModified(False)
-        # 合并条件判断，并设置窗口标题
-        if filename_:
-            self.setWindowTitle(f"{self.app_name} - {filename_}")
-        else:
-            self.setWindowTitle(f"{self.app_name} - [{self.untitled_name}]")
 
     def tip_to_save(self):
         if self.text_edit.document().isModified():
@@ -1316,10 +1308,10 @@ class Notepad(QMainWindow):
             self.highlighter.setDocument(self.text_edit.document())
 
     def apply_theme(self):
-        if self.theme == "default":
-            self.set_default_style()
-        elif self.theme == "light":
-            self.set_light_style()
+        if self.theme == "intellijlight":
+            self.set_intellijlight_style()
+        elif self.theme == "gerrylight":
+            self.set_gerrylight_style()
         elif self.theme == "dark":
             self.set_dark_style()
         elif self.theme == "xcode":
@@ -1351,7 +1343,7 @@ class Notepad(QMainWindow):
         self.font.setStrikeOut(font_properties["strikeOut"])
 
         # 更新主题设置
-        self.theme = settings.get("theme", "default")
+        self.theme = settings.get("theme", "intellijlight")
 
         # 更新状态栏，自动换行设置
         self.wrap_lines = settings.get("wrap_lines", True)
@@ -1400,8 +1392,8 @@ class Notepad(QMainWindow):
         for action in self.theme_actions:
             action.setChecked(False)
 
-    def set_default_style(self):
-        qss_file = QFile(self.default_style_file)
+    def set_intellijlight_style(self):
+        qss_file = QFile(self.intellijlight_style_file)
         if qss_file.open(QFile.ReadOnly | QFile.Text):
             stream = QTextStream(qss_file)
             self.setStyleSheet(stream.readAll())
@@ -1409,7 +1401,7 @@ class Notepad(QMainWindow):
         else:
             # 文件打开失败的错误处理
             print("Failed to open QSS file:", qss_file.errorString())
-        self.theme = "default"
+        self.theme = "intellijlight"
         self.theme_changed.emit(self.theme)  # 发射主题改变信号
         self.clear_checked()
         self.default_theme_action.setChecked(True)
@@ -1430,8 +1422,8 @@ class Notepad(QMainWindow):
         self.xcode_theme_action.setChecked(True)
         self.save_settings()
 
-    def set_light_style(self):
-        qss_file = QFile(self.light_style_file)
+    def set_gerrylight_style(self):
+        qss_file = QFile(self.gerrylight_style_file)
         if qss_file.open(QFile.ReadOnly | QFile.Text):
             stream = QTextStream(qss_file)
             self.setStyleSheet(stream.readAll())
@@ -1439,7 +1431,7 @@ class Notepad(QMainWindow):
         else:
             # 文件打开失败的错误处理
             print("Failed to open QSS file:", qss_file.errorString())
-        self.theme = "light"
+        self.theme = "gerrylight"
         self.theme_changed.emit(self.theme)  # 发射主题改变信号
         self.clear_checked()
         self.light_theme_action.setChecked(True)
@@ -1593,14 +1585,6 @@ class Notepad(QMainWindow):
         self.find_replace_dialog.exec()
 
     @Slot()
-    def search_in_baidu(self):
-        cursor = self.text_edit.textCursor()
-        if cursor.hasSelection():
-            keyword = cursor.selectedText()
-            url = QUrl("https://www.baidu.com/s?wd=" + keyword)
-            QDesktopServices.openUrl(url)
-
-    @Slot()
     def open_terminal(self):
         try:
             # 如果self.work_dir不为空，切换到相应的目录
@@ -1613,13 +1597,8 @@ class Notepad(QMainWindow):
             QMessageBox.warning(self, "发生错误", str(e))
 
     @Slot()
-    def show_contextmenu(self, pos):
-        # text_edit中的右键菜单
-        self.context_menu.exec(self.text_edit.mapToGlobal(pos))
-
-    @Slot()
     def use_code_save(self, encoding, *args):
-        default_filename = self.current_file_name if self.current_file_name else self.untitled_name
+        default_filename = self.current_file_name if self.current_file_name else self.text_edit.untitled_name
         filename, _ = QFileDialog.getSaveFileName(None, "保存文件", default_filename,
                                                   "所有文件类型(*.*);;文本文件 (*.txt)")
         # 如果用户取消保存操作，直接返回
@@ -1687,7 +1666,7 @@ class Notepad(QMainWindow):
 
     @Slot()
     def save_as(self):
-        default_filename = self.current_file_name if self.current_file_name else self.untitled_name
+        default_filename = self.current_file_name if self.current_file_name else self.text_edit.untitled_name
         filename, _ = QFileDialog.getSaveFileName(None, "保存文件", default_filename,
                                                   "所有文件类型(*.*);;文本文件 (*.txt)")
         # 如果用户取消保存操作，直接返回 None
@@ -1712,7 +1691,7 @@ class Notepad(QMainWindow):
             self.text_edit.clear()
             self.current_file_name=""
             self.work_dir = self.desktop_dir
-            self.setWindowTitle(f"{self.app_name} - [{self.untitled_name}]")
+            self.setWindowTitle(f"{self.app_name} - [{self.text_edit.untitled_name}]")
 
     @Slot()
     def modify_font(self):
@@ -1903,6 +1882,5 @@ if __name__ == "__main__":
     filename = get_file_argument()
     if filename:
         JQEdit.read_file(filename)
-
     JQEdit.show()
     sys.exit(app.exec())

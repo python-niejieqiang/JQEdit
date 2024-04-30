@@ -1,9 +1,9 @@
 {
-  "default": {
+  "intellijlight": {
     "keyword": [0, 51, 179],
     "string": [6,125,23],
     "comment": [140, 140,140],
-    "operator": [0,0,0]
+    "operator": [0, 0,0]
   },
   "dark": {
     "keyword": [204,120,50],
@@ -11,11 +11,11 @@
     "comment": [140,140,140],
     "operator": [204,120,50]
   },
-  "light": {
+  "gerrylight": {
     "keyword": [112,64,128],
     "string": [72,104,48],
     "comment": [160,160,160],
-    "operator": [255, 255, 255]
+    "operator": [112,64,128]
   },
   "xcode": {
     "keyword": [252,95,163],
