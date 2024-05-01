@@ -1,26 +1,90 @@
 {
   "intellijlight": {
-    "keyword": [0, 51, 179],
-    "string": [6,125,23],
-    "comment": [140, 140,140],
-    "operator": [0, 0,0]
+    "keyword": {
+      "color":[0, 51, 179],
+      "bold": true,
+      "italic": false
+    },
+    "string":{
+      "color": [6,125,23],
+      "bold": false,
+      "italic": false
+    },
+    "comment": {
+      "color":[140, 140,140],
+      "bold": false,
+      "italic": true
+    },
+    "operator": {
+      "color":[0, 0,0],
+      "bold": false,
+      "italic": false
+    }
   },
   "dark": {
-    "keyword": [204,120,50],
-    "string": [83,131,134],
-    "comment": [140,140,140],
-    "operator": [204,120,50]
+    "comment": {
+      "color": [150, 150, 150],
+      "bold": false,
+      "italic": true
+    },
+    "string": {
+      "color": [42, 161, 152],
+      "bold": false,
+      "italic": false
+    },
+    "operator": {
+      "color": [200, 120, 50],
+      "bold": false,
+      "italic": false
+    },
+    "keyword": {
+      "color": [200, 120, 50],
+      "bold": true,
+      "italic": false
+    }
   },
   "gerrylight": {
-    "keyword": [112,64,128],
-    "string": [72,104,48],
-    "comment": [160,160,160],
-    "operator": [112,64,128]
+    "keyword": {
+      "color":[112,64,128],
+      "bold": true,
+      "italic": false
+    },
+    "string": {
+      "color":[72,104,48],
+      "bold": false,
+      "italic": false
+    },
+    "comment": {
+      "color":[160,160,160],
+      "bold": false,
+      "italic": true
+    },
+    "operator": {
+      "color":[112,64,128],
+      "bold": false,
+      "italic": false
+    }
   },
   "xcode": {
-    "keyword": [252,95,163],
-    "string": [252,106,93],
-    "comment": [108,121,134],
-    "operator": [252,95,163]
+    "keyword": {
+      "color":[252,95,163],
+      "bold": true,
+      "italic": false
+    },
+    "string": {
+      "color": [252,106,93],
+      "bold": false,
+      "italic": false
+    },
+    "comment": {
+      "color":[108,121,134],
+      "bold": false,
+      "italic": true
+    },
+    "operator": {
+      "color": [252,95,163],
+      "bold": false,
+      "italic": false
+    }
   }
 }

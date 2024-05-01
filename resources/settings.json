@@ -1,5 +1,5 @@
 {
-    "font_family": "Arial",
+    "font_family": "JetBrains Mono",
     "pointSize": 14,
     "bold": false,
     "italic": false,
@@ -11,7 +11,7 @@
     "startup_size": {
         "width": 800,
         "height": 600,
-        "start_maximized": false
+        "start_maximized": true
     },
     "show_line_numbers": true
 }
