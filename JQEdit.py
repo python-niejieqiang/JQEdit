@@ -9,8 +9,8 @@ import sys
 from functools import partial
 
 import chardet
-from PySide6.QtCore import (QTranslator, QFile, QObject, QTextStream, QTimer, QSize, QFileInfo, Qt, QEvent, QRect,
-                            QThread,
+from PySide6.QtCore import (QTranslator, QFile, QRunnable, QThreadPool, QObject, QTextStream, QTimer, QSize, QFileInfo,
+                            Qt, QEvent, QRect,
                             Signal, QUrl, Slot,
                             QRegularExpression)
 from PySide6.QtGui import (QAction, QIntValidator, QPalette, QPainter, QSyntaxHighlighter, QColor, QTextCharFormat,
@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (QApplication, QDialog, QWidget, QLabel, QLineEdit
                                QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
 
 from replace_window_ui import Ui_replace_window
+
 
 class LineNumberArea(QWidget):
     def __init__(self, editor):
@@ -351,8 +352,17 @@ class TextEditor(QPlainTextEdit):
         # text_edit中的右键菜单
         self.context_menu.exec(self.mapToGlobal(pos))
 
+class FileReaderRunnable(QRunnable):
+    def __init__(self, reader):
+        super().__init__()
+        self.reader = reader
+
+    def run(self):
+        self.reader.run()
+
 class FileReader(QObject):
     finished = Signal(str, str)  # 读取完成信号，传递文件内容和文件编码
+
     def __init__(self, filename):
         super().__init__()
         self.filename = filename
@@ -880,6 +890,9 @@ class Notepad(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        # 初始化 QThreadPool
+        self.threadpool = QThreadPool()
+
         self.app_name = "JQEdit"
         self.resize(800,600)
         # 用来记录文件编码，名字
@@ -1182,7 +1195,8 @@ class Notepad(QMainWindow):
             event.accept()  # 用户选择保存或确定不保存，继续关闭
         else:
             event.ignore()  # 用户选择取消保存，不关闭窗口
-
+        self.threadpool.clear()
+        event.accept()
     def keyPressEvent(self, event: QKeyEvent):
         # 处理组合键 Ctrl+F
         if event.key() == Qt.Key_F and event.modifiers() & Qt.ControlModifier:
@@ -1255,43 +1269,48 @@ class Notepad(QMainWindow):
             QMessageBox.warning(self, self.app_name, f"文件 {file_name} 保存时发生未知错误:\n{e}")
         return False
 
-    def on_file_read_finished(self, content, encoding, filename):  # 添加 filename 参数
-        if content is not None:
-            self.text_edit.setPlainText(content)
-            self.setWindowTitle(f"{self.app_name} - {encoding.upper()} - {filename}")
-            # 记录当前文件名,编码,以及当前目录
-            self.current_file_name = filename
-            self.last_modified_time = QFileInfo(filename).lastModified().toMSecsSinceEpoch()
-            self.current_file_encoding = encoding
-            self.work_dir = os.path.dirname(os.path.abspath(filename))
-            # 将打开记录添加到最近打开
-            self.add_recent_file(filename)
-
-            # 获取文件扩展名
-            file_extension = os.path.splitext(filename)[1]
-            highlighter = HighlighterFactory.create_highlighter(file_extension,self.theme)
-            if highlighter:
-                self.highlighter = highlighter
-                self.highlighter.setDocument(self.text_edit.document())
-        else:
-            QMessageBox.warning(self, "错误", "打开文件时发生错误！")
-        self.thread.quit()
-        self.thread.wait()
-
     def read_file_in_thread(self, filename):
-        # 关闭语法高亮
+        # Close syntax highlighter
         if self.highlighter:
             self.highlighter.deleteLater()
             self.highlighter = None
         if not filename:
             return
-        self.thread = QThread()
-        self.file_reader = FileReader(filename)
-        self.file_reader.moveToThread(self.thread)
-        # 将 filename 传递给 on_file_read_finished 方法
-        self.file_reader.finished.connect(lambda content, encoding: self.on_file_read_finished(content, encoding, filename))
-        self.thread.started.connect(self.file_reader.run)
-        self.thread.start()
+        # Create a FileReader instance
+        reader = FileReader(filename)
+        # Create a FileReaderRunnable instance
+        reader_runnable = FileReaderRunnable(reader)
+        # Connect signals and slots
+        reader.finished.connect(lambda content, encoding: self.on_file_read_finished(content, encoding, filename))
+        # Submit the FileReaderRunnable to the thread pool
+        self.thread = self.threadpool.start(reader_runnable)  # Store a reference to the thread
+
+    def on_file_read_finished(self, content, encoding, filename):
+        # Handle the file reading finished event
+        if content is not None:
+            self.text_edit.setPlainText(content)
+            self.setWindowTitle(f"{self.app_name} - {encoding.upper()} - {filename}")
+            # Record current file name, encoding, and current directory
+            self.current_file_name = filename
+            self.last_modified_time = QFileInfo(filename).lastModified().toMSecsSinceEpoch()
+            self.current_file_encoding = encoding
+            self.work_dir = os.path.dirname(os.path.abspath(filename))
+            # Add open record to recent files
+            self.add_recent_file(filename)
+
+            # Get file extension
+            file_extension = os.path.splitext(filename)[1]
+            highlighter = HighlighterFactory.create_highlighter(file_extension, self.theme)
+            if highlighter:
+                self.highlighter = highlighter
+                self.highlighter.setDocument(self.text_edit.document())
+        else:
+            QMessageBox.warning(self, "Error", "An error occurred while opening the file!")
+
+        # Quit the thread if it's not None
+        if self.thread is not None:
+            self.thread.quit()
+            self.thread.wait()
 
     def add_recent_file(self, file_path):
         # 添加最近打开的文件路径到列表中
@@ -1299,7 +1318,7 @@ class Notepad(QMainWindow):
             self.recent_files.remove(file_path)
         self.recent_files.insert(0, file_path)
         # 如果超过十个文件，则移除列表中最早打开的文件
-        if len(self.recent_files) > 10:
+        if len(self.recent_files) > 20:
             self.recent_files.pop(-1)
         # 更新最近打开的文件菜单
         self.update_recent_files_menu()
