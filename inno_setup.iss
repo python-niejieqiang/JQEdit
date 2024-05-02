@@ -87,7 +87,7 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [Tasks]
-Name: addPath; Description: "将程序添加到PATH环境变量"
+Name: addPath; Description: "将程序添加到Path环境变量"
 
 [Code]
 function ShouldAddToPath: Boolean;

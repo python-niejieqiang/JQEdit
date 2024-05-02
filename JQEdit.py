@@ -643,13 +643,18 @@ class FindReplaceDialog(QDialog, Ui_replace_window):
         super().__init__(parent)
         self.text_edit = text_edit
         self.setupUi(self)
+
+        self.regex = None
+        self.original_text = None
+        self.loop_count = 0
+
         self.findnext_btn.clicked.connect(self.find_next)
         self.replace_btn.clicked.connect(self.replace)
         self.allreplace_btn.clicked.connect(self.replace_all)
         self.cancel_btn.clicked.connect(self.close_dialog)
-        self.regex = None
-        self.original_text = None
-        self.loop_count = 0
+
+        self.search_text.textChanged.connect(self.on_search_text_changed)
+        self.search_text.setFocus()
 
         # 为搜索文本框和替换文本框安装事件过滤器
         self.search_text.installEventFilter(self)
@@ -657,6 +662,11 @@ class FindReplaceDialog(QDialog, Ui_replace_window):
 
         # 设置初始焦点
         self.search_text.setFocus()
+
+        self.search_timer = QTimer()  # 定义定时器
+        self.search_timer.setInterval(200)  # 设置定时器间隔为500毫秒
+        self.search_timer.setSingleShot(True)  # 设置为单次触发
+        self.search_timer.timeout.connect(self.update_search)  # 定时器超时时连接到update_search槽函数
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress and event.key() == Qt.Key_Tab:
@@ -689,6 +699,27 @@ class FindReplaceDialog(QDialog, Ui_replace_window):
             QMessageBox.critical(self, "错误", "无效的正则表达式，请重新输入", QMessageBox.Ok)
             self.regex = None
 
+    def update_search(self):
+        self.find_matches()
+
+    def find_matches(self):
+        self.update_regex()
+        cursor = self.text_edit.textCursor()
+        plain_text = self.text_edit.toPlainText()
+
+        match_iter = self.regex.globalMatch(plain_text)
+
+        while match_iter.hasNext():
+            match = match_iter.next()
+            match_start = match.capturedStart()
+            match_end = match.capturedEnd()
+
+            cursor.setPosition(match_start)
+            cursor.setPosition(match_end, QTextCursor.KeepAnchor)
+            self.text_edit.setTextCursor(cursor)
+            self.text_edit.centerCursor()  # 居中显示光标所在位置
+            return
+
     def find_next(self):
         self.update_regex()
         cursor = self.text_edit.textCursor()
@@ -718,12 +749,14 @@ class FindReplaceDialog(QDialog, Ui_replace_window):
                         cursor.setPosition(last_match.capturedStart())
                         cursor.setPosition(last_match.capturedEnd(), QTextCursor.KeepAnchor)
                         self.text_edit.setTextCursor(cursor)
+                        self.text_edit.centerCursor()  # 居中显示光标所在位置
                         return
                     else:
                         if self.loop_count == 0:
                             QApplication.instance().beep()
                             cursor.setPosition(len(plain_text))
                             self.text_edit.setTextCursor(cursor)
+                            self.text_edit.centerCursor()  # 居中显示光标所在位置
                             return
                         else:
                             self.loop_count = 0
@@ -735,6 +768,7 @@ class FindReplaceDialog(QDialog, Ui_replace_window):
                     cursor.setPosition(match_start)
                     cursor.setPosition(match_end, QTextCursor.KeepAnchor)
                     self.text_edit.setTextCursor(cursor)
+                    self.text_edit.centerCursor()  # 居中显示光标所在位置
                     return
 
         if direction == -1:
@@ -742,11 +776,13 @@ class FindReplaceDialog(QDialog, Ui_replace_window):
                 cursor.setPosition(last_match.capturedStart())
                 cursor.setPosition(last_match.capturedEnd(), QTextCursor.KeepAnchor)
                 self.text_edit.setTextCursor(cursor)
+                self.text_edit.centerCursor()  # 居中显示光标所在位置
             else:
                 if self.loop_count == 0:
                     QApplication.instance().beep()
                     cursor.setPosition(len(plain_text))
                     self.text_edit.setTextCursor(cursor)
+                    self.text_edit.centerCursor()  # 居中显示光标所在位置
                     return
                 else:
                     self.loop_count = 0
@@ -756,6 +792,7 @@ class FindReplaceDialog(QDialog, Ui_replace_window):
                 QApplication.instance().beep()
                 cursor.setPosition(0)
                 self.text_edit.setTextCursor(cursor)
+                self.text_edit.centerCursor()  # 居中显示光标所在位置
                 return
             else:
                 self.loop_count = 0
@@ -801,6 +838,9 @@ class FindReplaceDialog(QDialog, Ui_replace_window):
 
     def close_dialog(self):
         self.close()
+
+    def on_search_text_changed(self):
+        self.search_timer.start()  # 当搜索文本框内容改变时启动定时器
 
 class SelectionReplaceDialog(QDialog, Ui_replace_window):
     def __init__(self,text_edit, parent=None):

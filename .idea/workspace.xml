@@ -4,11 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="代码重构，使用QThreadPool">
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="增加语法高亮切换开关。">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build_exe.bat" beforeDir="false" afterPath="$PROJECT_DIR$/build_exe.bat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/JetBrainsMono-Regular-2.ttf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_setup.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/inno_setup.iss" beforeDir="false" afterPath="$PROJECT_DIR$/inno_setup.iss" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
     </list>
@@ -358,7 +358,15 @@
       <option name="project" value="LOCAL" />
       <updated>1714542592121</updated>
     </task>
-    <option name="localTasksCounter" value="19" />
+    <task id="LOCAL-00019" summary="增加语法高亮切换开关。">
+      <option name="closed" value="true" />
+      <created>1714619299422</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1714619299422</updated>
+    </task>
+    <option name="localTasksCounter" value="20" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -425,7 +433,8 @@
     <MESSAGE value="代码重构，无功能更新，优化选区缩进" />
     <MESSAGE value="增加关键字高亮的粗体与斜体设置，使用内存映射读取文件" />
     <MESSAGE value="代码重构，使用QThreadPool" />
-    <option name="LAST_COMMIT_MESSAGE" value="代码重构，使用QThreadPool" />
+    <MESSAGE value="增加语法高亮切换开关。" />
+    <option name="LAST_COMMIT_MESSAGE" value="增加语法高亮切换开关。" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>
