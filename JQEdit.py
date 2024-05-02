@@ -6,6 +6,7 @@ import os
 import re
 import subprocess
 import sys
+import shlex
 from functools import partial
 
 import chardet
@@ -17,7 +18,7 @@ from PySide6.QtGui import (QAction, QIntValidator, QPalette, QPainter, QSyntaxHi
                            QIcon, QFont,
                            QTextCursor, QDesktopServices, QKeyEvent)
 from PySide6.QtWidgets import (QApplication, QDialog, QWidget, QLabel, QLineEdit, QCheckBox, QVBoxLayout, QPushButton,
-                               QFileDialog, QMainWindow, QFontDialog, QPlainTextEdit,
+                               QFileDialog, QMainWindow, QDialogButtonBox,QFontDialog, QPlainTextEdit,
                                QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
 
 from replace_window_ui import Ui_replace_window
@@ -513,6 +514,24 @@ class CHighlighter(SyntaxHighlighterBase):
             (QRegularExpression(r"\/\*[\s\S]*?\*\/|\/\/.*"), self.comment_format)
         ]
 
+class CppHighlighter(SyntaxHighlighterBase):
+    def __init__(self, parent=None, theme_name="dark"):
+        super().__init__(parent, theme_name=theme_name)
+
+        self.highlight_rules = [
+            (QRegularExpression(r"[\/\*\.\-\+\=\:\|\,\?\&\%]"), self.operator_format),
+            (QRegularExpression(r"\b(asm|auto|bool|break|case|catch|char|class|const|const_cast|"
+                                r"continue|default|delete|do|double|dynamic_cast|else|enum|"
+                                r"explicit|export|extern|false|float|for|friend|goto|if|inline|int|"
+                                r"long|mutable|namespace|new|operator|private|protected|public|"
+                                r"register|reinterpret_cast|return|short|signed|sizeof|static|"
+                                r"static_cast|struct|switch|template|this|throw|true|try|typedef|"
+                                r"typeid|typename|union|unsigned|using|virtual|void|volatile|while)\b"),
+             self.keyword_format),
+            (QRegularExpression(r"\".*?\"|\'.*?\'"), self.string_format),
+            (QRegularExpression(r"\/\/[^\n]*"), self.comment_format)  # 单行注释
+        ]
+
 class SQLHighlighter(SyntaxHighlighterBase):
     def __init__(self, parent=None, theme_name="dark"):
         super().__init__(parent, theme_name=theme_name)
@@ -629,7 +648,8 @@ class HighlighterFactory:
             ".kt": KotlinHighlighter,
             ".sh": BashHighlighter,
             ".html": HTMLHighlighter,
-            ".css": CssHighlighter
+            ".css": CssHighlighter,
+            ".cpp": CssHighlighter
         }
 
         highlighter_class = highlighters.get(file_extension)
@@ -918,6 +938,21 @@ class SelectionReplaceDialog(QDialog, Ui_replace_window):
     def close_dialog(self):
         self.close()
 
+class CommandDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("编辑命令")
+        layout = QVBoxLayout(self)
+        self.command_line_edit = QLineEdit(self)
+        layout.addWidget(self.command_line_edit)
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, parent=self)
+        button_box.accepted.connect(self.accept)
+        button_box.rejected.connect(self.reject)
+        layout.addWidget(button_box)
+
+    def get_command(self):
+        return self.command_line_edit.text()
+
 class Notepad(QMainWindow):
     syntax_highlight_toggled = Signal(bool)
     # 定义主题改变信号
@@ -1195,7 +1230,15 @@ class Notepad(QMainWindow):
             self.encoding_submenu.addAction(self.to_open)
 
         # 工具菜单
-        self.cmd_action = QAction("命令行")
+        self.run_script_action = QAction("运行")
+        self.run_script_action.triggered.connect(self.run_script)
+        self.tool_menu.addAction(self.run_script_action)
+
+        self.edit_cmd_action = QAction("编辑命令", self)
+        self.edit_cmd_action.triggered.connect(self.edit_command)
+        self.tool_menu.addAction(self.edit_cmd_action)
+
+        self.cmd_action = QAction("仅打开命令行")
         self.cmd_action.triggered.connect(self.open_terminal)
         self.tool_menu.addAction(self.cmd_action)
 
@@ -1486,6 +1529,8 @@ class Notepad(QMainWindow):
         self.font.setUnderline(font_properties["underline"])
         self.font.setStrikeOut(font_properties["strikeOut"])
 
+        self.custom_command = settings.get("custom_command","python $1")
+
         self.syntax_highlight_enabled = settings.get("syntax_on",False)
         # 更新主题设置
         self.theme = settings.get("theme", "intellijlight")
@@ -1526,7 +1571,8 @@ class Notepad(QMainWindow):
             "statusbar_shown": self.statusbar_shown,
             "startup_size": {"width": self.width(), "height": self.height(), "start_maximized": self.isMaximized()},
             "show_line_numbers": self.show_line_numbers,
-            "syntax_on": self.syntax_highlight_enabled
+            "syntax_on": self.syntax_highlight_enabled,
+            "custom_command": self.custom_command
         })
 
         # 保存更新后的设置到文件
@@ -1704,11 +1750,15 @@ class Notepad(QMainWindow):
 
     @Slot()
     def help_info(self):
-        help_txt = r"""   1.匹配中文：[\u4e00-\u9fff]+ ,查找框三个选项对应Perl正则中的/i,/m,/s开关)。
-   2.鼠标选中想要的文字，按CTRL-F就可以搜索了.按Ctrl-G 可以跳转行号（虽然还没行号）（类似PyCharmIDE中的查找
-   3.取色器，点击PICK SCREEN COLOR 拾取颜色）
-   4.默认高亮的语言有:Java,Javascript,Kotlin,Perl,Python,Bat,Bash,Xml，C,C++,修改关键字颜色在程序目录下的resources/syntax_highlighter_file.json，修改文本区域颜色在主题对应的qss文件中修改.
-        """
+        help_txt = r"""<ol>
+       <li><span style='font-size:14px'>匹配中文：[\u4e00-\u9fff]+ ,查找框三个选项对应Perl正则中的/i,/m,/s开关)。</span></li>
+       <li><span style='font-size:14px'>鼠标选中想要的文字，按CTRL-F就可以搜索了.按Ctrl-G 可以跳转行号类似PyCharmIDE中的查找</span></li>
+       <li><span style='font-size:14px'>取色器，点击PICK SCREEN COLOR 拾取颜色，那个英文暂时没法汉化</span></li>
+       <li><span style='font-size:14px'>默认高亮的语言有:Java,Javascript,Kotlin,Perl,Python,Bat,Bash,Xml，C,C++,修改关键字颜色在程序目录下的resources/syntax_highlighter_file.json，修改文本区域颜色在主题对应的qss文件中修改。</span></li>
+       <li><span style='font-size:14px'>自定义命令行，$1 表示当前文件名。</span></li>
+       <li><span style='font-size:14px'>设置自动保存在settings.json中</span></li>
+    </ol>"""
+
         QMessageBox.information(self, self.app_name, help_txt)
 
     @Slot()
@@ -1732,6 +1782,25 @@ class Notepad(QMainWindow):
             # 如果有选中的文本，则将其填充到查找对话框的搜索框中
             self.find_replace_dialog.search_text.setText(selected_text)
         self.find_replace_dialog.exec()
+
+    def edit_command(self):
+        dialog = CommandDialog(self)
+        dialog.command_line_edit.setText(self.custom_command)  # 设置输入框中的默认值
+        if dialog.exec():
+            self.custom_command = dialog.get_command()
+            self.save_settings()  # 保存用户自定义命令到json文件中
+
+    def run_script(self):
+        try:
+            # 如果self.work_dir不为空，切换到相应的目录
+            if self.work_dir:
+                os.chdir(self.work_dir)
+            # 对于Windows系统
+            custom_command = self.custom_command.replace("$1", self.current_file_name)
+            cmd_command = f'start cmd /K {custom_command}'
+            subprocess.Popen(cmd_command, shell=True)
+        except Exception as e:
+            QMessageBox.warning(self, "发生错误", str(e))
 
     @Slot()
     def open_terminal(self):

@@ -15,5 +15,6 @@
     },
     "show_line_numbers": true,
     "wrap_line_on": true,
-    "syntax_on": true
+    "syntax_on": true,
+    "custom_command": "python $1"
 }
