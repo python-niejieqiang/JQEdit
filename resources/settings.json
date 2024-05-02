@@ -1,17 +1,19 @@
 {
-    "font_family": "Monaco",
+    "font_family": "\u5fae\u8f6f\u96c5\u9ed1",
     "pointSize": 14,
     "bold": false,
     "italic": false,
     "underline": false,
     "strikeOut": false,
-    "theme": "intellijlight",
+    "theme": "xcode",
     "wrap_lines": true,
     "statusbar_shown": true,
     "startup_size": {
         "width": 800,
         "height": 600,
-        "start_maximized": true
+        "start_maximized": false
     },
-    "show_line_numbers": true
+    "show_line_numbers": true,
+    "wrap_line_on": true,
+    "syntax_on": true
 }

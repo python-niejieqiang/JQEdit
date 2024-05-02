@@ -4,10 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="增加关键字高亮的粗体与斜体设置，使用内存映射读取文件">
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="代码重构，使用QThreadPool">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_setup.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build_exe.bat" beforeDir="false" afterPath="$PROJECT_DIR$/build_exe.bat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/JetBrainsMono-Regular-2.ttf" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
     </list>
@@ -113,7 +114,7 @@
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/迅雷下载/csdn/zh-6.1.jar&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/迅雷下载/JQEdit/resources&quot;,
     &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;
   },
@@ -135,6 +136,15 @@
       <recent name="D:\迅雷下载\JQEdit\dist\JQEdit\_internal\resources" />
       <recent name="D:\迅雷下载\code\resources" />
     </key>
+  </component>
+  <component name="RunAnythingCache">
+    <myKeys>
+      <visibility group="最近的项目" flag="true" />
+      <visibility group="运行 Python 文件" flag="true" />
+      <visibility group="运行 conda 命令" flag="true" />
+      <visibility group="运行 pip 命令" flag="true" />
+      <visibility group="运行配置" flag="true" />
+    </myKeys>
   </component>
   <component name="RunManager" selected="Python.JQEdit">
     <configuration name="1" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
@@ -340,7 +350,15 @@
       <option name="project" value="LOCAL" />
       <updated>1714539578018</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="代码重构，使用QThreadPool">
+      <option name="closed" value="true" />
+      <created>1714542592121</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1714542592121</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -406,7 +424,8 @@
     <MESSAGE value="增加语法高亮配置文件，QSS配置文件，配色方案高度自定义，关键字在不同的主题中有不同表现" />
     <MESSAGE value="代码重构，无功能更新，优化选区缩进" />
     <MESSAGE value="增加关键字高亮的粗体与斜体设置，使用内存映射读取文件" />
-    <option name="LAST_COMMIT_MESSAGE" value="增加关键字高亮的粗体与斜体设置，使用内存映射读取文件" />
+    <MESSAGE value="代码重构，使用QThreadPool" />
+    <option name="LAST_COMMIT_MESSAGE" value="代码重构，使用QThreadPool" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>

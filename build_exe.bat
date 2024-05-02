@@ -1,5 +1,5 @@
 @echo off
-REM 检查系统是否安装 Python
+REM 检查系统是否安装 Python OK
 python --version > nul 2>&1
 IF %ERRORLEVEL% NEQ 0 (
     echo Python 未安装，请先安装 Python。

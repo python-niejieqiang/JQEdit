@@ -501,7 +501,7 @@ class CHighlighter(SyntaxHighlighterBase):
 
         self.highlight_rules = [
             (QRegularExpression(r"[\/\*\.\-\+\=\:\|\,\?\&\%]"), self.operator_format),
-            (QRegularExpression(r"\b(asm|auto|bool|break|case|catch|char|class|const|"
+            (QRegularExpression(r"\b(asm|include|auto|bool|break|case|catch|char|class|const|"
                                 r"const_cast|continue|default|delete|do|double|dynamic_cast|"
                                 r"else|enum|explicit|export|extern|false|float|for|friend|goto|"
                                 r"if|inline|int|long|mutable|namespace|new|operator|private|"
@@ -599,7 +599,6 @@ class CssHighlighter(SyntaxHighlighterBase):
             # 字符串
             (QRegularExpression(r"(\'.*?\')|(\".*?\")"), self.string_format),
         ]
-
 
 class JavaScriptHighlighter(SyntaxHighlighterBase):
     def __init__(self, parent=None, theme_name="dark"):
@@ -880,6 +879,7 @@ class SelectionReplaceDialog(QDialog, Ui_replace_window):
         self.close()
 
 class Notepad(QMainWindow):
+    syntax_highlight_toggled = Signal(bool)
     # 定义主题改变信号
     theme_changed = Signal(str)
     _instance = None
@@ -897,9 +897,10 @@ class Notepad(QMainWindow):
         self.resize(800,600)
         # 用来记录文件编码，名字
         self.current_file_encoding = None
-        self.highlighter = None
         # 记录当前文件名
         self.current_file_name = ""
+        # 记录当前文件后缀，用于判断使用何种语法高亮
+        self.current_file_extension = ""
         # 记录文件所在目录名，打开命令行时就可以切换到该目录
         self.desktop_dir = os.path.join(os.path.expanduser('~'), 'Desktop')
         self.work_dir = self.desktop_dir
@@ -914,7 +915,9 @@ class Notepad(QMainWindow):
         self.gerrylight_style_file = os.path.join(resource_path, "gerrylight_style.qss")
         self.xcode_style_file = os.path.join(resource_path,"xcode_style.qss")
 
+        self.highlighter = None
         self.theme_changed.connect(self.on_theme_changed)  # 连接主题改变信号到槽函数
+        self.syntax_highlight_toggled.connect(self.toggle_syntax_highlight)
 
         # 读取settings.json文件
         self.settings_file = os.path.join(resource_path, "settings.json")
@@ -1103,8 +1106,16 @@ class Notepad(QMainWindow):
         self.line_numbers_action.triggered.connect(self.toggle_line_numbers)
         self.theme_menu.addAction(self.line_numbers_action)
 
+        # 假设你已经在主题菜单下添加了一个名为“Syntax Highlighting”的复选框动作
+        self.syntax_highlight_action = QAction("语法高亮", self, checkable=True)
+        self.syntax_highlight_action.setChecked(self.syntax_highlight_enabled)
+        self.syntax_highlight_action.triggered.connect(self.toggle_syntax_highlight)
+        self.theme_menu.addAction(self.syntax_highlight_action)
+
+        # 将语法高亮动作添加到主题菜单
+        self.theme_menu.addAction(self.syntax_highlight_action)
         self.wrap_action = QAction("自动换行(&W)", self, checkable=True)
-        self.wrap_action.setChecked(self.wrap_lines)
+        self.wrap_action.setChecked(self.wrap_line_on)
         self.wrap_action.setShortcut("Alt+W")
         self.wrap_action.triggered.connect(self.wrap_line_toggle)
         self.theme_menu.addAction(self.wrap_action)
@@ -1161,9 +1172,39 @@ class Notepad(QMainWindow):
         self.tool_menu.addAction(self.help_action)
 
     def on_theme_changed(self, new_theme):
-        # 获取当前文件的扩展名
-        file_extension = os.path.splitext(self.current_file_name)[1]
-        self.reload_highlighter(new_theme, file_extension)
+        self.theme = new_theme
+        if self.syntax_highlight_enabled:
+            self.reload_highlighter(new_theme, self.current_file_extension)
+
+    def reload_highlighter(self, new_theme, file_extension):
+        if self.highlighter:
+            self.highlighter.deleteLater()
+            self.highlighter = None
+
+        if not self.syntax_highlight_enabled:
+            return
+
+        highlighter = HighlighterFactory.create_highlighter(file_extension, new_theme)
+        if highlighter:
+            self.highlighter = highlighter
+            self.highlighter.setDocument(self.text_edit.document())
+
+    def toggle_syntax_highlight(self, enable=None):
+        if enable is None:
+            # 如果没有传递enable参数，则表示从动作中切换状态
+            self.syntax_highlight_enabled = not self.syntax_highlight_enabled
+            self.syntax_highlight_action.setChecked(self.syntax_highlight_enabled)
+        else:
+            # 如果传递了enable参数，则根据参数值设置状态
+            self.syntax_highlight_enabled = enable
+
+        if self.syntax_highlight_enabled:
+            self.reload_highlighter(self.theme, self.current_file_extension)
+        else:
+            if self.highlighter:
+                self.highlighter.deleteLater()
+                self.highlighter = None
+        self.save_settings()
 
     def toggle_line_numbers(self, checked):
         self.text_edit.update_line_number_display(checked)
@@ -1197,6 +1238,7 @@ class Notepad(QMainWindow):
             event.ignore()  # 用户选择取消保存，不关闭窗口
         self.threadpool.clear()
         event.accept()
+
     def keyPressEvent(self, event: QKeyEvent):
         # 处理组合键 Ctrl+F
         if event.key() == Qt.Key_F and event.modifiers() & Qt.ControlModifier:
@@ -1290,20 +1332,18 @@ class Notepad(QMainWindow):
         if content is not None:
             self.text_edit.setPlainText(content)
             self.setWindowTitle(f"{self.app_name} - {encoding.upper()} - {filename}")
-            # Record current file name, encoding, and current directory
             self.current_file_name = filename
             self.last_modified_time = QFileInfo(filename).lastModified().toMSecsSinceEpoch()
             self.current_file_encoding = encoding
             self.work_dir = os.path.dirname(os.path.abspath(filename))
-            # Add open record to recent files
+            # 添加打开记录到最近打开
             self.add_recent_file(filename)
 
             # Get file extension
-            file_extension = os.path.splitext(filename)[1]
-            highlighter = HighlighterFactory.create_highlighter(file_extension, self.theme)
-            if highlighter:
-                self.highlighter = highlighter
-                self.highlighter.setDocument(self.text_edit.document())
+            self.current_file_extension = os.path.splitext(filename)[1]
+
+            if self.syntax_highlight_enabled:
+                self.reload_highlighter(self.theme, self.current_file_extension)
         else:
             QMessageBox.warning(self, "Error", "An error occurred while opening the file!")
 
@@ -1361,7 +1401,7 @@ class Notepad(QMainWindow):
             json.dump(self.recent_files, f)
 
     def apply_wrap_status(self):
-        if self.wrap_lines:
+        if self.wrap_line_on:
             self.text_edit.setLineWrapMode(QPlainTextEdit.WidgetWidth)
         else:
             self.text_edit.setLineWrapMode(QPlainTextEdit.NoWrap)
@@ -1370,13 +1410,6 @@ class Notepad(QMainWindow):
             self.status_bar.show()
         else:
             self.status_bar.hide()
-
-    def reload_highlighter(self, new_theme,file_extension):
-        # 当主题改变时重新加载高亮器
-        highlighter = HighlighterFactory.create_highlighter(file_extension, new_theme)
-        if highlighter:
-            self.highlighter = highlighter
-            self.highlighter.setDocument(self.text_edit.document())
 
     def apply_theme(self):
         if self.theme == "intellijlight":
@@ -1397,7 +1430,7 @@ class Notepad(QMainWindow):
             settings = {}  # 如果文件不存在，创建一个空字典
 
         font_properties = {
-            "font_family": "Courier New",
+            "font_family": "Microsoft Yahei",
             "pointSize": 12,
             "bold": False,
             "italic": False,
@@ -1413,11 +1446,12 @@ class Notepad(QMainWindow):
         self.font.setUnderline(font_properties["underline"])
         self.font.setStrikeOut(font_properties["strikeOut"])
 
+        self.syntax_highlight_enabled = settings.get("syntax_on",False)
         # 更新主题设置
         self.theme = settings.get("theme", "intellijlight")
 
         # 更新状态栏，自动换行设置
-        self.wrap_lines = settings.get("wrap_lines", True)
+        self.wrap_line_on = settings.get("wrap_line_on", True)
         self.statusbar_shown = settings.get("statusbar_shown", True)
         #读取是否显示行号
         self.show_line_numbers = settings.get("show_line_numbers", True)
@@ -1448,10 +1482,11 @@ class Notepad(QMainWindow):
             "underline": self.font.underline(),
             "strikeOut": self.font.strikeOut(),
             "theme": self.theme,
-            "wrap_lines": self.wrap_lines,
+            "wrap_line_on": self.wrap_line_on,
             "statusbar_shown": self.statusbar_shown,
             "startup_size": {"width": self.width(), "height": self.height(), "start_maximized": self.isMaximized()},
-            "show_line_numbers": self.show_line_numbers
+            "show_line_numbers": self.show_line_numbers,
+            "syntax_on": self.syntax_highlight_enabled
         })
 
         # 保存更新后的设置到文件
@@ -1584,17 +1619,20 @@ class Notepad(QMainWindow):
         width_edit.setEnabled(not state)
         height_edit.setEnabled(not state)
 
+    # 在save_startup_size方法中
     def save_startup_size(self, dialog, width, height, is_maximized):
         try:
-            if is_maximized:
-                width = 800
-                height = 600
-            else:
-                width = int(width)
-                height = int(height)
+            width = int(width)
+            height = int(height)
         except ValueError:
             QMessageBox.critical(self, "错误", "请输入有效的数字", QMessageBox.Ok)
             return
+
+        # 如果用户选择了最大化，则设置窗口尺寸为屏幕尺寸，并记录最大化状态
+        if is_maximized:
+            self.showMaximized()
+        else:
+            self.resize(width, height)
 
         # 保存启动窗口尺寸及最大化状态到 settings.json
         with open(self.settings_file, 'r+') as f:
@@ -1629,7 +1667,7 @@ class Notepad(QMainWindow):
         help_txt = r"""   1.匹配中文：[\u4e00-\u9fff]+ ,查找框三个选项对应Perl正则中的/i,/m,/s开关)。
    2.鼠标选中想要的文字，按CTRL-F就可以搜索了.按Ctrl-G 可以跳转行号（虽然还没行号）（类似PyCharmIDE中的查找
    3.取色器，点击PICK SCREEN COLOR 拾取颜色）
-   4.默认高亮的语言有:Java,Javascript,Kotlin,Perl,Python,Bat,Bash,Xml，C,C++,修改关键字颜色在程序目录下的res/syntax_highlighter_file.json，修改文本区域颜色在主题对应的qss文件中修改.
+   4.默认高亮的语言有:Java,Javascript,Kotlin,Perl,Python,Bat,Bash,Xml，C,C++,修改关键字颜色在程序目录下的resources/syntax_highlighter_file.json，修改文本区域颜色在主题对应的qss文件中修改.
         """
         QMessageBox.information(self, self.app_name, help_txt)
 
@@ -1775,7 +1813,7 @@ class Notepad(QMainWindow):
 
     @Slot()
     def wrap_line_toggle(self):
-        self.wrap_lines = self.wrap_action.isChecked()
+        self.wrap_line_on = self.wrap_action.isChecked()
         self.apply_wrap_status()
         self.save_settings()
 
@@ -1833,7 +1871,7 @@ class Notepad(QMainWindow):
             cursor.setPosition(selection_start)
             num = 0
             comment_delta = 0
-            while cursor.position() < selection_end:
+            while cursor.position() < selection_end and not cursor.atEnd():
                 cursor.movePosition(QTextCursor.StartOfLine)
                 if cursor.block().text().startswith(comment_char):
                     # 如果行已注释，则去除注释
@@ -1846,10 +1884,6 @@ class Notepad(QMainWindow):
                     cursor.insertText(f"{comment_char}")
                     num += 1
                     comment_delta += len(comment_char)  # 增加注释符号的长度
-
-                # # 检查是否到达文本末尾，如果到达，退出循环
-                if cursor.atEnd():
-                    break
 
                 cursor.movePosition(QTextCursor.NextBlock)
 
