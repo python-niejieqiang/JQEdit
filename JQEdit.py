@@ -6,10 +6,10 @@ import os
 import re
 import subprocess
 import sys
-import shlex
 from functools import partial
 
 import chardet
+import pyperclip
 from PySide6.QtCore import (QTranslator, QFile, QRunnable, QThreadPool, QObject, QTextStream, QTimer, QSize, QFileInfo,
                             Qt, QEvent, QRect,
                             Signal, QUrl, Slot,
@@ -18,7 +18,7 @@ from PySide6.QtGui import (QAction, QIntValidator, QPalette, QPainter, QSyntaxHi
                            QIcon, QFont,
                            QTextCursor, QDesktopServices, QKeyEvent)
 from PySide6.QtWidgets import (QApplication, QDialog, QWidget, QLabel, QLineEdit, QCheckBox, QVBoxLayout, QPushButton,
-                               QFileDialog, QMainWindow, QDialogButtonBox,QFontDialog, QPlainTextEdit,
+                               QFileDialog, QMainWindow, QDialogButtonBox, QFontDialog, QPlainTextEdit,
                                QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
 
 from replace_window_ui import Ui_replace_window
@@ -373,7 +373,6 @@ class FileReader(QObject):
         try:
             with open(self.filename, "r") as file:
                 with mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as mm:
-                    # 读取前100KB用于编码检测
                     content_for_detection = mm.read(FILE_SIZE_THRESHOLD)
                     encoding_info = chardet.detect(content_for_detection)
                     if encoding_info is None:
@@ -686,7 +685,13 @@ class FindReplaceDialog(QDialog, Ui_replace_window):
         self.search_timer = QTimer()  # 定义定时器
         self.search_timer.setInterval(200)  # 设置定时器间隔为500毫秒
         self.search_timer.setSingleShot(True)  # 设置为单次触发
-        self.search_timer.timeout.connect(self.update_search)  # 定时器超时时连接到update_search槽函数
+        self.search_timer.timeout.connect(self.update_search)
+
+        # 如果有选中的文本，则将其填充到查找对话框的搜索框中
+        selected_text = self.text_edit.textCursor().selectedText()
+        if selected_text:
+            self.search_text.setText(selected_text)
+        self.show()
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress and event.key() == Qt.Key_Tab:
@@ -890,6 +895,7 @@ class SelectionReplaceDialog(QDialog, Ui_replace_window):
 
         # 设置初始焦点
         self.search_text.setFocus()
+        self.show()
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress and event.key() == Qt.Key_Tab:
@@ -937,6 +943,32 @@ class SelectionReplaceDialog(QDialog, Ui_replace_window):
 
     def close_dialog(self):
         self.close()
+
+class CustomColorDialog(QColorDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setOption(QColorDialog.DontUseNativeDialog)  # 禁用原生对话框以自定义界面
+
+        self.copy_html_button = QPushButton("复制HTML颜色", self)
+        self.copy_rgb_button = QPushButton("复制RGB颜色", self)
+
+        # 设置按钮宽度
+        self.copy_rgb_button.setGeometry(135, 363, 100, 23)
+        self.copy_html_button.setGeometry(245, 363, 100, 23)
+
+        # 连接按钮信号
+        self.copy_html_button.clicked.connect(self.copy_to_clipboard_html)
+        self.copy_rgb_button.clicked.connect(self.copy_to_clipboard_rgb)
+
+    def copy_to_clipboard_html(self):
+        color = self.currentColor()
+        html_color = color.name()
+        pyperclip.copy(html_color)
+
+    def copy_to_clipboard_rgb(self):
+        color = self.currentColor()
+        rgb_color = f"rgb({color.red()}, {color.green()}, {color.blue()})"
+        pyperclip.copy(rgb_color)
 
 class CommandDialog(QDialog):
     def __init__(self, parent=None):
@@ -1047,7 +1079,6 @@ class Notepad(QMainWindow):
         self.tool_menu = QMenu("工具", self.menu_bar)
         self.menu_bar.addMenu(self.tool_menu)
 
-        # 文件菜单
         # 添加最近打开的文件子菜单
         self.recent_files_menu = self.file_menu.addMenu("最近打开")
         # 添加清空记录的菜单项
@@ -1308,7 +1339,6 @@ class Notepad(QMainWindow):
         selected_text = self.text_edit.textCursor().selectedText()
         if selected_text:
             selection_replace_dialog = SelectionReplaceDialog(self.text_edit, self)
-            selection_replace_dialog.exec()
         else:
             QMessageBox.warning(self, "错误", "先选中文本才能替换！")
             pass
@@ -1773,15 +1803,7 @@ class Notepad(QMainWindow):
 
     @Slot()
     def display_replace(self):
-        # 点击替换弹出查找对话框,如果有选中文字则直接显示至搜索框
-        # 获取选中的文本
-        # 创建查找对话框的实例,暂时不显示,点击查找替换才显示在display_replace函数中使用
         self.find_replace_dialog = FindReplaceDialog(self.text_edit, self)
-        selected_text = self.text_edit.textCursor().selectedText()
-        if selected_text:
-            # 如果有选中的文本，则将其填充到查找对话框的搜索框中
-            self.find_replace_dialog.search_text.setText(selected_text)
-        self.find_replace_dialog.exec()
 
     def edit_command(self):
         dialog = CommandDialog(self)
@@ -2063,8 +2085,10 @@ class Notepad(QMainWindow):
 
     @Slot()
     def pick_color(self):
-        # 弹出颜色选择器
-        QColorDialog.getColor(Qt.white, self, "点击 Pick Screen Color 拾取颜色")
+        dialog = CustomColorDialog()
+        dialog.show()  # 使用show()方法显示非模态对话框
+        if dialog.exec():
+            selected_color = dialog.currentColor()
 
 #======================================================================================
 def get_file_argument():
