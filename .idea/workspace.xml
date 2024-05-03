@@ -4,14 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="添加一键运行当前程序，可自定义命令">
-      <change afterPath="$PROJECT_DIR$/cprofile_and_piplist.py" afterDir="false" />
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="取色器添加复制颜色按钮，优化查找替换框体验">
+      <change afterPath="$PROJECT_DIR$/resources/clipboard_history.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_setup.exe" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cprofile.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -117,7 +115,7 @@
     "git-widget-placeholder": "master",
     "last_opened_file_path": "D:/迅雷下载/JQEdit/resources",
     "run.code.analysis.last.selected.profile": "pProject Default",
-    "settings.editor.selected.configurable": "terminal"
+    "settings.editor.selected.configurable": "com.gitee.ui.GiteeSettingsConfigurable"
   },
   "keyToStringList": {
     "ChangesTree.GroupingKeys": [
@@ -147,7 +145,29 @@
       <visibility group="运行配置" flag="true" />
     </myKeys>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python.JQEdit">
+    <configuration name="1" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="JQEdit" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/1.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="JQEdit" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="JQEdit" />
       <option name="ENV_FILES" value="" />
@@ -170,9 +190,14 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <list>
+      <item itemvalue="Python.1" />
+      <item itemvalue="Python.JQEdit" />
+    </list>
     <recent_temporary>
       <list>
         <item itemvalue="Python.JQEdit" />
+        <item itemvalue="Python.1" />
       </list>
     </recent_temporary>
   </component>
@@ -360,7 +385,15 @@
       <option name="project" value="LOCAL" />
       <updated>1714651107465</updated>
     </task>
-    <option name="localTasksCounter" value="22" />
+    <task id="LOCAL-00022" summary="取色器添加复制颜色按钮，优化查找替换框体验">
+      <option name="closed" value="true" />
+      <created>1714740262004</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1714740262004</updated>
+    </task>
+    <option name="localTasksCounter" value="23" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -430,7 +463,8 @@
     <MESSAGE value="增加语法高亮切换开关。" />
     <MESSAGE value="查找替换功能中，搜索实时显示结果" />
     <MESSAGE value="添加一键运行当前程序，可自定义命令" />
-    <option name="LAST_COMMIT_MESSAGE" value="添加一键运行当前程序，可自定义命令" />
+    <MESSAGE value="取色器添加复制颜色按钮，优化查找替换框体验" />
+    <option name="LAST_COMMIT_MESSAGE" value="取色器添加复制颜色按钮，优化查找替换框体验" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>

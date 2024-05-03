@@ -14,10 +14,10 @@ from PySide6.QtCore import (QTranslator, QFile, QRunnable, QThreadPool, QObject,
                             Qt, QEvent, QRect,
                             Signal, QUrl, Slot,
                             QRegularExpression)
-from PySide6.QtGui import (QAction, QIntValidator, QPalette, QPainter, QSyntaxHighlighter, QColor, QTextCharFormat,
+from PySide6.QtGui import (QAction, QIntValidator, QKeySequence,QShortcut,QPalette, QPainter, QSyntaxHighlighter, QColor, QTextCharFormat,
                            QIcon, QFont,
                            QTextCursor, QDesktopServices, QKeyEvent)
-from PySide6.QtWidgets import (QApplication, QDialog, QWidget, QLabel, QLineEdit, QCheckBox, QVBoxLayout, QPushButton,
+from PySide6.QtWidgets import (QApplication, QListWidget,QSplitter,QDialog, QHBoxLayout,QWidget, QLabel, QLineEdit, QCheckBox, QVBoxLayout, QPushButton,
                                QFileDialog, QMainWindow, QDialogButtonBox, QFontDialog, QPlainTextEdit,
                                QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
 
@@ -985,6 +985,96 @@ class CommandDialog(QDialog):
     def get_command(self):
         return self.command_line_edit.text()
 
+class ClipboardManager:
+    def __init__(self, history_file):
+        self.history_file = history_file
+        self.history = []
+
+        self.load_history()
+
+    def add_to_history(self, content):
+        if content in self.history:
+            self.history.remove(content)  # 如果内容已经存在，先移除，确保不重复
+        self.history.insert(0, content)  # 插入到列表的第一个位置
+
+        # 将更新后的历史记录保存到文件
+        self.save_history()
+
+    def save_history(self):
+        with open(self.history_file, 'w') as f:
+            json.dump(self.history, f)
+
+    def load_history(self):
+        try:
+            with open(self.history_file, 'r') as f:
+                self.history = json.load(f)
+        except FileNotFoundError:
+            pass
+
+class PasteDialog(QDialog):
+    def __init__(self, clipboard_manager, parent=None):
+        super().__init__(parent)
+        self.clipboard_manager = clipboard_manager
+        self.setWindowTitle("剪贴板历史记录")
+        self.setMinimumSize(400, 300)
+
+        main_layout = QVBoxLayout(self)
+
+        self.clipboard_list = QListWidget()
+        self.clipboard_list.setMinimumHeight(200)
+        self.clipboard_list.setUniformItemSizes(True)  # 设置每个条目大小相同
+        self.populate_clipboard_list()
+        main_layout.addWidget(self.clipboard_list)
+
+        self.detail_label = QLabel("详细内容:")
+        main_layout.addWidget(self.detail_label)
+
+        self.detail_text = QPlainTextEdit()
+        self.detail_text.setMinimumHeight(100)
+        font = QFont()
+        font.setPointSize(12)  # 设置字体大小
+        self.detail_text.setFont(font)  # 设置字体
+        main_layout.addWidget(self.detail_text)
+
+        button_layout = QHBoxLayout()
+        self.paste_button = QPushButton("粘贴")
+        self.paste_button.setFixedWidth(80)  # 设置按钮长度为80
+        self.paste_button.clicked.connect(self.paste_selected)
+        button_layout.addWidget(self.paste_button)
+
+        self.cancel_button = QPushButton("取消")
+        self.cancel_button.setFixedWidth(80)  # 设置按钮长度为80
+        self.cancel_button.clicked.connect(self.close)
+        button_layout.addWidget(self.cancel_button)
+
+        main_layout.addLayout(button_layout)
+
+        self.clipboard_list.currentItemChanged.connect(self.update_detail_text)
+
+    def populate_clipboard_list(self):
+        self.clipboard_list.clear()
+        for idx, item in enumerate(self.clipboard_manager.history):
+            if len(item) > 20:
+                item_display = item[:20] + "..."
+            else:
+                item_display = item
+            item_display = f"{idx + 1}: {item_display}"  # 添加行号
+            self.clipboard_list.addItem(item_display)
+
+    def update_detail_text(self, current, previous):
+        if current:
+            self.detail_text.setPlainText(self.clipboard_manager.history[self.clipboard_list.currentRow()])
+
+    def paste_selected(self):
+        selected_row = self.clipboard_list.currentRow()
+        if selected_row != -1:
+            content = self.clipboard_manager.history[selected_row]
+            clipboard = QApplication.clipboard()
+            clipboard.setText(content)
+
+            # 将内容粘贴到光标处
+            self.parent().text_edit.textCursor().insertText(content)
+
 class Notepad(QMainWindow):
     syntax_highlight_toggled = Signal(bool)
     # 定义主题改变信号
@@ -1031,6 +1121,12 @@ class Notepad(QMainWindow):
         # 读取并设置启动窗口尺寸,主题字体等设置
         self.load_settings()
 
+        self.clipboard_manager = ClipboardManager(os.path.join(resource_path,"clipboard_history.json"))
+        self.clipboard = QApplication.clipboard()
+        self.clipboard.dataChanged.connect(self.on_clipboard_changed)
+
+        self.paste_dialog = None
+
         # UI初始化，菜单栏以及编辑器，状态栏，各个子菜单，自定义的右键菜单
         self.setup_menu_and_actions()
 
@@ -1055,6 +1151,9 @@ class Notepad(QMainWindow):
 
         self.text_edit = TextEditor(self)
         self.setCentralWidget(self.text_edit)
+
+        paste_shortcut = QShortcut(QKeySequence(Qt.CTRL | Qt.SHIFT |Qt.Key_V), self)
+        paste_shortcut.activated.connect(self.show_paste_dialog)
 
         # 添加底部状态栏
         self.status_bar = QStatusBar()
@@ -1273,6 +1372,10 @@ class Notepad(QMainWindow):
         self.cmd_action.triggered.connect(self.open_terminal)
         self.tool_menu.addAction(self.cmd_action)
 
+        self.paste_history_action = QAction("剪贴板")
+        self.paste_history_action.triggered.connect(self.show_paste_dialog)
+        self.tool_menu.addAction(self.paste_history_action)
+
         self.color_picker_action = QAction("取色器")
         self.color_picker_action.triggered.connect(self.pick_color)
         self.tool_menu.addAction(self.color_picker_action)
@@ -1351,6 +1454,16 @@ class Notepad(QMainWindow):
             event.ignore()  # 用户选择取消保存，不关闭窗口
         self.threadpool.clear()
         event.accept()
+
+    def on_clipboard_changed(self):
+        clipboard_text = self.clipboard.text()
+        if clipboard_text:
+            self.clipboard_manager.add_to_history(clipboard_text)
+
+    def show_paste_dialog(self):
+        if not self.paste_dialog or not self.paste_dialog.isVisible():
+            self.paste_dialog = PasteDialog(self.clipboard_manager, self)
+            self.paste_dialog.show()
 
     def keyPressEvent(self, event: QKeyEvent):
         # 处理组合键 Ctrl+F
