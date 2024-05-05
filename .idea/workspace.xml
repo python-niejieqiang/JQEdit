@@ -5,11 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="取色器添加复制颜色按钮，优化查找替换框体验">
-      <change afterPath="$PROJECT_DIR$/resources/clipboard_history.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_setup.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cprofile_and_piplist.py" beforeDir="false" afterPath="$PROJECT_DIR$/cprofile_and_piplist.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/clipboard_history.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/clipboard_history.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -83,7 +85,6 @@
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/1.py" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/JQEdit.py" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/cprofile.py" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/replace_window_ui.py" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/trim.py" root0="SKIP_HIGHLIGHTING" />
   </component>
@@ -115,7 +116,7 @@
     "git-widget-placeholder": "master",
     "last_opened_file_path": "D:/迅雷下载/JQEdit/resources",
     "run.code.analysis.last.selected.profile": "pProject Default",
-    "settings.editor.selected.configurable": "com.gitee.ui.GiteeSettingsConfigurable"
+    "settings.editor.selected.configurable": "editor.preferences.fonts.default"
   },
   "keyToStringList": {
     "ChangesTree.GroupingKeys": [

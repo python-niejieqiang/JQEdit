@@ -14,10 +14,12 @@ from PySide6.QtCore import (QTranslator, QFile, QRunnable, QThreadPool, QObject,
                             Qt, QEvent, QRect,
                             Signal, QUrl, Slot,
                             QRegularExpression)
-from PySide6.QtGui import (QAction, QIntValidator, QKeySequence,QShortcut,QPalette, QPainter, QSyntaxHighlighter, QColor, QTextCharFormat,
+from PySide6.QtGui import (QAction, QIntValidator, QKeySequence, QShortcut, QPalette, QPainter, QSyntaxHighlighter,
+                           QColor, QTextCharFormat,
                            QIcon, QFont,
                            QTextCursor, QDesktopServices, QKeyEvent)
-from PySide6.QtWidgets import (QApplication, QListWidget,QSplitter,QDialog, QHBoxLayout,QWidget, QLabel, QLineEdit, QCheckBox, QVBoxLayout, QPushButton,
+from PySide6.QtWidgets import (QApplication, QListWidget, QDialog, QHBoxLayout, QWidget, QLabel, QLineEdit, QCheckBox,
+                               QVBoxLayout, QPushButton,
                                QFileDialog, QMainWindow, QDialogButtonBox, QFontDialog, QPlainTextEdit,
                                QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
 
@@ -322,6 +324,7 @@ class TextEditor(QPlainTextEdit):
         self.empty_context = QAction("清空行", self)
         self.empty_context.triggered.connect(self.notepad.empty_line)
         self.context_menu.addAction(self.empty_context)
+
         # 添加菜单分割线
         self.context_menu.addSeparator()
 
@@ -339,6 +342,8 @@ class TextEditor(QPlainTextEdit):
 
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_contextmenu)
+
+
 
     @Slot()
     def search_in_baidu(self):
@@ -1016,7 +1021,7 @@ class PasteDialog(QDialog):
         super().__init__(parent)
         self.clipboard_manager = clipboard_manager
         self.setWindowTitle("剪贴板历史记录")
-        self.setMinimumSize(400, 300)
+        self.setFixedSize(380, 500)
 
         main_layout = QVBoxLayout(self)
 
@@ -1030,6 +1035,7 @@ class PasteDialog(QDialog):
         main_layout.addWidget(self.detail_label)
 
         self.detail_text = QPlainTextEdit()
+        self.detail_text.setReadOnly(True)
         self.detail_text.setMinimumHeight(100)
         font = QFont()
         font.setPointSize(12)  # 设置字体大小
@@ -1054,8 +1060,9 @@ class PasteDialog(QDialog):
     def populate_clipboard_list(self):
         self.clipboard_list.clear()
         for idx, item in enumerate(self.clipboard_manager.history):
-            if len(item) > 20:
-                item_display = item[:20] + "..."
+            if len(item) > 15:
+                non_space_chars = [char for char in item[:15] if not char.isspace()]
+                item_display = ''.join(non_space_chars) + "..."
             else:
                 item_display = item
             item_display = f"{idx + 1}: {item_display}"  # 添加行号
@@ -1223,20 +1230,63 @@ class Notepad(QMainWindow):
         # 添加菜单分割线
         self.edit_menu.addSeparator()
 
-        self.emptyline_action = QAction(self.tr("清空行(&M)"), self)
+        self.word_menu = self.edit_menu.addMenu("单词")
+        self.delete_word_right_action = QAction("右删单词", self)
+        self.delete_word_right_action.setShortcut(QKeySequence("Alt+D"))
+        self.delete_word_right_action.triggered.connect(self.delete_word_right)
+        self.word_menu.addAction(self.delete_word_right_action)
+
+        self.delete_word_left_action = QAction("左删单词", self)
+        self.delete_word_left_action.setShortcut(QKeySequence("Alt+Del"))
+        self.delete_word_left_action.triggered.connect(self.delete_word_left)
+        self.word_menu.addAction(self.delete_word_left_action)
+
+        self.move_word_right_action = QAction("前进一个单词", self)
+        self.move_word_right_action.setShortcut(QKeySequence("Alt+F"))
+        self.move_word_right_action.triggered.connect(self.move_word_right)
+        self.word_menu.addAction(self.move_word_right_action)
+
+        self.move_word_left_action = QAction("后退一个单词", self)
+        self.move_word_left_action.setShortcut(QKeySequence("Alt+B"))
+        self.move_word_left_action.triggered.connect(self.move_word_left)
+        self.word_menu.addAction(self.move_word_left_action)
+        self.edit_menu.addMenu(self.word_menu)
+
+        self.case_menu = self.edit_menu.addMenu("大小写")
+        self.to_uppercase_action = QAction("转换成大写", self)
+        self.to_uppercase_action.triggered.connect(self.to_uppercase)
+        self.case_menu.addAction(self.to_uppercase_action)
+
+        self.to_lowercase_action = QAction("转换成小写", self)
+        self.to_lowercase_action.triggered.connect(self.to_lowercase)
+        self.case_menu.addAction(self.to_lowercase_action)
+
+        self.capitalize_action = QAction("首字母大写", self)
+        self.capitalize_action.triggered.connect(self.capitalize_text)
+        self.case_menu.addAction(self.capitalize_action)
+
+        self.toggle_case_action = QAction("大小写互换", self)
+        self.toggle_case_action.triggered.connect(self.toggle_case)
+        self.case_menu.addAction(self.toggle_case_action)
+        self.edit_menu.addMenu(self.case_menu)
+
+
+        self.line_menu = self.edit_menu.addMenu("行")
+        self.emptyline_action = QAction(self.tr("清空行"), self)
         self.emptyline_action.setShortcut("Ctrl+K")
         self.emptyline_action.triggered.connect(self.empty_line)
-        self.edit_menu.addAction(self.emptyline_action)
+        self.line_menu.addAction(self.emptyline_action)
 
-        self.copyline_action = QAction(self.tr("复制行(&H)"), self)
+        self.copyline_action = QAction(self.tr("复制行"), self)
         self.copyline_action.setShortcut("Alt+C")
         self.copyline_action.triggered.connect(self.copy_line)
-        self.edit_menu.addAction(self.copyline_action)
+        self.line_menu.addAction(self.copyline_action)
 
-        self.del_line_action = QAction(self.tr("删除行(&D)"), self)
-        self.del_line_action.setShortcut("Alt+D")
+        self.del_line_action = QAction(self.tr("删除行"), self)
+        self.del_line_action.setShortcut("Ctrl+Del")
         self.del_line_action.triggered.connect(self.delete_line)
-        self.edit_menu.addAction(self.del_line_action)
+        self.line_menu.addAction(self.del_line_action)
+        self.edit_menu.addMenu(self.line_menu)
 
         self.comment_action = QAction(self.tr("切换注释(&S)"), self)
         self.comment_action.setShortcut("Ctrl+/")
@@ -2191,6 +2241,61 @@ class Notepad(QMainWindow):
             cursor.insertText("\n")
             # 更新文本编辑器的光标位置
         self.text_edit.setTextCursor(cursor)
+
+    def delete_word_right(self):
+        cursor = self.text_edit.textCursor()
+        cursor.movePosition(QTextCursor.NextWord, QTextCursor.KeepAnchor)
+        cursor.removeSelectedText()
+
+    def delete_word_left(self):
+        cursor = self.text_edit.textCursor()
+        cursor.movePosition(QTextCursor.PreviousWord, QTextCursor.KeepAnchor)
+        cursor.removeSelectedText()
+
+    def move_word_right(self):
+        cursor = self.text_edit.textCursor()
+        cursor.movePosition(QTextCursor.NextWord)
+        self.text_edit.setTextCursor(cursor)
+
+    def move_word_left(self):
+        cursor = self.text_edit.textCursor()
+        cursor.movePosition(QTextCursor.PreviousWord)
+        self.text_edit.setTextCursor(cursor)
+
+    def to_uppercase(self):
+        cursor = self.text_edit.textCursor()
+        if cursor.hasSelection():
+            cursor.insertText(cursor.selectedText().upper())
+        else:
+            QMessageBox.warning(self, "错误", "先选中文本才能替换！")
+            pass
+
+    def to_lowercase(self):
+        cursor = self.text_edit.textCursor()
+        if cursor.hasSelection():
+            cursor.insertText(cursor.selectedText().lower())
+        else:
+            QMessageBox.warning(self, "错误", "先选中文本才能替换！")
+            pass
+
+    def capitalize_text(self):
+        cursor = self.text_edit.textCursor()
+        if cursor.hasSelection():
+            cursor.insertText(cursor.selectedText().capitalize())
+        else:
+            QMessageBox.warning(self, "错误", "先选中文本才能替换！")
+            pass
+
+    def toggle_case(self):
+        cursor = self.text_edit.textCursor()
+        if cursor.hasSelection():
+            selected_text = cursor.selectedText()
+            toggled_text = ''.join(c.lower() if c.isupper() else c.upper() for c in selected_text)
+            cursor.insertText(toggled_text)
+        else:
+            QMessageBox.warning(self, "错误", "先选中文本才能替换！")
+            pass
+
 
     @Slot()
     def select_all(self):

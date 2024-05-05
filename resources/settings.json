@@ -1,11 +1,11 @@
 {
-    "font_family": "\u5fae\u8f6f\u96c5\u9ed1",
-    "pointSize": 14,
+    "font_family": "Monaco",
+    "pointSize": 16,
     "bold": false,
     "italic": false,
     "underline": false,
     "strikeOut": false,
-    "theme": "gerrylight",
+    "theme": "intellijlight",
     "wrap_lines": true,
     "statusbar_shown": true,
     "startup_size": {
