@@ -7,7 +7,7 @@ import re
 import subprocess
 import sys
 from functools import partial
-
+import shutil
 import chardet
 import pyperclip
 from PySide6.QtCore import (QTranslator, QFile, QRunnable, QThreadPool, QObject, QTextStream, QTimer, QSize, QFileInfo,
@@ -17,7 +17,7 @@ from PySide6.QtCore import (QTranslator, QFile, QRunnable, QThreadPool, QObject,
 from PySide6.QtGui import (QAction, QIntValidator, QKeySequence, QShortcut, QPalette, QPainter, QSyntaxHighlighter,
                            QColor, QTextCharFormat,
                            QIcon, QFont,
-                           QTextCursor, QDesktopServices, QKeyEvent)
+                           QTextCursor, QDesktopServices)
 from PySide6.QtWidgets import (QApplication, QListWidget, QDialog, QHBoxLayout, QWidget, QLabel, QLineEdit, QCheckBox,
                                QVBoxLayout, QPushButton,
                                QFileDialog, QMainWindow, QDialogButtonBox, QFontDialog, QPlainTextEdit,
@@ -77,6 +77,9 @@ class TextEditor(QPlainTextEdit):
 
         self.cursorPositionChanged.connect(self.get_row_col)
         self.display_default_file_name(self.notepad.current_file_name)
+
+        paste_shortcut = QShortcut(QKeySequence(Qt.CTRL | Qt.SHIFT |Qt.Key_V), self)
+        paste_shortcut.activated.connect(self.notepad.show_paste_dialog)
 
         self.setFont(self.notepad.font) # 设置文本区域字体
         self.init_context_menu()
@@ -990,31 +993,57 @@ class CommandDialog(QDialog):
     def get_command(self):
         return self.command_line_edit.text()
 
-class ClipboardManager:
+class ClipboardManager(QObject):
+    clipboard_content_changed = Signal()
+
     def __init__(self, history_file):
+        super().__init__()
         self.history_file = history_file
         self.history = []
-
         self.load_history()
+
+        # 连接到剪贴板内容改变的信号槽
+        QApplication.clipboard().dataChanged.connect(self.on_clipboard_change)
+
+    @Slot()
+    def on_clipboard_change(self):
+        mime_data = QApplication.clipboard().mimeData()
+        if mime_data.hasText():
+            new_content = mime_data.text()
+            self.add_to_history(new_content)
+            # 更新系统剪贴板中的内容，以实现实时显示
+            QApplication.clipboard().setText(new_content)
+            self.clipboard_content_changed.emit()  # 发出信号
 
     def add_to_history(self, content):
         if content in self.history:
-            self.history.remove(content)  # 如果内容已经存在，先移除，确保不重复
-        self.history.insert(0, content)  # 插入到列表的第一个位置
-
-        # 将更新后的历史记录保存到文件
+            self.history.remove(content)
+        self.history.insert(0, content)
         self.save_history()
 
     def save_history(self):
-        with open(self.history_file, 'w') as f:
-            json.dump(self.history, f)
+        with open(self.history_file, "w", encoding="utf-8") as f:
+            json.dump(self.history, f, ensure_ascii=False)
 
     def load_history(self):
+        if os.path.exists(self.history_file):
+            try:
+                with open(self.history_file, "r", encoding="utf-8") as f:
+                    self.history = json.load(f)
+            except json.JSONDecodeError:
+                print("Error loading history: Invalid JSON format. History reset.")
+                self.backup_history_file()
+                self.history = []
+        else:
+            print("History file not found. A new one will be created.")
+
+    def backup_history_file(self):
+        backup_file = self.history_file + '.bak'
         try:
-            with open(self.history_file, 'r') as f:
-                self.history = json.load(f)
-        except FileNotFoundError:
-            pass
+            shutil.copy(self.history_file, backup_file)
+            print(f"Backup created: {backup_file}")
+        except Exception as e:
+            print(f"Error creating backup: {e}")
 
 class PasteDialog(QDialog):
     def __init__(self, clipboard_manager, parent=None):
@@ -1055,6 +1084,7 @@ class PasteDialog(QDialog):
 
         main_layout.addLayout(button_layout)
 
+        self.clipboard_manager.clipboard_content_changed.connect(self.update_clipboard_list)
         self.clipboard_list.currentItemChanged.connect(self.update_detail_text)
 
     def populate_clipboard_list(self):
@@ -1067,6 +1097,9 @@ class PasteDialog(QDialog):
                 item_display = item
             item_display = f"{idx + 1}: {item_display}"  # 添加行号
             self.clipboard_list.addItem(item_display)
+
+    def update_clipboard_list(self):
+        self.populate_clipboard_list()
 
     def update_detail_text(self, current, previous):
         if current:
@@ -1125,14 +1158,14 @@ class Notepad(QMainWindow):
 
         # 读取settings.json文件
         self.settings_file = os.path.join(resource_path, "settings.json")
+        self.immersive_mode = False  # 记录是否处于沉浸模式
         # 读取并设置启动窗口尺寸,主题字体等设置
         self.load_settings()
 
-        self.clipboard_manager = ClipboardManager(os.path.join(resource_path,"clipboard_history.json"))
-        self.clipboard = QApplication.clipboard()
-        self.clipboard.dataChanged.connect(self.on_clipboard_changed)
+        # 创建剪贴板管理器
+        self.clipboard_manager = ClipboardManager(os.path.join(resource_path,"clipboard_list.json"))
+        self.paste_dialog = PasteDialog(self.clipboard_manager)
 
-        self.paste_dialog = None
 
         # UI初始化，菜单栏以及编辑器，状态栏，各个子菜单，自定义的右键菜单
         self.setup_menu_and_actions()
@@ -1158,9 +1191,6 @@ class Notepad(QMainWindow):
 
         self.text_edit = TextEditor(self)
         self.setCentralWidget(self.text_edit)
-
-        paste_shortcut = QShortcut(QKeySequence(Qt.CTRL | Qt.SHIFT |Qt.Key_V), self)
-        paste_shortcut.activated.connect(self.show_paste_dialog)
 
         # 添加底部状态栏
         self.status_bar = QStatusBar()
@@ -1384,6 +1414,12 @@ class Notepad(QMainWindow):
         self.set_startup_size_action = QAction("设置启动窗口尺寸", self)
         self.set_startup_size_action.triggered.connect(self.show_startup_size_dialog)
         self.theme_menu.addAction(self.set_startup_size_action)
+        # 沉浸模式
+        self.immersive_mode_action = QAction("沉浸模式", self, checkable=True)
+        self.immersive_mode_action.setChecked(self.immersive_mode)
+        self.immersive_mode_action.triggered.connect(self.toggle_immersive_mode)
+        self.immersive_mode_action.setShortcut("F12")
+        self.theme_menu.addAction(self.immersive_mode_action)
 
         # 主窗口部分
         self.replace_action = QAction("查找/替换(&Z)", self)
@@ -1394,22 +1430,39 @@ class Notepad(QMainWindow):
         self.selection_replace_action.triggered.connect(self.show_replace_dialog)
         self.find_menu.addAction(self.selection_replace_action)
 
-        # 编码菜单
-        encodings = ["utf-8", "gb18030", "utf-32-le", "utf-32-be", "utf-16le", "utf-16be", "iso-8859-1", "ascii",
-                     "euc_jisx0213",
-                     "euc_kr", "cp866"]
-        for code_name in encodings:
-            self.encoding_submenu = QMenu(code_name, self.bianma_menu)
+        encodings = {
+            "gb18030": "中文（GB18030）",
+            "utf-8": "UTF-8",
+            "iso-8859-1": "西欧语系（ISO-8859-1）",
+            "ascii": "ASCII码",
+            "euc_jisx0213": "日文（EUC-JISX0213）",
+            "euc_kr": "韩文（EUC-KR）",
+            "cp866": "俄文（Windows-866）",
+            "cp1258": "越南语（Windows-1258）",
+            "cp1254": "土耳其语（Windows-1254）",
+            "TIS-1199":"泰文（TIS-1199）",
+            "cp1257":"波罗的语（Windows-1257）",
+            "cp1256":"阿拉伯语（Windows-1256）",
+            "cp1255":"希伯来文（Windows-1255）",
+            "cp1253":"希腊语（Windows-1253）",
+            "utf-32-le": "UTF-32 (小端序)",
+            "utf-32-be": "UTF-32 (大端序)",
+            "utf-16le": "UTF-16 (小端序)",
+            "utf-16be": "UTF-16 (大端序)",
+        }
+
+        for code_name, chinese_name in encodings.items():
+            self.encoding_submenu = QMenu(chinese_name, self.bianma_menu)
             self.bianma_menu.addMenu(self.encoding_submenu)
 
-            self.to_sava_as = QAction("以该编码另存", self)
+            self.to_sava_as = QAction(f"以该编码另存", self)
             self.encoding_submenu.addAction(self.to_sava_as)
             self.to_sava_as.triggered.connect(partial(self.use_code_save, encoding=code_name))
-            self.to_open = QAction("以该编码重新加载", self)
+
+            self.to_open = QAction(f"以该编码重新加载", self)
             self.to_open.triggered.connect(partial(self.re_open, coding=code_name))
             self.encoding_submenu.addAction(self.to_open)
 
-        # 工具菜单
         self.run_script_action = QAction("运行")
         self.run_script_action.triggered.connect(self.run_script)
         self.tool_menu.addAction(self.run_script_action)
@@ -1496,6 +1549,19 @@ class Notepad(QMainWindow):
             QMessageBox.warning(self, "错误", "先选中文本才能替换！")
             pass
 
+    def toggle_immersive_mode(self):
+        if not self.immersive_mode:
+            self.immersive_mode = True
+            self.showFullScreen()  # 进入全屏模式
+            self.text_edit.showFullScreen()  # 让 QPlainTextEdit 占据整个屏幕
+            self.menuBar().hide()
+            self.immersive_mode_action.setChecked(True)  # 更新菜单项状态
+        else:
+            self.showNormal()  # 退出全屏模式
+            self.immersive_mode = False
+            self.menuBar().show()
+            self.immersive_mode_action.setChecked(False)  # 更新菜单项状态
+
     # 点击关闭按钮时提示要不要保存（重写closeEvent）
     def closeEvent(self, event):
         if self.tip_to_save():
@@ -1505,17 +1571,12 @@ class Notepad(QMainWindow):
         self.threadpool.clear()
         event.accept()
 
-    def on_clipboard_changed(self):
-        clipboard_text = self.clipboard.text()
-        if clipboard_text:
-            self.clipboard_manager.add_to_history(clipboard_text)
-
     def show_paste_dialog(self):
-        if not self.paste_dialog or not self.paste_dialog.isVisible():
-            self.paste_dialog = PasteDialog(self.clipboard_manager, self)
             self.paste_dialog.show()
 
-    def keyPressEvent(self, event: QKeyEvent):
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_F12:
+            self.toggle_immersive_mode()
         # 处理组合键 Ctrl+F
         if event.key() == Qt.Key_F and event.modifiers() & Qt.ControlModifier:
             self.display_replace()
@@ -2267,7 +2328,7 @@ class Notepad(QMainWindow):
         if cursor.hasSelection():
             cursor.insertText(cursor.selectedText().upper())
         else:
-            QMessageBox.warning(self, "错误", "先选中文本才能替换！")
+            QMessageBox.warning(self, "错误", "先选中文本才能转换！")
             pass
 
     def to_lowercase(self):
@@ -2275,7 +2336,7 @@ class Notepad(QMainWindow):
         if cursor.hasSelection():
             cursor.insertText(cursor.selectedText().lower())
         else:
-            QMessageBox.warning(self, "错误", "先选中文本才能替换！")
+            QMessageBox.warning(self, "错误", "先选中文本才能转换！")
             pass
 
     def capitalize_text(self):
@@ -2283,7 +2344,7 @@ class Notepad(QMainWindow):
         if cursor.hasSelection():
             cursor.insertText(cursor.selectedText().capitalize())
         else:
-            QMessageBox.warning(self, "错误", "先选中文本才能替换！")
+            QMessageBox.warning(self, "错误", "先选中文本才能转换！")
             pass
 
     def toggle_case(self):
@@ -2293,7 +2354,7 @@ class Notepad(QMainWindow):
             toggled_text = ''.join(c.lower() if c.isupper() else c.upper() for c in selected_text)
             cursor.insertText(toggled_text)
         else:
-            QMessageBox.warning(self, "错误", "先选中文本才能替换！")
+            QMessageBox.warning(self, "错误", "先选中文本才能转换！")
             pass
 
 

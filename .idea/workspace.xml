@@ -4,12 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="取色器添加复制颜色按钮，优化查找替换框体验">
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="增加单词移动，删除，大小写转换功能">
+      <change afterPath="$PROJECT_DIR$/resources/clipboard_list.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_setup.exe" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cprofile_and_piplist.py" beforeDir="false" afterPath="$PROJECT_DIR$/cprofile_and_piplist.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/clipboard_history.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/clipboard_history.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/clipboard_history.json" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
     </list>
@@ -116,7 +116,7 @@
     "git-widget-placeholder": "master",
     "last_opened_file_path": "D:/迅雷下载/JQEdit/resources",
     "run.code.analysis.last.selected.profile": "pProject Default",
-    "settings.editor.selected.configurable": "editor.preferences.fonts.default"
+    "settings.editor.selected.configurable": "settings.json.schema"
   },
   "keyToStringList": {
     "ChangesTree.GroupingKeys": [
@@ -394,7 +394,15 @@
       <option name="project" value="LOCAL" />
       <updated>1714740262004</updated>
     </task>
-    <option name="localTasksCounter" value="23" />
+    <task id="LOCAL-00023" summary="增加单词移动，删除，大小写转换功能">
+      <option name="closed" value="true" />
+      <created>1714927916118</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1714927916118</updated>
+    </task>
+    <option name="localTasksCounter" value="24" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -465,7 +473,8 @@
     <MESSAGE value="查找替换功能中，搜索实时显示结果" />
     <MESSAGE value="添加一键运行当前程序，可自定义命令" />
     <MESSAGE value="取色器添加复制颜色按钮，优化查找替换框体验" />
-    <option name="LAST_COMMIT_MESSAGE" value="取色器添加复制颜色按钮，优化查找替换框体验" />
+    <MESSAGE value="增加单词移动，删除，大小写转换功能" />
+    <option name="LAST_COMMIT_MESSAGE" value="增加单词移动，删除，大小写转换功能" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>

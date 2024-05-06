@@ -1,13 +1,13 @@
 {
-    "font_family": "Monaco",
-    "pointSize": 16,
+    "font_family": "JetBrains Mono",
+    "pointSize": 14,
     "bold": false,
     "italic": false,
     "underline": false,
     "strikeOut": false,
     "theme": "intellijlight",
     "wrap_lines": true,
-    "statusbar_shown": true,
+    "statusbar_shown": false,
     "startup_size": {
         "width": 800,
         "height": 600,
