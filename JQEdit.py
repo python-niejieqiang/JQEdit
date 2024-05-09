@@ -5,6 +5,7 @@ import mmap
 import os
 import re
 import subprocess
+import threading
 import sys
 from functools import partial
 import shutil
@@ -20,7 +21,7 @@ from PySide6.QtGui import (QAction, QIntValidator, QKeySequence, QShortcut, QPal
                            QTextCursor, QDesktopServices)
 from PySide6.QtWidgets import (QApplication, QListWidget, QDialog, QHBoxLayout, QWidget, QLabel, QLineEdit, QCheckBox,
                                QVBoxLayout, QPushButton,
-                               QFileDialog, QMainWindow, QDialogButtonBox, QFontDialog, QPlainTextEdit,
+                               QFileDialog, QMainWindow, QDialogButtonBox, QFontDialog,QPlainTextEdit,
                                QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
 
 from replace_window_ui import Ui_replace_window
@@ -1010,37 +1011,42 @@ class ClipboardManager(QObject):
         mime_data = QApplication.clipboard().mimeData()
         if mime_data.hasText():
             new_content = mime_data.text()
+            # 保存剪贴板中的内容到历史记录
             self.add_to_history(new_content)
-            # 更新系统剪贴板中的内容，以实现实时显示
-            QApplication.clipboard().setText(new_content)
+            # 不直接设置剪贴板的文本内容，而是只保存到历史记录
             self.clipboard_content_changed.emit()  # 发出信号
 
     def add_to_history(self, content):
-        if content in self.history:
-            self.history.remove(content)
-        self.history.insert(0, content)
-        self.save_history()
+        if content not in self.history:
+            self.history.insert(0, content)
+            self.save_history()
+
+    def save_history_async(self):
+        threading.Thread(target=self.save_history).start()
 
     def save_history(self):
-        with open(self.history_file, "w", encoding="utf-8") as f:
-            json.dump(self.history, f, ensure_ascii=False)
+        try:
+            with codecs.open(self.history_file, "w", encoding="utf-8") as f:
+                json.dump(self.history, f, ensure_ascii=False)
+        except Exception as e:
+            print(f"Error saving history: {e}")
 
     def load_history(self):
         if os.path.exists(self.history_file):
             try:
-                with open(self.history_file, "r", encoding="utf-8") as f:
+                with codecs.open(self.history_file, "r", encoding="utf-8") as f:
                     self.history = json.load(f)
-            except json.JSONDecodeError:
-                print("Error loading history: Invalid JSON format. History reset.")
+            except json.JSONDecodeError as e:
+                print(f"Error loading history: {e}. History reset.")
                 self.backup_history_file()
                 self.history = []
         else:
             print("History file not found. A new one will be created.")
 
     def backup_history_file(self):
-        backup_file = self.history_file + '.bak'
+        backup_file = f"{self.history_file}.bak"
         try:
-            shutil.copy(self.history_file, backup_file)
+            shutil.copy2(self.history_file, backup_file)
             print(f"Backup created: {backup_file}")
         except Exception as e:
             print(f"Error creating backup: {e}")
@@ -1057,7 +1063,6 @@ class PasteDialog(QDialog):
         self.clipboard_list = QListWidget()
         self.clipboard_list.setMinimumHeight(200)
         self.clipboard_list.setUniformItemSizes(True)  # 设置每个条目大小相同
-        self.populate_clipboard_list()
         main_layout.addWidget(self.clipboard_list)
 
         self.detail_label = QLabel("详细内容:")
@@ -1086,15 +1091,16 @@ class PasteDialog(QDialog):
 
         self.clipboard_manager.clipboard_content_changed.connect(self.update_clipboard_list)
         self.clipboard_list.currentItemChanged.connect(self.update_detail_text)
+        # 加载剪贴板记录
+        self.populate_clipboard_list()
 
     def populate_clipboard_list(self):
         self.clipboard_list.clear()
         for idx, item in enumerate(self.clipboard_manager.history):
-            if len(item) > 15:
-                non_space_chars = [char for char in item[:15] if not char.isspace()]
-                item_display = ''.join(non_space_chars) + "..."
-            else:
-                item_display = item
+            # 移除所有空白字符
+            item_stripped = item.strip()
+            # 取前面30个字符显示
+            item_display = item_stripped[:50] + "..." if len(item_stripped) > 50 else item_stripped
             item_display = f"{idx + 1}: {item_display}"  # 添加行号
             self.clipboard_list.addItem(item_display)
 
@@ -1110,10 +1116,13 @@ class PasteDialog(QDialog):
         if selected_row != -1:
             content = self.clipboard_manager.history[selected_row]
             clipboard = QApplication.clipboard()
-            clipboard.setText(content)
 
             # 将内容粘贴到光标处
             self.parent().text_edit.textCursor().insertText(content)
+
+            # 清空剪贴板的文本内容
+            clipboard.clear()
+
 
 class Notepad(QMainWindow):
     syntax_highlight_toggled = Signal(bool)
@@ -1162,14 +1171,11 @@ class Notepad(QMainWindow):
         # 读取并设置启动窗口尺寸,主题字体等设置
         self.load_settings()
 
-        # 创建剪贴板管理器
-        self.clipboard_manager = ClipboardManager(os.path.join(resource_path,"clipboard_list.json"))
-        self.paste_dialog = PasteDialog(self.clipboard_manager)
-
-
         # UI初始化，菜单栏以及编辑器，状态栏，各个子菜单，自定义的右键菜单
         self.setup_menu_and_actions()
-
+        # 创建剪贴板管理器
+        self.clipboard_manager = ClipboardManager(os.path.join(resource_path,"clipboard_list.json"))
+        self.paste_dialog = PasteDialog(self.clipboard_manager,parent=self)
         # 最近打开的文件列表
         self.action_connections = {}
         # 使用os模块读取路径只是为了pyinstaller打包成exe的时候不会报错
@@ -1716,11 +1722,12 @@ class Notepad(QMainWindow):
         # 添加最近打开的文件到菜单中
         self.action_connections.clear()  # 清空连接字典
         for file_path in self.recent_files:
-            action = QAction(file_path, self)
-            new_connection = partial(self.read_file_in_thread, file_path)
-            action.triggered.connect(new_connection)
-            self.action_connections[action] = new_connection
-            self.recent_files_menu.addAction(action)
+            if os.path.exists(file_path):
+                action = QAction(file_path, self)
+                new_connection = partial(self.read_file_in_thread, file_path)
+                action.triggered.connect(new_connection)
+                self.action_connections[action] = new_connection
+                self.recent_files_menu.addAction(action)
 
         # 添加清空记录的菜单项，但只有在有记录时才显示
         if self.recent_files:

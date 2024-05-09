@@ -4,12 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="增加单词移动，删除，大小写转换功能">
-      <change afterPath="$PROJECT_DIR$/resources/clipboard_list.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="增加沉浸模式，大幅完善编码1支持（希伯来语，希腊，泰文，越南语，俄语），修复剪贴板bug">
+      <change afterPath="$PROJECT_DIR$/1.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/search_files.ui" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/search_lines_by_keyword_ui.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/clipboard_history.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/clipboard_list.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/clipboard_list.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
     </list>
@@ -100,30 +101,31 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "Python.1.executor": "Run",
-    "Python.2.executor": "Debug",
-    "Python.JQEdit (1).executor": "Run",
-    "Python.JQEdit.executor": "Run",
-    "Python.file_find.executor": "Run",
-    "Python.find_test.executor": "Run",
-    "Python.trim.executor": "Run",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "master",
-    "last_opened_file_path": "D:/迅雷下载/JQEdit/resources",
-    "run.code.analysis.last.selected.profile": "pProject Default",
-    "settings.editor.selected.configurable": "settings.json.schema"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;Python.1.executor&quot;: &quot;Run&quot;,
+    &quot;Python.2.executor&quot;: &quot;Debug&quot;,
+    &quot;Python.JQEdit (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.JQEdit.executor&quot;: &quot;Run&quot;,
+    &quot;Python.file_find.executor&quot;: &quot;Run&quot;,
+    &quot;Python.find_test.executor&quot;: &quot;Run&quot;,
+    &quot;Python.search_lines_by_keyword_ui.executor&quot;: &quot;Run&quot;,
+    &quot;Python.trim.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/迅雷下载/JQEdit/resources&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   },
-  "keyToStringList": {
-    "ChangesTree.GroupingKeys": [
-      "directory"
+  &quot;keyToStringList&quot;: {
+    &quot;ChangesTree.GroupingKeys&quot;: [
+      &quot;directory&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\迅雷下载\JQEdit\resources" />
@@ -132,6 +134,7 @@
       <recent name="D:\迅雷下载\code\resources" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\迅雷下载\JQEdit" />
       <recent name="D:\迅雷下载\JQEdit\resources" />
       <recent name="D:\迅雷下载\JQEdit\dist\JQEdit\_internal\resources" />
       <recent name="D:\迅雷下载\code\resources" />
@@ -191,7 +194,30 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="search_lines_by_keyword_ui" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="JQEdit" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/search_lines_by_keyword_ui.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <list>
+      <item itemvalue="Python.search_lines_by_keyword_ui" />
       <item itemvalue="Python.1" />
       <item itemvalue="Python.JQEdit" />
     </list>
@@ -199,6 +225,7 @@
       <list>
         <item itemvalue="Python.JQEdit" />
         <item itemvalue="Python.1" />
+        <item itemvalue="Python.search_lines_by_keyword_ui" />
       </list>
     </recent_temporary>
   </component>
@@ -402,7 +429,15 @@
       <option name="project" value="LOCAL" />
       <updated>1714927916118</updated>
     </task>
-    <option name="localTasksCounter" value="24" />
+    <task id="LOCAL-00024" summary="增加沉浸模式，大幅完善编码1支持（希伯来语，希腊，泰文，越南语，俄语），修复剪贴板bug">
+      <option name="closed" value="true" />
+      <created>1714999259622</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1714999259623</updated>
+    </task>
+    <option name="localTasksCounter" value="25" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -474,7 +509,8 @@
     <MESSAGE value="添加一键运行当前程序，可自定义命令" />
     <MESSAGE value="取色器添加复制颜色按钮，优化查找替换框体验" />
     <MESSAGE value="增加单词移动，删除，大小写转换功能" />
-    <option name="LAST_COMMIT_MESSAGE" value="增加单词移动，删除，大小写转换功能" />
+    <MESSAGE value="增加沉浸模式，大幅完善编码1支持（希伯来语，希腊，泰文，越南语，俄语），修复剪贴板bug" />
+    <option name="LAST_COMMIT_MESSAGE" value="增加沉浸模式，大幅完善编码1支持（希伯来语，希腊，泰文，越南语，俄语），修复剪贴板bug" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>
