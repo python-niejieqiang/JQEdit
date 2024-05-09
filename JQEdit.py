@@ -368,9 +368,19 @@ class FileReaderRunnable(QRunnable):
         self.reader = reader
 
     def run(self):
-        self.reader.run()
+        try:
+            self.reader.run()
+        except FileNotFoundError as e:
+            self.reader.errorOccurred.emit(f"文件不存在！{e}")
+        except PermissionError as e:
+            self.reader.errorOccurred.emit(f"没有足够权限打开！{e}")
+        except IsADirectoryError as e:
+            self.reader.errorOccurred.emit(f"打开的是目录而非文件！{e}")
+        except Exception as e:
+            self.reader.errorOccurred.emit(f"其他不支持的文件类型！详细错误：{e}")
 
 class FileReader(QObject):
+    errorOccurred = Signal(str)  # 错误信号
     finished = Signal(str, str)  # 读取完成信号，传递文件内容和文件编码
 
     def __init__(self, filename):
@@ -384,20 +394,22 @@ class FileReader(QObject):
                 with mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as mm:
                     content_for_detection = mm.read(FILE_SIZE_THRESHOLD)
                     encoding_info = chardet.detect(content_for_detection)
-                    if encoding_info is None:
-                        encoding = "utf-8"
-                    else:
-                        encoding = encoding_info.get("encoding", "utf-8")
-                        if not encoding:
-                            encoding = "utf-8"
-                        if encoding.upper() in ["GB2312", "GBK"]:
-                            encoding = "GB18030"
-                    # 读取整个文件内容
+                    encoding = self.determine_encoding(encoding_info)
                     mm.seek(0)
-                    content = mm.read().decode(encoding, 'ignore')
+                    content = mm.read().decode(encoding)
             self.finished.emit(content, encoding)
-        except Exception as e:
-            self.finished.emit(None, None)
+        except Exception as e:  # 这里可以更具体地捕获并处理异常，但最终目的是为了传递给runnable
+            raise e  # 重新抛出异常，以便Runnable中处理
+
+    def determine_encoding(self, encoding_info):
+        if encoding_info is None:
+            return "utf-8"
+        encoding = encoding_info.get("encoding", "utf-8")
+        if not encoding:
+            return "utf-8"
+        if encoding.upper() in ["GB2312", "GBK"]:
+            return "GB18030"
+        return encoding
 
 class SyntaxHighlighterBase(QSyntaxHighlighter):
     def __init__(self, parent=None, theme_name="dark"):
@@ -1627,6 +1639,7 @@ class Notepad(QMainWindow):
         # 取消操作不需要返回值，因为 tip_to_save 会根据返回值来判断
 
     def save_file(self, file_name):
+        file_name = os.path.normpath(file_name)
         try:
             with codecs.open(file_name, "w", encoding=self.current_file_encoding) as outfile:
                 text = self.text_edit.toPlainText()
@@ -1654,25 +1667,27 @@ class Notepad(QMainWindow):
             QMessageBox.warning(self, self.app_name, f"文件 {file_name} 保存时发生未知错误:\n{e}")
         return False
 
+    def handle_error_message(self,error_msg):
+        QMessageBox.warning(None, "错误", error_msg)
+
     def read_file_in_thread(self, filename):
-        # Close syntax highlighter
+        # 关闭语法高亮
         if self.highlighter:
             self.highlighter.deleteLater()
             self.highlighter = None
         if not filename:
             return
-        # Create a FileReader instance
         reader = FileReader(filename)
-        # Create a FileReaderRunnable instance
         reader_runnable = FileReaderRunnable(reader)
-        # Connect signals and slots
+        reader.errorOccurred.connect(self.handle_error_message)  # 连接信号到槽
         reader.finished.connect(lambda content, encoding: self.on_file_read_finished(content, encoding, filename))
-        # Submit the FileReaderRunnable to the thread pool
-        self.thread = self.threadpool.start(reader_runnable)  # Store a reference to the thread
+        # 提交到线程池
+        self.thread = self.threadpool.start(reader_runnable)
 
     def on_file_read_finished(self, content, encoding, filename):
-        # Handle the file reading finished event
+        # 读完文件处理事项
         if content is not None:
+            filename=os.path.normpath(filename) # 文件路径统一使用正斜杠
             self.text_edit.setPlainText(content)
             self.setWindowTitle(f"{self.app_name} - {encoding.upper()} - {filename}")
             self.current_file_name = filename
@@ -1682,15 +1697,12 @@ class Notepad(QMainWindow):
             # 添加打开记录到最近打开
             self.add_recent_file(filename)
 
-            # Get file extension
+            # 使用文件后缀判断使用何种语言高亮
             self.current_file_extension = os.path.splitext(filename)[1]
 
             if self.syntax_highlight_enabled:
                 self.reload_highlighter(self.theme, self.current_file_extension)
-        else:
-            QMessageBox.warning(self, "Error", "An error occurred while opening the file!")
 
-        # Quit the thread if it's not None
         if self.thread is not None:
             self.thread.quit()
             self.thread.wait()
@@ -2072,6 +2084,7 @@ class Notepad(QMainWindow):
         default_filename = self.current_file_name if self.current_file_name else self.text_edit.untitled_name
         filename, _ = QFileDialog.getSaveFileName(None, "保存文件", default_filename,
                                                   "所有文件类型(*.*);;文本文件 (*.txt)")
+        filename = os.path.normpath(filename)
         # 如果用户取消保存操作，直接返回
         if not filename:
             return
@@ -2101,6 +2114,7 @@ class Notepad(QMainWindow):
 
     @Slot()
     def re_open(self, coding, *args):
+        self.current_file_name = os.path.normpath(self.current_file_name)
         # 指定编码加载文件
         try:
             with open(self.current_file_name, "r", encoding=coding,errors="ignore") as f:
@@ -2124,6 +2138,7 @@ class Notepad(QMainWindow):
     def save(self):
         encoding = self.current_file_encoding.upper()
         if self.text_edit.document().isModified():  # 检查文档是否被修改过
+            self.current_file_name = os.path.normpath(self.current_file_name)
             if self.current_file_name:
                 saved = self.save_file(self.current_file_name)
                 if saved:

@@ -7,7 +7,7 @@
     "strikeOut": false,
     "theme": "intellijlight",
     "wrap_lines": true,
-    "statusbar_shown": false,
+    "statusbar_shown": true,
     "startup_size": {
         "width": 800,
         "height": 600,
