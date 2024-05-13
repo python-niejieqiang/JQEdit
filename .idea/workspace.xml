@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="继续完善剪贴板管理器，最近打开菜单文件路径如果已经删除的话就会自动消失">
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="完善文件读取的异常处理">
       <change afterPath="$PROJECT_DIR$/1.py" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/build/JQEdit/Analysis-00.toc" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/build/JQEdit/COLLECT-00.toc" afterDir="false" />
@@ -624,8 +624,8 @@
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_setup.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/clipboard_list.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/clipboard_list.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -829,7 +829,30 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="trim" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="JQEdit" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/trim.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <list>
+      <item itemvalue="Python.trim" />
       <item itemvalue="Python.search_lines_by_keyword_ui" />
       <item itemvalue="Python.1" />
       <item itemvalue="Python.JQEdit" />
@@ -838,6 +861,7 @@
       <list>
         <item itemvalue="Python.JQEdit" />
         <item itemvalue="Python.1" />
+        <item itemvalue="Python.trim" />
         <item itemvalue="Python.search_lines_by_keyword_ui" />
       </list>
     </recent_temporary>
@@ -1058,7 +1082,15 @@
       <option name="project" value="LOCAL" />
       <updated>1715257439015</updated>
     </task>
-    <option name="localTasksCounter" value="26" />
+    <task id="LOCAL-00026" summary="完善文件读取的异常处理">
+      <option name="closed" value="true" />
+      <created>1715263641248</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1715263641248</updated>
+    </task>
+    <option name="localTasksCounter" value="27" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -1132,7 +1164,8 @@
     <MESSAGE value="增加单词移动，删除，大小写转换功能" />
     <MESSAGE value="增加沉浸模式，大幅完善编码1支持（希伯来语，希腊，泰文，越南语，俄语），修复剪贴板bug" />
     <MESSAGE value="继续完善剪贴板管理器，最近打开菜单文件路径如果已经删除的话就会自动消失" />
-    <option name="LAST_COMMIT_MESSAGE" value="继续完善剪贴板管理器，最近打开菜单文件路径如果已经删除的话就会自动消失" />
+    <MESSAGE value="完善文件读取的异常处理" />
+    <option name="LAST_COMMIT_MESSAGE" value="完善文件读取的异常处理" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>

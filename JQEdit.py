@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 import codecs
 import json
-import mmap
 import os
 import re
-import subprocess
-import threading
-import sys
-from functools import partial
 import shutil
+import subprocess
+import sys
+import threading
+from functools import partial
+
 import chardet
 import pyperclip
-from PySide6.QtCore import (QTranslator, QFile, QRunnable, QThreadPool, QObject, QTextStream, QTimer, QSize, QFileInfo,
+from PySide6.QtCore import (QTranslator, QFile, QThread, QObject, QTextStream, QTimer, QSize, QFileInfo,
                             Qt, QEvent, QRect,
                             Signal, QUrl, Slot,
                             QRegularExpression)
@@ -21,11 +21,37 @@ from PySide6.QtGui import (QAction, QIntValidator, QKeySequence, QShortcut, QPal
                            QTextCursor, QDesktopServices)
 from PySide6.QtWidgets import (QApplication, QListWidget, QDialog, QHBoxLayout, QWidget, QLabel, QLineEdit, QCheckBox,
                                QVBoxLayout, QPushButton,
-                               QFileDialog, QMainWindow, QDialogButtonBox, QFontDialog,QPlainTextEdit,
+                               QFileDialog, QMainWindow, QDialogButtonBox, QFontDialog, QPlainTextEdit,
                                QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
 
 from replace_window_ui import Ui_replace_window
 
+class FileLoader(QThread):
+    contentLoaded = Signal(str)
+
+    def __init__(self, filename, encoding, position):
+        super().__init__()
+        self.filename = filename
+        self.encoding = encoding
+        self.position = position
+
+    def run(self):
+        try:
+            with open(self.filename, "rb") as f:
+                f.seek(self.position)
+                while True:
+                    lines = []
+                    for _ in range(20000):
+                        line = f.readline()
+                        if not line:
+                            break
+                        lines.append(line)
+                    if not lines:
+                        break
+                    content = b"".join(lines).decode(self.encoding)
+                    self.contentLoaded.emit(content.rstrip())
+        except Exception as e:
+            print(f"Error loading file: {e}")
 
 class LineNumberArea(QWidget):
     def __init__(self, editor):
@@ -84,6 +110,11 @@ class TextEditor(QPlainTextEdit):
 
         self.setFont(self.notepad.font) # 设置文本区域字体
         self.init_context_menu()
+
+    def update_total_lines(self):
+        # 更新总行数
+        total_lines = self.document().blockCount()
+        self.notepad.status_bar.showMessage("  行 {:d} , 列 {:d} , 总行数 {:d}".format(1, 1, total_lines))
 
     def display_default_file_name(self, filename_):
         # 只需要设置文档的修改状态，窗口的修改状态会自动更新
@@ -348,7 +379,6 @@ class TextEditor(QPlainTextEdit):
         self.customContextMenuRequested.connect(self.show_contextmenu)
 
 
-
     @Slot()
     def search_in_baidu(self):
         cursor = self.textCursor()
@@ -361,55 +391,6 @@ class TextEditor(QPlainTextEdit):
     def show_contextmenu(self, pos):
         # text_edit中的右键菜单
         self.context_menu.exec(self.mapToGlobal(pos))
-
-class FileReaderRunnable(QRunnable):
-    def __init__(self, reader):
-        super().__init__()
-        self.reader = reader
-
-    def run(self):
-        try:
-            self.reader.run()
-        except FileNotFoundError as e:
-            self.reader.errorOccurred.emit(f"文件不存在！{e}")
-        except PermissionError as e:
-            self.reader.errorOccurred.emit(f"没有足够权限打开！{e}")
-        except IsADirectoryError as e:
-            self.reader.errorOccurred.emit(f"打开的是目录而非文件！{e}")
-        except Exception as e:
-            self.reader.errorOccurred.emit(f"其他不支持的文件类型！详细错误：{e}")
-
-class FileReader(QObject):
-    errorOccurred = Signal(str)  # 错误信号
-    finished = Signal(str, str)  # 读取完成信号，传递文件内容和文件编码
-
-    def __init__(self, filename):
-        super().__init__()
-        self.filename = filename
-
-    def run(self):
-        FILE_SIZE_THRESHOLD = 5000
-        try:
-            with open(self.filename, "r") as file:
-                with mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as mm:
-                    content_for_detection = mm.read(FILE_SIZE_THRESHOLD)
-                    encoding_info = chardet.detect(content_for_detection)
-                    encoding = self.determine_encoding(encoding_info)
-                    mm.seek(0)
-                    content = mm.read().decode(encoding)
-            self.finished.emit(content, encoding)
-        except Exception as e:  # 这里可以更具体地捕获并处理异常，但最终目的是为了传递给runnable
-            raise e  # 重新抛出异常，以便Runnable中处理
-
-    def determine_encoding(self, encoding_info):
-        if encoding_info is None:
-            return "utf-8"
-        encoding = encoding_info.get("encoding", "utf-8")
-        if not encoding:
-            return "utf-8"
-        if encoding.upper() in ["GB2312", "GBK"]:
-            return "GB18030"
-        return encoding
 
 class SyntaxHighlighterBase(QSyntaxHighlighter):
     def __init__(self, parent=None, theme_name="dark"):
@@ -1135,22 +1116,13 @@ class PasteDialog(QDialog):
             # 清空剪贴板的文本内容
             clipboard.clear()
 
-
 class Notepad(QMainWindow):
     syntax_highlight_toggled = Signal(bool)
     # 定义主题改变信号
     theme_changed = Signal(str)
-    _instance = None
-    def __new__(cls, *args, **kwargs):
-        if not isinstance(cls._instance, cls):
-            cls._instance = super(Notepad, cls).__new__(cls, *args, **kwargs)
-        return cls._instance
 
     def __init__(self):
         super().__init__()
-        # 初始化 QThreadPool
-        self.threadpool = QThreadPool()
-
         self.app_name = "JQEdit"
         self.resize(800,600)
         # 用来记录文件编码，名字
@@ -1586,7 +1558,6 @@ class Notepad(QMainWindow):
             event.accept()  # 用户选择保存或确定不保存，继续关闭
         else:
             event.ignore()  # 用户选择取消保存，不关闭窗口
-        self.threadpool.clear()
         event.accept()
 
     def show_paste_dialog(self):
@@ -1667,9 +1638,6 @@ class Notepad(QMainWindow):
             QMessageBox.warning(self, self.app_name, f"文件 {file_name} 保存时发生未知错误:\n{e}")
         return False
 
-    def handle_error_message(self,error_msg):
-        QMessageBox.warning(None, "错误", error_msg)
-
     def read_file_in_thread(self, filename):
         # 关闭语法高亮
         if self.highlighter:
@@ -1677,24 +1645,27 @@ class Notepad(QMainWindow):
             self.highlighter = None
         if not filename:
             return
-        reader = FileReader(filename)
-        reader_runnable = FileReaderRunnable(reader)
-        reader.errorOccurred.connect(self.handle_error_message)  # 连接信号到槽
-        reader.finished.connect(lambda content, encoding: self.on_file_read_finished(content, encoding, filename))
-        # 提交到线程池
-        self.thread = self.threadpool.start(reader_runnable)
+        try:
+            lines,position = self.read_100_lines(filename,100)
+            encoding_info = chardet.detect(b"".join(lines))
+            if encoding_info is None:
+                encoding = "utf-8"
+            else:
+                encoding = encoding_info.get("encoding", "utf-8")
+                if not encoding:
+                    encoding = "utf-8"
+                if encoding.upper() in ["GB2312", "GBK"]:
+                    encoding = "GB18030"
 
-    def on_file_read_finished(self, content, encoding, filename):
-        # 读完文件处理事项
-        if content is not None:
-            filename=os.path.normpath(filename) # 文件路径统一使用正斜杠
-            self.text_edit.setPlainText(content)
+            initial_content = b"".join(lines).decode(encoding)
+            self.text_edit.setPlainText(initial_content.rstrip())
             self.setWindowTitle(f"{self.app_name} - {encoding.upper()} - {filename}")
+            # 记录当前文件名,编码,以及当前目录
             self.current_file_name = filename
             self.last_modified_time = QFileInfo(filename).lastModified().toMSecsSinceEpoch()
             self.current_file_encoding = encoding
             self.work_dir = os.path.dirname(os.path.abspath(filename))
-            # 添加打开记录到最近打开
+            # 将打开记录添加到最近打开
             self.add_recent_file(filename)
 
             # 使用文件后缀判断使用何种语言高亮
@@ -1703,9 +1674,39 @@ class Notepad(QMainWindow):
             if self.syntax_highlight_enabled:
                 self.reload_highlighter(self.theme, self.current_file_extension)
 
-        if self.thread is not None:
-            self.thread.quit()
-            self.thread.wait()
+            self.start_file_loader(filename, encoding,position)
+
+        except FileNotFoundError:
+            QMessageBox.warning(self, "错误", "文件未找到，请检查路径是否正确！")
+        except PermissionError:
+            QMessageBox.warning(self, "错误", "没有足够的权限打开文件！")
+        except UnicodeDecodeError:
+            QMessageBox.warning(self, "错误", "文件编码无法识别，请尝试手动选择编码！")
+        except Exception as e:
+            QMessageBox.warning(self, "错误", f"打开文件时发生错误（很可能不支持该文件类型）:{e}")
+
+    def start_file_loader(self, filename, encoding,position):
+        # 启动文件加载线程
+        self.file_loader = FileLoader(filename, encoding,position)
+        self.file_loader.contentLoaded.connect(self.append_content)
+        self.file_loader.start()
+
+    def append_content(self, chunk):
+        self.text_edit.appendPlainText(chunk)
+        self.text_edit.document().setModified(False)
+        self.text_edit.update_total_lines()
+
+    def read_100_lines(self, filename, num_lines):
+        lines = []
+        position = 0
+        with open(filename, 'rb') as f:
+            for _ in range(num_lines):
+                line = f.readline()
+                if not line:
+                    break
+                lines.append(line)
+            position = f.tell()  # 在循环外获取位置
+        return lines,position
 
     def add_recent_file(self, file_path):
         # 添加最近打开的文件路径到列表中
@@ -2411,13 +2412,7 @@ if __name__ == "__main__":
     icon_path = os.path.join(resource_path, "JQEdit.png")
     app.setWindowIcon(QIcon(icon_path))
 
-    # 如果有参数就传给记事本打开（这样打包成exe双击txt就能被记事本打开），否则创建空窗口
-    if Notepad._instance is None:
-        JQEdit = Notepad()
-    else:
-        JQEdit = Notepad._instance
-
-        # Get filename from command line argument and open the file
+    JQEdit = Notepad()
     filename = get_file_argument()
     if filename:
         JQEdit.read_file_in_thread(filename)

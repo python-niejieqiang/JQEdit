@@ -1,1 +1,1 @@
-["    def insertFromMimeData(self, source):\n        super().insertFromMimeData(source)\n        self.applyCustomFontSettings()\n\n    def keyPressEvent(self, event):\n        super().keyPressEvent(event)\n        self.applyCustomFontSettings()\n\n    def applyCustomFontSettings(self):\n        cursor = self.textCursor()\n        start = cursor.position()\n        end = start + 1\n\n        while start >= 0 and end <=", "from PySide6.QtWidgets import QApplication, QMainWindow, QTextEdit\n"]
+[]
