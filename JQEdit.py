@@ -1430,7 +1430,7 @@ class Notepad(QMainWindow):
             "cp866": "俄文（Windows-866）",
             "cp1258": "越南语（Windows-1258）",
             "cp1254": "土耳其语（Windows-1254）",
-            "TIS-1199":"泰文（TIS-1199）",
+            "tis-620":"泰文（TIS-620）",
             "cp1257":"波罗的语（Windows-1257）",
             "cp1256":"阿拉伯语（Windows-1256）",
             "cp1255":"希伯来文（Windows-1255）",
