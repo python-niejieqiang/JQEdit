@@ -48,7 +48,7 @@ class FileLoader(QThread):
                         lines.append(line)
                     if not lines:
                         break
-                    content = b"".join(lines).decode(self.encoding)
+                    content = b"".join(lines).decode(self.encoding,"ignore")
                     self.contentLoaded.emit(content.rstrip())
         except Exception as e:
             print(f"Error loading file: {e}")
@@ -1657,7 +1657,7 @@ class Notepad(QMainWindow):
                 if encoding.upper() in ["GB2312", "GBK"]:
                     encoding = "GB18030"
 
-            initial_content = b"".join(lines).decode(encoding)
+            initial_content = b"".join(lines).decode(encoding,"ignore")
             self.text_edit.setPlainText(initial_content.rstrip())
             self.setWindowTitle(f"{self.app_name} - {encoding.upper()} - {filename}")
             # 记录当前文件名,编码,以及当前目录

@@ -4,12 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="上传打包好的exe">
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="修正首字母大写转换错误，标题栏，最近打开中的文件路径统一使用正斜杠">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cprofile_and_piplist.py" beforeDir="false" afterPath="$PROJECT_DIR$/cprofile_and_piplist.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/clipboard_list.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/clipboard_list.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -490,7 +490,15 @@
       <option name="project" value="LOCAL" />
       <updated>1715706497908</updated>
     </task>
-    <option name="localTasksCounter" value="29" />
+    <task id="LOCAL-00029" summary="修正首字母大写转换错误，标题栏，最近打开中的文件路径统一使用正斜杠">
+      <option name="closed" value="true" />
+      <created>1715762390774</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1715762390774</updated>
+    </task>
+    <option name="localTasksCounter" value="30" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -541,7 +549,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="修复不能逐项替换，修复全部替换不能无法撤销恢复bug" />
     <MESSAGE value="打包脚本优化，安装包体积小了2M- -！" />
     <MESSAGE value="优化行号跳转效率,大文件读取修复分块读取不能无缝衔接bug" />
     <MESSAGE value="增加选区替换功能。" />
@@ -566,7 +573,8 @@
     <MESSAGE value="完善文件读取的异常处理" />
     <MESSAGE value="修复泰文编码错误" />
     <MESSAGE value="上传打包好的exe" />
-    <option name="LAST_COMMIT_MESSAGE" value="上传打包好的exe" />
+    <MESSAGE value="修正首字母大写转换错误，标题栏，最近打开中的文件路径统一使用正斜杠" />
+    <option name="LAST_COMMIT_MESSAGE" value="修正首字母大写转换错误，标题栏，最近打开中的文件路径统一使用正斜杠" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>
