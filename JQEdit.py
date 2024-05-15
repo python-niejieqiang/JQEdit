@@ -11,7 +11,8 @@ from functools import partial
 
 import chardet
 import pyperclip
-from PySide6.QtCore import (QTranslator, QFile, QThread, QObject, QTextStream, QTimer, QSize, QFileInfo,
+from PySide6.QtCore import (QTranslator, QFile, QRunnable, QThreadPool, QThread, QObject, QTextStream, QTimer, QSize,
+                            QFileInfo,
                             Qt, QEvent, QRect,
                             Signal, QUrl, Slot,
                             QRegularExpression)
@@ -70,7 +71,10 @@ class LineNumberArea(QWidget):
         painter.setPen(text_color)  # 使用文本颜色绘制行号
         painter.fillRect(event.rect(), self.editor.palette().color(QPalette.Base))  # 绘制背景色
 
-        block = self.editor.firstVisibleBlock()
+        document = self.editor.document()
+        top_left = self.editor.viewport().mapToGlobal(event.rect().topLeft())  # 将视口坐标转换为全局坐标
+        top_left = self.editor.mapFromGlobal(top_left)  # 将全局坐标转换为编辑器内坐标
+        block = document.findBlock(self.editor.cursorForPosition(top_left).position())  # 找到位于指定位置的文本块
         block_number = block.blockNumber()
         top = int(self.editor.blockBoundingGeometry(block).translated(self.editor.contentOffset()).top())
         bottom = top + int(self.editor.blockBoundingRect(block).height())
@@ -86,6 +90,16 @@ class LineNumberArea(QWidget):
             top = bottom
             bottom = top + int(self.editor.blockBoundingRect(block).height())
             block_number += 1
+
+class LineNumberWorker(QRunnable):
+    def __init__(self, editor, event_rect, dy):
+        super().__init__()
+        self.editor = editor
+        self.event_rect = event_rect
+        self.dy = dy
+
+    def run(self):
+        self.editor.line_number_area.update()
 
 class TextEditor(QPlainTextEdit):
     def __init__(self, notepad_instance):
@@ -111,10 +125,7 @@ class TextEditor(QPlainTextEdit):
         self.setFont(self.notepad.font) # 设置文本区域字体
         self.init_context_menu()
 
-    def update_total_lines(self):
-        # 更新总行数
-        total_lines = self.document().blockCount()
-        self.notepad.status_bar.showMessage("  行 {:d} , 列 {:d} , 总行数 {:d}".format(1, 1, total_lines))
+        self.thread_pool = QThreadPool.globalInstance()
 
     def display_default_file_name(self, filename_):
         # 只需要设置文档的修改状态，窗口的修改状态会自动更新
@@ -125,21 +136,21 @@ class TextEditor(QPlainTextEdit):
         else:
             self.notepad.setWindowTitle(f"{self.notepad.app_name} - [{self.untitled_name}]")
 
+    def update_status_bar(self, row, column):
+        total_lines = self.document().blockCount()
+        left_message = "  行 {:d} , 列 {:d} , 总行数 {:d}".format(row, column, total_lines)
+        self.notepad.status_bar.showMessage(left_message)
+
     @Slot()
     def get_row_col(self):
-        # 获取光标所在的行和列
         cursor = self.textCursor()
-        row = cursor.blockNumber() + 1  # blockNumber() 是从 0 开始的，所以需要加 1
-        column = cursor.columnNumber() + 1  # columnNumber() 也是从 0 开始的，加 1 以符合常规的行列计数
-        # 获取文本编辑器中总的行数
-        total_lines = self.document().blockCount()
-        # 定义左下角信息字符串模板，指定数字部分占据至少五个字符的宽度
-        left_message_template = "  行 {:d} , 列 {:d} , 总行数 {:d}"
-        # 使用模板并填入实际值
-        left_message = left_message_template.format(row, column, total_lines)
+        row = cursor.blockNumber() + 1
+        column = cursor.columnNumber() + 1
+        self.update_status_bar(row, column)
 
-        # 在左下角状态栏显示信息
-        self.notepad.status_bar.showMessage(left_message.format(row, column, total_lines))
+    def update_total_lines(self):
+        total_lines = self.document().blockCount()
+        self.update_status_bar(1, 1)
 
     def line_number_area_width(self):
         digits = len(str(self.blockCount()))  # 计算当前文本行数的位数
@@ -151,15 +162,29 @@ class TextEditor(QPlainTextEdit):
         else:
             self.setViewportMargins(0, 0, 0, 0)
 
-    def update_line_number_area(self, rect, dy):
+    def update_line_number_area(self, event_rect, dy):
         if dy:
             self.line_number_area.scroll(dy, 0)
         else:
-            self.line_number_area.update(0, rect.y(), self.line_number_area.width(),
-                                          rect.height())
+            self.line_number_area.update(0, event_rect.y(), self.line_number_area.width(),
+                                         event_rect.height())
 
-        if rect.contains(self.viewport().rect()):
+        if event_rect.contains(self.viewport().rect()):
             self.update_line_number_area_width()
+
+    def update_line_number_display(self, checked):
+        self.show_line_numbers = checked  # 切换行号显示状态
+        self.update_line_number_area_width()
+        if self.show_line_numbers:
+            self.line_number_area.setGeometry(QRect(self.viewport().rect().left(), self.viewport().rect().top(),
+                                                    self.line_number_area_width(), self.viewport().rect().height()))
+        self.line_number_area.setVisible(self.show_line_numbers)
+        self.notepad.show_line_numbers = self.show_line_numbers  # 更新记事本的行号显示状态
+        self.notepad.save_settings()  # 保存设置到文件
+
+    def update_line_number_area_async(self, event_rect, dy):
+        worker = LineNumberWorker(self, event_rect, dy)
+        self.thread_pool.start(worker)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -171,16 +196,6 @@ class TextEditor(QPlainTextEdit):
     def setFont(self, font):
         super().setFont(font)
         self.line_number_area.setFont(font)
-
-    def update_line_number_display(self,checked):
-        self.show_line_numbers = checked # 切换行号显示状态
-        self.update_line_number_area_width()
-        if self.show_line_numbers:
-            self.line_number_area.setGeometry(QRect(self.viewport().rect().left(), self.viewport().rect().top(),
-                                                     self.line_number_area_width(), self.viewport().rect().height()))
-        self.line_number_area.setVisible(self.show_line_numbers)
-        self.notepad.show_line_numbers = self.show_line_numbers  # 更新记事本的行号显示状态
-        self.notepad.save_settings()  # 保存设置到文件
 
     def paintEvent(self, event):
         super().paintEvent(event)

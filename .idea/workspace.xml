@@ -4,12 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="修正首字母大写转换错误，标题栏，最近打开中的文件路径统一使用正斜杠">
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="补充EXE打包">
+      <change afterPath="$PROJECT_DIR$/1.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/clipboard_list.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/clipboard_list.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_setup.exe" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -113,7 +113,7 @@
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/迅雷下载/JQEdit&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/迅雷下载/JQEdit/resources&quot;,
     &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;com.gitee.ui.GiteeSettingsConfigurable&quot;
   },
@@ -244,9 +244,9 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.JQEdit" />
+        <item itemvalue="Python.1" />
         <item itemvalue="Python.trim" />
         <item itemvalue="Python.search_lines_by_keyword_ui" />
-        <item itemvalue="Python.1" />
       </list>
     </recent_temporary>
   </component>
@@ -498,7 +498,23 @@
       <option name="project" value="LOCAL" />
       <updated>1715762390774</updated>
     </task>
-    <option name="localTasksCounter" value="30" />
+    <task id="LOCAL-00030" summary="utf-16le编码文件设定为强制打开，需手动切换才能显示正常">
+      <option name="closed" value="true" />
+      <created>1715764689509</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1715764689509</updated>
+    </task>
+    <task id="LOCAL-00031" summary="补充EXE打包">
+      <option name="closed" value="true" />
+      <created>1715764842855</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1715764842855</updated>
+    </task>
+    <option name="localTasksCounter" value="32" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -549,8 +565,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="打包脚本优化，安装包体积小了2M- -！" />
-    <MESSAGE value="优化行号跳转效率,大文件读取修复分块读取不能无缝衔接bug" />
     <MESSAGE value="增加选区替换功能。" />
     <MESSAGE value="优化设置窗口尺寸体验" />
     <MESSAGE value="优化查找替换体验，按TAB键从搜索框跳到替换框" />
@@ -574,7 +588,9 @@
     <MESSAGE value="修复泰文编码错误" />
     <MESSAGE value="上传打包好的exe" />
     <MESSAGE value="修正首字母大写转换错误，标题栏，最近打开中的文件路径统一使用正斜杠" />
-    <option name="LAST_COMMIT_MESSAGE" value="修正首字母大写转换错误，标题栏，最近打开中的文件路径统一使用正斜杠" />
+    <MESSAGE value="utf-16le编码文件设定为强制打开，需手动切换才能显示正常" />
+    <MESSAGE value="补充EXE打包" />
+    <option name="LAST_COMMIT_MESSAGE" value="补充EXE打包" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>
