@@ -1,1 +1,1 @@
-["python --version > nul 2>&1\nIF %ERRORLEVEL% NEQ 0 (\n    echo Python 未安装，请先安装 Python。\n    pause\n    exit /b"]
+["rgb(162, 222, 255)", "#a2deff", "python --version > nul 2>&1\nIF %ERRORLEVEL% NEQ 0 (\n    echo Python 未安装，请先安装 Python。\n    pause\n    exit /b"]

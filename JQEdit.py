@@ -1282,7 +1282,7 @@ class Notepad(QMainWindow):
         self.case_menu.addAction(self.to_lowercase_action)
 
         self.capitalize_action = QAction("首字母大写", self)
-        self.capitalize_action.triggered.connect(self.capitalize_text)
+        self.capitalize_action.triggered.connect(self.capitalize_words)
         self.case_menu.addAction(self.capitalize_action)
 
         self.toggle_case_action = QAction("大小写互换", self)
@@ -1527,7 +1527,7 @@ class Notepad(QMainWindow):
                 response = QMessageBox.question(self, "提示", "文件内容发生变化，是否加载？",
                                                 QMessageBox.Yes | QMessageBox.No)
                 if response == QMessageBox.Yes:
-                    self.read_file_in_thread(self.current_file_name)  # 重新加载文件
+                    self.read_file(self.current_file_name)  # 重新加载文件
                 else:
                     self.text_edit.document().setModified(True)  # 标记文档已修改
 
@@ -1610,7 +1610,6 @@ class Notepad(QMainWindow):
         # 取消操作不需要返回值，因为 tip_to_save 会根据返回值来判断
 
     def save_file(self, file_name):
-        file_name = os.path.normpath(file_name)
         try:
             with codecs.open(file_name, "w", encoding=self.current_file_encoding) as outfile:
                 text = self.text_edit.toPlainText()
@@ -1638,7 +1637,8 @@ class Notepad(QMainWindow):
             QMessageBox.warning(self, self.app_name, f"文件 {file_name} 保存时发生未知错误:\n{e}")
         return False
 
-    def read_file_in_thread(self, filename):
+    def read_file(self, filename):
+        filename = os.path.normpath(filename)
         # 关闭语法高亮
         if self.highlighter:
             self.highlighter.deleteLater()
@@ -1737,7 +1737,7 @@ class Notepad(QMainWindow):
         for file_path in self.recent_files:
             if os.path.exists(file_path):
                 action = QAction(file_path, self)
-                new_connection = partial(self.read_file_in_thread, file_path)
+                new_connection = partial(self.read_file, file_path)
                 action.triggered.connect(new_connection)
                 self.action_connections[action] = new_connection
                 self.recent_files_menu.addAction(action)
@@ -2085,7 +2085,6 @@ class Notepad(QMainWindow):
         default_filename = self.current_file_name if self.current_file_name else self.text_edit.untitled_name
         filename, _ = QFileDialog.getSaveFileName(None, "保存文件", default_filename,
                                                   "所有文件类型(*.*);;文本文件 (*.txt)")
-        filename = os.path.normpath(filename)
         # 如果用户取消保存操作，直接返回
         if not filename:
             return
@@ -2115,7 +2114,6 @@ class Notepad(QMainWindow):
 
     @Slot()
     def re_open(self, coding, *args):
-        self.current_file_name = os.path.normpath(self.current_file_name)
         # 指定编码加载文件
         try:
             with open(self.current_file_name, "r", encoding=coding,errors="ignore") as f:
@@ -2132,14 +2130,13 @@ class Notepad(QMainWindow):
         if self.tip_to_save():
             filename, _ = QFileDialog.getOpenFileName(self, "打开", "",
                                                       "*.txt *.py *.xml *.html *.json *.qss *.c *.java *.sql *.pl *.kt *.sh *.cpp *.ini *.bat;;所有文件(*.*)")
-            self.read_file_in_thread(filename)
+            self.read_file(filename)
 
     # 根据当前是否打开文件来决定是直接保存，还是另存至其他位置（）
     @Slot()
     def save(self):
         encoding = self.current_file_encoding.upper()
         if self.text_edit.document().isModified():  # 检查文档是否被修改过
-            self.current_file_name = os.path.normpath(self.current_file_name)
             if self.current_file_name:
                 saved = self.save_file(self.current_file_name)
                 if saved:
@@ -2362,13 +2359,14 @@ class Notepad(QMainWindow):
             QMessageBox.warning(self, "错误", "先选中文本才能转换！")
             pass
 
-    def capitalize_text(self):
+    def capitalize_words(self):
         cursor = self.text_edit.textCursor()
         if cursor.hasSelection():
-            cursor.insertText(cursor.selectedText().capitalize())
+            text_to_capitalize = cursor.selectedText()
+            capitalized_text = text_to_capitalize.title()
+            cursor.insertText(capitalized_text)
         else:
-            QMessageBox.warning(self, "错误", "先选中文本才能转换！")
-            pass
+            QMessageBox.warning(self, "错误", "请先选中文本以便转换每个单词的首字母为大写！")
 
     def toggle_case(self):
         cursor = self.text_edit.textCursor()
@@ -2415,6 +2413,6 @@ if __name__ == "__main__":
     JQEdit = Notepad()
     filename = get_file_argument()
     if filename:
-        JQEdit.read_file_in_thread(filename)
+        JQEdit.read_file(filename)
     JQEdit.show()
     sys.exit(app.exec())

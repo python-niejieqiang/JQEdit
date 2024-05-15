@@ -4,8 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="修复泰文编码错误">
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="上传打包好的exe">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cprofile_and_piplist.py" beforeDir="false" afterPath="$PROJECT_DIR$/cprofile_and_piplist.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/clipboard_list.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/clipboard_list.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
     </list>
@@ -480,7 +482,15 @@
       <option name="project" value="LOCAL" />
       <updated>1715695916030</updated>
     </task>
-    <option name="localTasksCounter" value="28" />
+    <task id="LOCAL-00028" summary="上传打包好的exe">
+      <option name="closed" value="true" />
+      <created>1715706497908</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1715706497908</updated>
+    </task>
+    <option name="localTasksCounter" value="29" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -531,7 +541,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="实现循环查找，解决GB18030正则查找失效，替换未实现，全部替换只勉强实现undo_stack，替换后按CTRL-Z只能恢复删除内容，点击撤销才能恢复替换内容" />
     <MESSAGE value="修复不能逐项替换，修复全部替换不能无法撤销恢复bug" />
     <MESSAGE value="打包脚本优化，安装包体积小了2M- -！" />
     <MESSAGE value="优化行号跳转效率,大文件读取修复分块读取不能无缝衔接bug" />
@@ -556,7 +565,8 @@
     <MESSAGE value="继续完善剪贴板管理器，最近打开菜单文件路径如果已经删除的话就会自动消失" />
     <MESSAGE value="完善文件读取的异常处理" />
     <MESSAGE value="修复泰文编码错误" />
-    <option name="LAST_COMMIT_MESSAGE" value="修复泰文编码错误" />
+    <MESSAGE value="上传打包好的exe" />
+    <option name="LAST_COMMIT_MESSAGE" value="上传打包好的exe" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>

@@ -24,7 +24,7 @@ else:
     # Get filename from command line argument and open the file
 filename = get_file_argument()
 if filename:
-    JQEdit.read_file_in_thread(filename)
+    JQEdit.read_file(filename)
 JQEdit.show()
 
 profiler.disable()
