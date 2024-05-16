@@ -2046,6 +2046,7 @@ class Notepad(QMainWindow):
        <li><span style='font-size:14px'>默认高亮的语言有:Java,Javascript,Kotlin,Perl,Python,Bat,Bash,Xml，C,C++,修改关键字颜色在程序目录下的resources/syntax_highlighter_file.json，修改文本区域颜色在主题对应的qss文件中修改。</span></li>
        <li><span style='font-size:14px'>自定义命令行，$1 表示当前文件名。</span></li>
        <li><span style='font-size:14px'>设置自动保存在settings.json中</span></li>
+       <li><span style='font-size:14px'>清空剪贴板，需要打开resources目录下的clipboard_list.json,删除所有内容，然后在输入法的英文状态下输入“ [] ”（就是数组的符号）,保存为UTF-8编码就可以了.另外按CTRL-SHIFT-V也可以弹出剪贴板窗口</span></li>
     </ol>"""
 
         QMessageBox.information(self, self.app_name, help_txt)
