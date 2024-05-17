@@ -5,7 +5,7 @@
     "italic": false,
     "underline": false,
     "strikeOut": false,
-    "theme": "gerrylight",
+    "theme": "intellijlight",
     "wrap_lines": true,
     "statusbar_shown": true,
     "startup_size": {

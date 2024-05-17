@@ -1677,11 +1677,11 @@ class Notepad(QMainWindow):
             self.setWindowTitle(f"{self.app_name} - {encoding.upper()} - {filename}")
             # 记录当前文件名,编码,以及当前目录
             self.current_file_name = filename
-            self.last_modified_time = QFileInfo(filename).lastModified().toMSecsSinceEpoch()
             self.current_file_encoding = encoding
             self.work_dir = os.path.dirname(os.path.abspath(filename))
             # 将打开记录添加到最近打开
             self.add_recent_file(filename)
+            self.last_modified_time = QFileInfo(filename).lastModified().toMSecsSinceEpoch()
 
             # 使用文件后缀判断使用何种语言高亮
             self.current_file_extension = os.path.splitext(filename)[1]
