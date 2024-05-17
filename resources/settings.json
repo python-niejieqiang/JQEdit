@@ -1,11 +1,11 @@
 {
-    "font_family": "Consolas",
+    "font_family": "Microsoft YaHei UI",
     "pointSize": 14,
     "bold": false,
     "italic": false,
     "underline": false,
     "strikeOut": false,
-    "theme": "intellijlight",
+    "theme": "gerrylight",
     "wrap_lines": true,
     "statusbar_shown": true,
     "startup_size": {

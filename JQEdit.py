@@ -16,7 +16,7 @@ from PySide6.QtCore import (QTranslator, QFile, QRunnable, QThreadPool, QThread,
                             Qt, QEvent, QRect,
                             Signal, QUrl, Slot,
                             QRegularExpression)
-from PySide6.QtGui import (QAction, QIntValidator, QKeySequence, QShortcut, QPalette, QPainter, QSyntaxHighlighter,
+from PySide6.QtGui import (QAction, QIntValidator,QGuiApplication, QKeySequence, QShortcut, QPalette, QPainter, QSyntaxHighlighter,
                            QColor, QTextCharFormat,
                            QIcon, QFont,
                            QTextCursor, QDesktopServices)
@@ -99,13 +99,16 @@ class LineNumberWorker(QRunnable):
         self.dy = dy
 
     def run(self):
-        self.editor.line_number_area.update()
+        # 确保此处的更新逻辑正确处理event_rect和dy
+        self.editor.line_number_area.update(self.event_rect)
 
 class TextEditor(QPlainTextEdit):
     def __init__(self, notepad_instance):
         super().__init__()
         self.untitled_name = "Untitled.txt"
         self.notepad = notepad_instance  # 保存与之关联的记事本实例
+        # 数字9最高最宽，由此计算出行号所需的最合适的宽度
+        self.line_number_digit_width = self.fontMetrics().horizontalAdvance('9')
 
         self.show_line_numbers = self.notepad.show_line_numbers  # 添加此行，保存行号显示状态
         self.line_number_area = LineNumberArea(self)  # 创建行号区域实例
@@ -166,8 +169,9 @@ class TextEditor(QPlainTextEdit):
         if dy:
             self.line_number_area.scroll(dy, 0)
         else:
-            self.line_number_area.update(0, event_rect.y(), self.line_number_area.width(),
-                                         event_rect.height())
+            # 限制重绘区域
+            self.line_number_area.update(
+                event_rect.intersected(QRect(0, 0, self.line_number_area.width(), event_rect.height())))
 
         if event_rect.contains(self.viewport().rect()):
             self.update_line_number_area_width()
@@ -1131,6 +1135,21 @@ class PasteDialog(QDialog):
             # 清空剪贴板的文本内容
             clipboard.clear()
 
+class LoadRecentFilesWorker(QObject):
+    recentFilesLoaded = Signal(list)
+
+    def __init__(self, recent_files_path):
+        super().__init__()
+        self.recent_files_path = recent_files_path
+
+    def run(self):
+        try:
+            with open(self.recent_files_path, 'r') as file:
+                recent_files = json.load(file)
+        except FileNotFoundError:
+            recent_files = []
+        self.recentFilesLoaded.emit(recent_files)
+
 class Notepad(QMainWindow):
     syntax_highlight_toggled = Signal(bool)
     # 定义主题改变信号
@@ -1181,10 +1200,13 @@ class Notepad(QMainWindow):
         self.recent_files_path = os.path.join(resource_path, "recent_files.json")
         # 这个数组跟命令行参数处理一定要等recent_files_menu初始化才能正常运行
         self.recent_files = []
-
-        # 读取最近打开文件记录，并更新“最近打开菜单”
-        self.load_recent_files()
-        self.update_recent_files_menu()
+        self.load_recent_files_thread = QThread()
+        self.load_recent_files_worker = LoadRecentFilesWorker(self.recent_files_path)
+        self.load_recent_files_worker.recentFilesLoaded.connect(self.handle_recent_files_loaded)
+        self.load_recent_files_worker.moveToThread(self.load_recent_files_thread)
+        self.load_recent_files_thread.started.connect(self.load_recent_files_worker.run)
+        self.load_recent_files_thread.start()
+        QGuiApplication.instance().aboutToQuit.connect(self.clean_up_on_exit)
 
         self.apply_theme()  # 应用主题选择
         self.apply_wrap_status()  # 应用状态栏，自动换行设置
@@ -1496,6 +1518,14 @@ class Notepad(QMainWindow):
         self.help_action.triggered.connect(self.help_info)
         self.tool_menu.addAction(self.help_action)
 
+    def handle_recent_files_loaded(self, recent_files):
+        self.recent_files = recent_files
+        self.update_recent_files_menu()
+
+    def clean_up_on_exit(self):
+        self.load_recent_files_thread.quit()  # 请求线程退出
+        self.load_recent_files_thread.wait()  # 请求线程退出
+
     def on_theme_changed(self, new_theme):
         self.theme = new_theme
         if self.syntax_highlight_enabled:
@@ -1573,7 +1603,6 @@ class Notepad(QMainWindow):
             event.accept()  # 用户选择保存或确定不保存，继续关闭
         else:
             event.ignore()  # 用户选择取消保存，不关闭窗口
-        event.accept()
 
     def show_paste_dialog(self):
             self.paste_dialog.show()
@@ -1685,10 +1714,8 @@ class Notepad(QMainWindow):
 
             # 使用文件后缀判断使用何种语言高亮
             self.current_file_extension = os.path.splitext(filename)[1]
-
             if self.syntax_highlight_enabled:
                 self.reload_highlighter(self.theme, self.current_file_extension)
-
             self.start_file_loader(filename, encoding,position)
 
         except FileNotFoundError:
@@ -2409,7 +2436,7 @@ class Notepad(QMainWindow):
 #======================================================================================
 def get_file_argument():
     if len(sys.argv) > 1:
-        return sys.argv[1]
+        return os.path.abspath(sys.argv[1])
     else:
         return None
 

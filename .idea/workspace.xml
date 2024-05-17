@@ -4,10 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="同步到github">
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="修复打开recent_files.json会触发“文件内容有变动，是否加载”提示的bug">
       <change afterPath="$PROJECT_DIR$/1.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_setup.exe" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
     </list>
@@ -244,9 +245,9 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.JQEdit" />
+        <item itemvalue="Python.1" />
         <item itemvalue="Python.trim" />
         <item itemvalue="Python.search_lines_by_keyword_ui" />
-        <item itemvalue="Python.1" />
       </list>
     </recent_temporary>
   </component>
@@ -530,7 +531,15 @@
       <option name="project" value="LOCAL" />
       <updated>1715884963856</updated>
     </task>
-    <option name="localTasksCounter" value="34" />
+    <task id="LOCAL-00034" summary="修复打开recent_files.json会触发“文件内容有变动，是否加载”提示的bug">
+      <option name="closed" value="true" />
+      <created>1715919174239</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1715919174239</updated>
+    </task>
+    <option name="localTasksCounter" value="35" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -586,7 +595,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="优化查找替换体验，按TAB键从搜索框跳到替换框" />
     <MESSAGE value="优化查找替换体验，按TAB键从搜索框跳到替换框,打包脚本可选择添加程序到Path环境变量" />
     <MESSAGE value="移除window_size.json" />
     <MESSAGE value="加入行号功能" />
@@ -611,7 +619,8 @@
     <MESSAGE value="补充EXE打包" />
     <MESSAGE value="行号模块重构" />
     <MESSAGE value="同步到github" />
-    <option name="LAST_COMMIT_MESSAGE" value="同步到github" />
+    <MESSAGE value="修复打开recent_files.json会触发“文件内容有变动，是否加载”提示的bug" />
+    <option name="LAST_COMMIT_MESSAGE" value="修复打开recent_files.json会触发“文件内容有变动，是否加载”提示的bug" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>
