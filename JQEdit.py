@@ -122,8 +122,8 @@ class TextEditor(QPlainTextEdit):
         self.cursorPositionChanged.connect(self.get_row_col)
         self.display_default_file_name(self.notepad.current_file_name)
 
-        paste_shortcut = QShortcut(QKeySequence(Qt.CTRL | Qt.SHIFT |Qt.Key_V), self)
-        paste_shortcut.activated.connect(self.notepad.show_paste_dialog)
+        self.paste_shortcut = QShortcut(QKeySequence(Qt.CTRL | Qt.SHIFT |Qt.Key_V), self)
+        self.paste_shortcut.activated.connect(self.notepad.show_paste_dialog)
 
         self.setFont(self.notepad.font) # 设置文本区域字体
         self.init_context_menu()
@@ -396,7 +396,6 @@ class TextEditor(QPlainTextEdit):
 
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_contextmenu)
-
 
     @Slot()
     def search_in_baidu(self):
@@ -1013,7 +1012,11 @@ class ClipboardManager(QObject):
         super().__init__()
         self.history_file = history_file
         self.history = []
-        self.load_history()
+        # 异步加载历史记录
+        self.load_history_async()
+
+    def load_history_async(self):
+        threading.Thread(target=self.load_history).start()
 
         # 连接到剪贴板内容改变的信号槽
         QApplication.clipboard().dataChanged.connect(self.on_clipboard_change)
@@ -1031,7 +1034,7 @@ class ClipboardManager(QObject):
     def add_to_history(self, content):
         if content not in self.history:
             self.history.insert(0, content)
-            self.save_history()
+            self.save_history_async()
 
     def save_history_async(self):
         threading.Thread(target=self.save_history).start()
@@ -1039,7 +1042,7 @@ class ClipboardManager(QObject):
     def save_history(self):
         try:
             with codecs.open(self.history_file, "w", encoding="utf-8") as f:
-                json.dump(self.history, f, ensure_ascii=False)
+                json.dump(self.history, f, ensure_ascii=True)
         except Exception as e:
             print(f"Error saving history: {e}")
 
@@ -1191,9 +1194,10 @@ class Notepad(QMainWindow):
 
         # UI初始化，菜单栏以及编辑器，状态栏，各个子菜单，自定义的右键菜单
         self.setup_menu_and_actions()
+
         # 创建剪贴板管理器
         self.clipboard_manager = ClipboardManager(os.path.join(resource_path,"clipboard_list.json"))
-        self.paste_dialog = PasteDialog(self.clipboard_manager,parent=self)
+
         # 最近打开的文件列表
         self.action_connections = {}
         # 使用os模块读取路径只是为了pyinstaller打包成exe的时候不会报错
@@ -1605,7 +1609,9 @@ class Notepad(QMainWindow):
             event.ignore()  # 用户选择取消保存，不关闭窗口
 
     def show_paste_dialog(self):
-            self.paste_dialog.show()
+        # 按需创建PasteDialog实例
+        self.paste_dialog = PasteDialog(self.clipboard_manager, parent=self)
+        self.paste_dialog.show()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_F12:
