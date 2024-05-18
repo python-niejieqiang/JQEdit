@@ -16,7 +16,8 @@ from PySide6.QtCore import (QTranslator, QFile, QRunnable, QThreadPool, QThread,
                             Qt, QEvent, QRect,
                             Signal, QUrl, Slot,
                             QRegularExpression)
-from PySide6.QtGui import (QAction, QIntValidator,QGuiApplication, QKeySequence, QShortcut, QPalette, QPainter, QSyntaxHighlighter,
+from PySide6.QtGui import (QAction, QIntValidator, QGuiApplication, QKeySequence, QShortcut, QPalette, QPainter,
+                           QSyntaxHighlighter,
                            QColor, QTextCharFormat,
                            QIcon, QFont,
                            QTextCursor, QDesktopServices)
@@ -205,6 +206,26 @@ class TextEditor(QPlainTextEdit):
         super().paintEvent(event)
 
     def keyPressEvent(self, event):
+        if event.key() in (Qt.Key_QuoteDbl, Qt.Key_Apostrophe):
+            cursor = self.textCursor()
+            if cursor.hasSelection():
+                selected_text = cursor.selectedText()
+                start_pos = cursor.selectionStart()
+                end_pos = cursor.selectionEnd()
+
+                quote_char = '"' if event.key() == Qt.Key_QuoteDbl else "'"
+                cursor.beginEditBlock()
+                cursor.setPosition(start_pos)
+                cursor.insertText(quote_char)
+                cursor.setPosition(end_pos + 1)
+                cursor.insertText(quote_char)
+                cursor.setPosition(start_pos + 1)
+                cursor.setPosition(end_pos + 1, QTextCursor.KeepAnchor)
+                cursor.endEditBlock()
+                self.setTextCursor(cursor)
+                event.accept()
+                return  # 一旦处理了这个事件，就不再向下执行，避免与其他逻辑冲突
+
         if event.key() == Qt.Key_Backspace:
             cursor = self.textCursor()
             if cursor.hasSelection():
@@ -1422,7 +1443,6 @@ class Notepad(QMainWindow):
         self.line_numbers_action.triggered.connect(self.toggle_line_numbers)
         self.theme_menu.addAction(self.line_numbers_action)
 
-        # 假设你已经在主题菜单下添加了一个名为“Syntax Highlighting”的复选框动作
         self.syntax_highlight_action = QAction("语法高亮", self, checkable=True)
         self.syntax_highlight_action.setChecked(self.syntax_highlight_enabled)
         self.syntax_highlight_action.triggered.connect(self.toggle_syntax_highlight)

@@ -1,6 +1,8 @@
- **JQEdit** 
-使用Pyside6编写。作为Windows记事本的替代品，具有基本的读取、写入和保存功能，支持正则表达式查找替换、切换主题，自动保存用户设置，选区替换、行号显示，行号跳转，选区缩进（功能不是很完善）以及语法关键字高亮等功能。此外，JQEdit还具有处理各国编码的能力（我没用过，准确性有待验证），并提供剪贴板功能以及调用命令行的功能。
-
+<img src="https://gitee.com/niejieqiang/JQEdit/blob/master/resources/screenshot/theme_menu.png">
+<img src="https://gitee.com/niejieqiang/JQEdit/blob/master/resources/screenshot/encodings.png">
+<img src="https://gitee.com/niejieqiang/JQEdit/blob/master/resources/screenshot/clipboard.png">
+**JQEdit**
+ 使用Pyside6编写。作为Windows记事本的替代品，具有基本的读取、写入和保存功能，支持正则表达式查找替换、切换主题，自动保存用户设置，选区替换、行号显示，行号跳转，选区缩进（功能不是很完善）以及语法关键字高亮等功能。此外，JQEdit还具有处理各国编码的能力（我没用过，准确性有待验证），并提供剪贴板功能以及调用命令行的功能。
 JQEdit的源代码遵循GPLv3协议发布。 GPLv3协议内容自行搜索，我就不粘贴了。
 JQEdit.py为主程序
 replace_window_ui.py为查找替换框代码
