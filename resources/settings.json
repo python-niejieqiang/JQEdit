@@ -1,12 +1,14 @@
 {
-    "font_family": "Microsoft YaHei UI",
-    "pointSize": 14,
-    "bold": false,
-    "italic": false,
-    "underline": false,
-    "strikeOut": false,
-    "theme": "gerrylight",
-    "wrap_lines": true,
+    "font": {
+        "font_family": "Microsoft YaHei UI",
+        "point_size": 14,
+        "bold": false,
+        "italic": false,
+        "underline": false,
+        "strikeOut": false
+    },
+    "theme": "intellijlight",
+    "wrap_line_on": true,
     "statusbar_shown": true,
     "startup_size": {
         "width": 800,
@@ -14,7 +16,6 @@
         "start_maximized": false
     },
     "show_line_numbers": true,
-    "wrap_line_on": true,
     "syntax_on": true,
     "custom_command": "python $1"
 }
