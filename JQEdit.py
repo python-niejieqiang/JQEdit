@@ -277,26 +277,38 @@ class TextEditor(QPlainTextEdit):
             return
 
         cursor.beginEditBlock()
-
-        # 获取选区的起始和结束位置
+        # 获取选区的起始块和结束块
+        at_line_start = cursor.positionInBlock() == 0
         initial_start_pos = cursor.selectionStart()
         initial_end_pos = cursor.selectionEnd()
-        # 移动光标到选区起始位置
         cursor.setPosition(initial_start_pos)
-        # 遍历选中区域的每一行
-        num = 0
-        while cursor.position() < initial_end_pos:
-            # 确保在行首
-            cursor.movePosition(QTextCursor.StartOfLine)
+        cursor.movePosition(QTextCursor.StartOfLine)
+        cursor.setPosition(initial_end_pos, QTextCursor.KeepAnchor)
+        # 复制选中文本到新字符串以避免直接操作导致的问题
+        selected_text = cursor.selectedText()
+        lines = selected_text.splitlines()  # 安全地分割为多行
 
-            # 插入缩进（例如4个空格）
-            cursor.insertText(" " * 4)
-            num +=1
-            # 移动到下一行的开始，注意NextBlock会包括换行符
-            cursor.movePosition(QTextCursor.Down)
-        cursor.endEditBlock()
+        # 初始化计数器
+        total_spaces_inserted = 0
 
+        # 在每行前添加缩进，并计算插入的空格总数
+        indented_lines = [
+            ("    " + line, 4) for line in lines  # 注意这里每行添加了4个空格
+        ]
+        for _, spaces in indented_lines:  # 这里第二个元素是每行添加的空格数，用于累加
+            total_spaces_inserted += spaces
+
+        # 合并回字符串（这一步保持不变）
+        indented_text = "\n".join(text for text, _ in indented_lines)
+        if at_line_start:
+            indented_text+="\n"
+        # 清除选区并插入新文本
+        cursor.removeSelectedText()
+        cursor.insertText(indented_text)
+        cursor.setPosition(initial_start_pos + 4)
+        cursor.setPosition(initial_end_pos + total_spaces_inserted, QTextCursor.KeepAnchor)
         self.setTextCursor(cursor)
+        cursor.endEditBlock()
 
     def shift_unindent(self):
         cursor = self.textCursor()
@@ -328,7 +340,14 @@ class TextEditor(QPlainTextEdit):
                     break
 
             cursor.endEditBlock()
-            self.setTextCursor(cursor)
+
+            if num > 0:
+                # 调整选区的起始位置
+                new_selection_start = max(initial_selection_start - 4, 0)
+                new_selection_end = initial_selection_end - 4 * num
+                cursor.setPosition(new_selection_start)
+                cursor.setPosition(new_selection_end, QTextCursor.KeepAnchor)
+                self.setTextCursor(cursor)
         else:
             # 处理未选中文本的情况
             cursor_position = cursor.position()
