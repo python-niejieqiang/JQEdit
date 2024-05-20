@@ -258,18 +258,18 @@ class TextEditor(QPlainTextEdit):
                     self.setTextCursor(cursor)
                     event.accept()  # 接受事件以阻止默认的Tab行为
                     return
-            self.indent()
+            self.indent_selected_text()
             event.accept()
         elif event.key() == Qt.Key_Backtab:
-            self.shift_unindent()
+            self.shift_unindent_selected_text()
             event.accept()
         elif event.key() == Qt.Key_Tab and event.modifiers() & Qt.ShiftModifier:
-            self.shift_unindent()
+            self.shift_unindent_selected_text()
             event.accept()
         else:
             super().keyPressEvent(event)
 
-    def indent(self):
+    def indent_selected_text(self):
         cursor = self.textCursor()
         if not cursor.hasSelection():
             cursor.insertText(" " * 4)
@@ -310,7 +310,7 @@ class TextEditor(QPlainTextEdit):
         self.setTextCursor(cursor)
         cursor.endEditBlock()
 
-    def shift_unindent(self):
+    def shift_unindent_selected_text(self):
         cursor = self.textCursor()
         initial_selection_start = cursor.selectionStart()
         initial_selection_end = cursor.selectionEnd()
@@ -898,14 +898,15 @@ class SelectionReplaceDialog(QDialog, Ui_replace_window):
         # 隐藏查找按钮和单个替换按钮
         self.findnext_btn.hide()
         self.replace_btn.hide()
-        self.multiline_check.hide()
+        # self.multiline_check.hide()
         # 移除方向选择组
         self.direction_gbox.setParent(None)
         # 微调按钮位置，将全部替换按钮的位置和大小设置为与查找按钮相同
         self.allreplace_btn.setGeometry(self.findnext_btn.geometry())
         self.cancel_btn.setGeometry(QRect(400, 80, 101, 31))
-        self.matchcase_check.setGeometry(QRect(190, 120, 81, 30))
-        self.dotall_check.setGeometry(QRect(85, 120, 71, 30))
+        self.matchcase_check.setGeometry(QRect(300, 120, 81, 30))
+        self.dotall_check.setGeometry(QRect(185, 120, 71, 30))
+        self.multiline_check.setGeometry(QRect(50, 120, 111, 30))
 
         self.allreplace_btn.clicked.connect(self.replace_all)
         self.cancel_btn.clicked.connect(self.close_dialog)
@@ -942,8 +943,6 @@ class SelectionReplaceDialog(QDialog, Ui_replace_window):
             flags = 0
             if not matchcase:
                 flags |= re.IGNORECASE
-            if multiline:
-                flags |= re.MULTILINE
             if dotall:
                 flags |= re.DOTALL
 
@@ -951,9 +950,16 @@ class SelectionReplaceDialog(QDialog, Ui_replace_window):
             # 获取选区的开始和结束位置
             selection_start = cursor.selectionStart()
             selection_end = cursor.selectionEnd()
-
+            if multiline:
+                lines = selected_text.splitlines()
+                for i,line in enumerate(lines):
+                    lines[i] = re.sub(pattern,replacement,line,flags=flags)
+                new_text = "\n".join(lines)
             # 执行替换操作
-            new_text = re.sub(pattern, replacement, selected_text, flags=flags)
+            else:
+                new_text = re.sub(pattern, replacement, selected_text, flags=flags)
+
+
             cursor.removeSelectedText()
             cursor.insertText(new_text)
             cursor.endEditBlock()
@@ -1154,6 +1160,28 @@ class LoadRecentFilesWorker(QObject):
             recent_files = []
         self.recentFilesLoaded.emit(recent_files)
 
+class CustomCommentDialog(QDialog):
+    def __init__(self, current_comment_char="", parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("自定义注释符号")
+        layout = QVBoxLayout()
+
+        self.label = QLabel("请输入新的注释符号:", self)
+        layout.addWidget(self.label)
+
+        self.lineEdit = QLineEdit(current_comment_char, self)  # 这里设置默认值
+        layout.addWidget(self.lineEdit)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+        layout.addWidget(buttonBox)
+
+        self.setLayout(layout)
+
+    def getCommentChar(self):
+        return self.lineEdit.text().strip()
+
 class Notepad(QMainWindow):
     syntax_highlight_toggled = Signal(bool)
     # 定义主题改变信号
@@ -1331,27 +1359,30 @@ class Notepad(QMainWindow):
 
 
         self.line_menu = self.edit_menu.addMenu("行")
-        self.emptyline_action = QAction(self.tr("清空行"), self)
+        self.emptyline_action = QAction("清空行", self)
         self.emptyline_action.setShortcut("Ctrl+K")
         self.emptyline_action.triggered.connect(self.empty_line)
         self.line_menu.addAction(self.emptyline_action)
 
-        self.copyline_action = QAction(self.tr("复制行"), self)
+        self.copyline_action = QAction("复制行", self)
         self.copyline_action.setShortcut("Alt+C")
         self.copyline_action.triggered.connect(self.copy_line)
         self.line_menu.addAction(self.copyline_action)
 
-        self.del_line_action = QAction(self.tr("删除行"), self)
+        self.del_line_action = QAction("删除行", self)
         self.del_line_action.setShortcut("Ctrl+Del")
         self.del_line_action.triggered.connect(self.delete_line)
         self.line_menu.addAction(self.del_line_action)
         self.edit_menu.addMenu(self.line_menu)
 
-        self.comment_action = QAction(self.tr("切换注释(&S)"), self)
+        self.comment_action = QAction("切换注释", self)
         self.comment_action.setShortcut("Ctrl+/")
         self.comment_action.triggered.connect(self.comment_selected_text)
         self.edit_menu.addAction(self.comment_action)
 
+        self.custom_comment_char_aciton = QAction("自定义注释符号", self)
+        self.custom_comment_char_aciton.triggered.connect(self.set_custom_comment_char)
+        self.edit_menu.addAction(self.custom_comment_char_aciton)
         self.edit_menu.addSeparator()
 
         self.cut_action = QAction("剪切(&T)", self)
@@ -1524,6 +1555,16 @@ class Notepad(QMainWindow):
         self.help_action.triggered.connect(self.help_info)
         self.tool_menu.addAction(self.help_action)
 
+    def set_custom_comment_char(self):
+        dialog = CustomCommentDialog(current_comment_char=self.custom_comment_char, parent=self)
+        if dialog.exec() == QDialog.Accepted:
+            new_comment_char = dialog.getCommentChar()
+            if new_comment_char:  # 确保用户输入不为空
+                self.custom_comment_char = new_comment_char
+                self.save_settings()
+            else:
+                QMessageBox.warning(self, "警告", "注释符号不能为空！")
+
     def handle_recent_files_loaded(self, recent_files):
         self.recent_files = recent_files
         self.update_recent_files_menu()
@@ -1596,11 +1637,52 @@ class Notepad(QMainWindow):
             self.text_edit.showFullScreen()  # 让 QPlainTextEdit 占据整个屏幕
             self.menuBar().hide()
             self.immersive_mode_action.setChecked(True)  # 更新菜单项状态
+            self.toggle_comment_shortcut = QShortcut(QKeySequence("Ctrl+/"), self)
+            self.toggle_comment_shortcut.activated.connect(self.comment_selected_text)
+            self.toggle_comment_shortcut.setEnabled(True)
+
+            self.del_line_shortcut = QShortcut(QKeySequence("Ctrl+Del"), self)
+            self.del_line_shortcut.activated.connect(self.delete_line)
+            self.del_line_shortcut.setEnabled(True)
+
+            self.empty_line_shortcut = QShortcut(QKeySequence("Ctrl+K"), self)
+            self.empty_line_shortcut.activated.connect(self.empty_line)
+            self.empty_line_shortcut.setEnabled(True)
+
+            self.copy_line_shortcut = QShortcut(QKeySequence("Alt+C"), self)
+            self.copy_line_shortcut.activated.connect(self.copy_line)
+            self.copy_line_shortcut.setEnabled(True)
+
+            self.delete_word_right_shortcut = QShortcut(QKeySequence("Alt+D"), self)
+            self.delete_word_right_shortcut.activated.connect(self.delete_word_right)
+            self.delete_word_right_shortcut.setEnabled(True)
+
+            self.delete_word_left_shortcut = QShortcut(QKeySequence("Alt+Del"), self)
+            self.delete_word_left_shortcut.activated.connect(self.delete_word_left)
+            self.delete_word_left_shortcut.setEnabled(True)
+
+            self.move_word_right_shortcut = QShortcut(QKeySequence("Alt+F"), self)
+            self.move_word_right_shortcut.activated.connect(self.move_word_right)
+            self.move_word_right_shortcut.setEnabled(True)
+
+            self.move_word_left_shortcut = QShortcut(QKeySequence("Alt+B"), self)
+            self.move_word_left_shortcut.activated.connect(self.move_word_left)
+            self.move_word_left_shortcut.setEnabled(True)
+
         else:
             self.showNormal()  # 退出全屏模式
             self.immersive_mode = False
             self.menuBar().show()
             self.immersive_mode_action.setChecked(False)  # 更新菜单项状态
+            self.toggle_comment_shortcut.setEnabled(False)
+            self.del_line_shortcut.setEnabled(False)
+            self.empty_line_shortcut.setEnabled(False)
+            self.copy_line_shortcut.setEnabled(False)
+            self.delete_word_right_shortcut.setEnabled(False)
+            self.delete_word_left_shortcut.setEnabled(False)
+            self.move_word_right_shortcut.setEnabled(False)
+            self.move_word_left_shortcut.setEnabled(False)
+
 
     # 点击关闭按钮时提示要不要保存（重写closeEvent）
     def closeEvent(self, event):
@@ -1857,6 +1939,7 @@ class Notepad(QMainWindow):
         self.theme = settings.get("theme", "intellijlight")
         self.syntax_highlight_enabled = settings.get("syntax_on", False)
         self.custom_command = settings.get("custom_command", "python $1")
+        self.custom_comment_char = settings.get("custom_comment_char","#")
         self.wrap_line_on = settings.get("wrap_line_on", True)
         self.statusbar_shown = settings.get("statusbar_shown", True)
         self.show_line_numbers = settings.get("show_line_numbers", True)
@@ -1888,7 +1971,8 @@ class Notepad(QMainWindow):
             "startup_size": {"width": self.width(), "height": self.height(), "start_maximized": self.isMaximized()},
             "show_line_numbers": self.show_line_numbers,
             "syntax_on": self.syntax_highlight_enabled,
-            "custom_command": self.custom_command
+            "custom_command": self.custom_command,
+            "custom_comment_char":self.custom_comment_char
         })
 
         # 保存更新后的设置到文件
@@ -2205,62 +2289,53 @@ class Notepad(QMainWindow):
     def delete(self):
         self.text_edit.textCursor().deletePreviousChar()
 
-    @Slot()
-    def comment_selected_text(self):
-        # 定义注释符号，python中是 “ # ”
-        comment_char = "# "
-        # 选取文本注释，在换行符后添加 “ # ”
+    def comment_selected_text(self, ):
         cursor = self.text_edit.textCursor()
-        # 获取用户当前选区的起始和结束位置
-        initial_selection_start = cursor.selectionStart()
-        initial_selection_end = cursor.selectionEnd()
-
         has_selection = cursor.hasSelection()
 
         if has_selection:
-            # 切换注释
             selection_start = cursor.selectionStart()
             selection_end = cursor.selectionEnd()
             cursor.setPosition(selection_start)
-            num = 0
+            cursor.movePosition(QTextCursor.StartOfLine)
+            cursor.setPosition(selection_end, QTextCursor.KeepAnchor)
+            selected_text = cursor.selectedText()
+            lines = selected_text.splitlines()
+
             comment_delta = 0
-            while cursor.position() < selection_end and not cursor.atEnd():
-                cursor.movePosition(QTextCursor.StartOfLine)
-                if cursor.block().text().startswith(comment_char):
-                    # 如果行已注释，则去除注释
-                    cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, len(comment_char))
-                    cursor.removeSelectedText()
-                    num -= 1
-                    comment_delta -= len(comment_char)  # 减去注释符号的长度
+            # 修正后的逻辑，确保既能添加又能移除注释，并准确计算移除的空格
+            has_added_count = 0  # 初始化添加#成功的计数器
+            chars_replaced = 0
+            # 使用传统for循环进行处理并计数
+            for i, line in enumerate(lines):
+                if line.startswith(self.custom_comment_char):
+                    lines[i] = line[len(self.custom_comment_char):]
+                    comment_delta = -len(self.custom_comment_char)
+                    has_added_count -=1
                 else:
-                    # 否则，添加注释
-                    cursor.insertText(f"{comment_char}")
-                    num += 1
-                    comment_delta += len(comment_char)  # 增加注释符号的长度
+                    lines[i] = self.custom_comment_char + line
+                    comment_delta = len(self.custom_comment_char)
+                    has_added_count += 1
+            commented_text = "\n".join(lines)
+            cursor.removeSelectedText()
+            cursor.insertText(commented_text)
 
-                cursor.movePosition(QTextCursor.NextBlock)
+            # 更精确的计算新选区结束位置，考虑所有变化
+            new_selection_end = selection_end + has_added_count * len(self.custom_comment_char)
 
-            # 重新设置选区为初始位置，确保在文本范围内
-            new_selection_start = max(0, initial_selection_start + comment_delta)
-            new_selection_end = min(self.text_edit.document().characterCount() - 1,
-                                    initial_selection_end + num * len(comment_char))
-            cursor.setPosition(new_selection_start, QTextCursor.MoveAnchor)
+            cursor.setPosition(selection_start + comment_delta)
             cursor.setPosition(new_selection_end, QTextCursor.KeepAnchor)
             self.text_edit.setTextCursor(cursor)
         else:
             # 若无选区，注释或取消注释当前行
             cursor.movePosition(QTextCursor.StartOfLine)
-            if cursor.block().text().startswith(comment_char):
-                cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, len(comment_char))
+            if cursor.block().text().startswith(self.custom_comment_char):
+                cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, len(self.custom_comment_char))
                 cursor.removeSelectedText()
             else:
-                cursor.insertText(f"{comment_char}")
+                cursor.insertText(f"{self.custom_comment_char}")
 
-            # 重新设置光标位置为初始位置
-            cursor.setPosition(initial_selection_start)
             self.text_edit.setTextCursor(cursor)
-
-        self.text_edit.ensureCursorVisible()
 
     def delete_line(self):
         cursor = self.text_edit.textCursor()

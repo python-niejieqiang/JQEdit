@@ -4,13 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="主题读取重构，移除选区缩进无法修复的代码。。。（缩进完成恢复选区时会导致界面僵死）">
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="修复选区缩进僵死问题，完美运行">
       <change afterPath="$PROJECT_DIR$/1.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_setup.exe" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/inno_setup.iss" beforeDir="false" afterPath="$PROJECT_DIR$/inno_setup.iss" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -581,7 +581,15 @@
       <option name="project" value="LOCAL" />
       <updated>1716115668875</updated>
     </task>
-    <option name="localTasksCounter" value="40" />
+    <task id="LOCAL-00040" summary="修复选区缩进僵死问题，完美运行">
+      <option name="closed" value="true" />
+      <created>1716127867278</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1716127867278</updated>
+    </task>
+    <option name="localTasksCounter" value="41" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -637,7 +645,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="增加语法高亮配置文件，QSS配置文件，配色方案高度自定义，关键字在不同的主题中有不同表现" />
     <MESSAGE value="代码重构，无功能更新，优化选区缩进" />
     <MESSAGE value="增加关键字高亮的粗体与斜体设置，使用内存映射读取文件" />
     <MESSAGE value="代码重构，使用QThreadPool" />
@@ -662,7 +669,8 @@
     <MESSAGE value="新增小功能：选中文本AAA输入'或者&quot;,得到'AAA'或者&quot;AAA&quot;" />
     <MESSAGE value="readme增加图片显示" />
     <MESSAGE value="主题读取重构，移除选区缩进无法修复的代码。。。（缩进完成恢复选区时会导致界面僵死）" />
-    <option name="LAST_COMMIT_MESSAGE" value="主题读取重构，移除选区缩进无法修复的代码。。。（缩进完成恢复选区时会导致界面僵死）" />
+    <MESSAGE value="修复选区缩进僵死问题，完美运行" />
+    <option name="LAST_COMMIT_MESSAGE" value="修复选区缩进僵死问题，完美运行" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>
