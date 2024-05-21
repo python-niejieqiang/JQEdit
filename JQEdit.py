@@ -43,7 +43,7 @@ class FileLoader(QThread):
                 f.seek(self.position)
                 while True:
                     lines = []
-                    for _ in range(20000):
+                    for _ in range(100000):
                         line = f.readline()
                         if not line:
                             break
@@ -106,6 +106,8 @@ class LineNumberWorker(QRunnable):
 class TextEditor(QPlainTextEdit):
     def __init__(self, notepad_instance):
         super().__init__()
+        self.special_pairs = {'"': '"', "'": "'", '{': '}', '(': ')', '[': ']'}
+
         self.untitled_name = "Untitled.txt"
         self.notepad = notepad_instance  # 保存与之关联的记事本实例
         # 数字9最高最宽，由此计算出行号所需的最合适的宽度
@@ -206,68 +208,101 @@ class TextEditor(QPlainTextEdit):
         super().paintEvent(event)
 
     def keyPressEvent(self, event):
-        if event.key() in (Qt.Key_QuoteDbl, Qt.Key_Apostrophe):
+        key = event.key()
+        text = event.text()
+        if key in (Qt.Key_Backspace, Qt.Key_Delete):
+            self.handle_deletion(event)
+        elif text and text in self.special_pairs:
             cursor = self.textCursor()
-            if cursor.hasSelection():
-                selected_text = cursor.selectedText()
-                start_pos = cursor.selectionStart()
-                end_pos = cursor.selectionEnd()
-
-                quote_char = '"' if event.key() == Qt.Key_QuoteDbl else "'"
+            if cursor.hasSelection():  # 新增：处理有选区的情况
+                start_pos, end_pos = cursor.selectionStart(), cursor.selectionEnd()
+                selected_text = self.toPlainText()[start_pos:end_pos]
+                surrounded_text = f"{text}{selected_text}{self.special_pairs[text]}"
                 cursor.beginEditBlock()
-                cursor.setPosition(start_pos)
-                cursor.insertText(quote_char)
-                cursor.setPosition(end_pos + 1)
-                cursor.insertText(quote_char)
-                cursor.setPosition(start_pos + 1)
-                cursor.setPosition(end_pos + 1, QTextCursor.KeepAnchor)
+                cursor.removeSelectedText()
+                cursor.insertText(surrounded_text)
+                cursor.setPosition(start_pos + 1)  # 光标置于包围后选区的右侧
+                cursor.setPosition(end_pos + 1,QTextCursor.KeepAnchor)  # 光标置于包围后选区的右侧
                 cursor.endEditBlock()
                 self.setTextCursor(cursor)
-                event.accept()
-                return  # 一旦处理了这个事件，就不再向下执行，避免与其他逻辑冲突
-
-        if event.key() == Qt.Key_Backspace:
-            cursor = self.textCursor()
-            if cursor.hasSelection():
-                cursor.removeSelectedText()
             else:
-                current_block = cursor.block()
-                current_line = current_block.text()
-                cursor_position = cursor.positionInBlock()
+                self.insert_paired_symbol(text)
 
-                # 检查当前行是否为全空格（空行）
-                if current_line.isspace():
-                    # 确保光标位置不是行首，并且从光标位置开始有至少4个空格可以删除
-                    if cursor_position > 3:  # 由于索引是从0开始，cursor_position为4时才能删除四个空格
-                        # 计算删除的起始位置（从光标前四个字符开始）
-                        delete_start = cursor.block().position() + cursor_position - 4
-                        cursor.setPosition(delete_start)
-                        cursor.setPosition(delete_start + 4, QTextCursor.KeepAnchor)  # 选择四个空格
-                        cursor.removeSelectedText()
-                        event.accept()  # 阻止默认的退格行为
-                    # 如果光标位置不足以删除四个空格，则不做处理，保持默认行为
-
-        if event.key() == Qt.Key_Tab and not event.modifiers():
+        elif key == Qt.Key_Tab and not event.modifiers():
             cursor = self.textCursor()
             if cursor.hasSelection():
                 selected_text = cursor.selectedText().strip()
                 if selected_text == "":
                     # 如果选中的是空格或空行，删除选中内容
                     cursor.removeSelectedText()
-                    cursor.insertText(" "*4)
+                    cursor.insertText(" " * 4)
                     self.setTextCursor(cursor)
                     event.accept()  # 接受事件以阻止默认的Tab行为
                     return
             self.indent_selected_text()
             event.accept()
-        elif event.key() == Qt.Key_Backtab:
+        elif key == Qt.Key_Backtab:
             self.shift_unindent_selected_text()
             event.accept()
-        elif event.key() == Qt.Key_Tab and event.modifiers() & Qt.ShiftModifier:
+        elif key == Qt.Key_Tab and event.modifiers() & Qt.ShiftModifier:
             self.shift_unindent_selected_text()
             event.accept()
         else:
             super().keyPressEvent(event)
+
+    def handle_deletion(self, event):
+        cursor = self.textCursor()
+        key = event.key()
+
+        if key == Qt.Key_Backspace:
+            if cursor.hasSelection():  # 添加回处理选区的逻辑
+                cursor.removeSelectedText()
+                event.accept()
+                return
+
+            pos = cursor.position()
+            if pos > 0:
+                # Check if we're at the beginning of a line with only spaces
+                cursor.movePosition(QTextCursor.StartOfLine)
+                current_line = cursor.block().text()
+                if current_line.isspace():
+                    # Calculate the number of spaces from cursor position to the start of the line
+                    spaces_to_delete = pos
+                    if spaces_to_delete > 3:  # Ensure we have at least 4 spaces to delete
+                        delete_start = cursor.position() - spaces_to_delete
+                        cursor.setPosition(delete_start)
+                        cursor.setPosition(delete_start + spaces_to_delete, QTextCursor.KeepAnchor)
+                        cursor.removeSelectedText()
+                        event.accept()  # Prevent default backspace behavior
+                        return
+
+                # Regular backspace handling for paired symbols
+                prev_char = self.toPlainText()[pos - 1]
+                if prev_char in self.special_pairs:
+                    next_char_pos = pos
+                    if pos < len(self.toPlainText()) and self.toPlainText()[pos] == self.special_pairs[prev_char]:
+                        next_char_pos += 1
+                    cursor.setPosition(pos - 1)
+                    cursor.setPosition(next_char_pos, QTextCursor.KeepAnchor)
+                    cursor.removeSelectedText()
+                    event.accept()
+                else:
+                    super().keyPressEvent(event)
+        elif key == Qt.Key_Delete:
+            if cursor.hasSelection():  # 处理Delete键时的选区删除逻辑
+                cursor.removeSelectedText()
+                event.accept()
+                return
+
+            # Handle regular deletion without special consideration for pairs
+            if cursor.position() < len(self.toPlainText()):
+                cursor.deleteChar()
+
+    def insert_paired_symbol(self, symbol):
+        cursor = self.textCursor()
+        cursor.insertText(symbol + self.special_pairs[symbol])
+        cursor.movePosition(QTextCursor.Left, QTextCursor.MoveAnchor)
+        self.setTextCursor(cursor)
 
     def indent_selected_text(self):
         cursor = self.textCursor()
@@ -935,7 +970,6 @@ class SelectionReplaceDialog(QDialog, Ui_replace_window):
         if selected_text:
             pattern = self.search_text.text()
             replacement = self.replacewith_text.text()
-
             matchcase = self.matchcase_check.isChecked()
             dotall = self.dotall_check.isChecked()
             multiline = self.multiline_check.isChecked()
@@ -1160,7 +1194,7 @@ class LoadRecentFilesWorker(QObject):
             recent_files = []
         self.recentFilesLoaded.emit(recent_files)
 
-class CustomCommentDialog(QDialog):
+class CustomCommentCharDialog(QDialog):
     def __init__(self, current_comment_char="", parent=None):
         super().__init__(parent)
         self.setWindowTitle("自定义注释符号")
@@ -1359,6 +1393,12 @@ class Notepad(QMainWindow):
 
 
         self.line_menu = self.edit_menu.addMenu("行")
+
+        self.combined_lines_action = QAction("连接行", self)
+        self.combined_lines_action.setShortcut("Ctrl+J")
+        self.combined_lines_action.triggered.connect(self.combined_lines)
+        self.line_menu.addAction(self.combined_lines_action)
+
         self.emptyline_action = QAction("清空行", self)
         self.emptyline_action.setShortcut("Ctrl+K")
         self.emptyline_action.triggered.connect(self.empty_line)
@@ -1556,7 +1596,7 @@ class Notepad(QMainWindow):
         self.tool_menu.addAction(self.help_action)
 
     def set_custom_comment_char(self):
-        dialog = CustomCommentDialog(current_comment_char=self.custom_comment_char, parent=self)
+        dialog = CustomCommentCharDialog(current_comment_char=self.custom_comment_char, parent=self)
         if dialog.exec() == QDialog.Accepted:
             new_comment_char = dialog.getCommentChar()
             if new_comment_char:  # 确保用户输入不为空
@@ -1641,6 +1681,10 @@ class Notepad(QMainWindow):
             self.toggle_comment_shortcut.activated.connect(self.comment_selected_text)
             self.toggle_comment_shortcut.setEnabled(True)
 
+            self.combined_lines_shortcut = QShortcut(QKeySequence("Ctrl+J"), self)
+            self.combined_lines_shortcut.activated.connect(self.combined_lines)
+            self.combined_lines_shortcut.setEnabled(True)
+
             self.del_line_shortcut = QShortcut(QKeySequence("Ctrl+Del"), self)
             self.del_line_shortcut.activated.connect(self.delete_line)
             self.del_line_shortcut.setEnabled(True)
@@ -1682,6 +1726,7 @@ class Notepad(QMainWindow):
             self.delete_word_left_shortcut.setEnabled(False)
             self.move_word_right_shortcut.setEnabled(False)
             self.move_word_left_shortcut.setEnabled(False)
+            self.combined_lines_shortcut.setEnabled(False)
 
 
     # 点击关闭按钮时提示要不要保存（重写closeEvent）
@@ -2325,7 +2370,6 @@ class Notepad(QMainWindow):
 
             cursor.setPosition(selection_start + comment_delta)
             cursor.setPosition(new_selection_end, QTextCursor.KeepAnchor)
-            self.text_edit.setTextCursor(cursor)
         else:
             # 若无选区，注释或取消注释当前行
             cursor.movePosition(QTextCursor.StartOfLine)
@@ -2335,7 +2379,7 @@ class Notepad(QMainWindow):
             else:
                 cursor.insertText(f"{self.custom_comment_char}")
 
-            self.text_edit.setTextCursor(cursor)
+        self.text_edit.setTextCursor(cursor)
 
     def delete_line(self):
         cursor = self.text_edit.textCursor()
@@ -2374,6 +2418,27 @@ class Notepad(QMainWindow):
             # 在文本开头插入一个换行符，以保留一个空行
             cursor.insertText("\n")
             # 更新文本编辑器的光标位置
+        self.text_edit.setTextCursor(cursor)
+
+    def combined_lines(self):
+        # 获取当前光标位置
+        cursor = self.text_edit.textCursor()
+
+        # 检查是否有选区，如果有，则合并选区内的所有行；否则只合并光标所在行及其下一行
+        if cursor.hasSelection():
+            start_pos = cursor.selectionStart()
+            end_pos = cursor.selectionEnd()
+            selected_text = cursor.selectedText()
+            lines = selected_text.splitlines()
+            new_text = "".join(lines)
+            cursor.removeSelectedText()
+            cursor.insertText(new_text)
+        else:
+            # 如果没有选区，仅处理光标所在行
+            cursor.movePosition(QTextCursor.EndOfLine)
+            cursor.deleteChar()
+
+        # 设置光标位置保持不变（可选）
         self.text_edit.setTextCursor(cursor)
 
     def delete_word_right(self):
