@@ -136,9 +136,10 @@ class TextEditor(QPlainTextEdit):
     def display_default_file_name(self, filename_):
         # 只需要设置文档的修改状态，窗口的修改状态会自动更新
         self.document().setModified(False)
+        encoding = self.notepad.current_file_encoding
         # 合并条件判断，并设置窗口标题
         if filename_:
-            self.notepad.setWindowTitle(f"{self.notepad.app_name} - {filename_}")
+            self.notepad.setWindowTitle(f"{self.notepad.app_name} - {encoding.upper()} - {filename_}")
         else:
             self.notepad.setWindowTitle(f"{self.notepad.app_name} - [{self.untitled_name}]")
 
@@ -1239,16 +1240,6 @@ class Notepad(QMainWindow):
         # 记录文件所在目录名，打开命令行时就可以切换到该目录
         self.desktop_dir = os.path.join(os.path.expanduser('~'), 'Desktop')
         self.work_dir = self.desktop_dir
-
-        self.last_modified_time = None
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.check_file_modification)
-        self.timer.start(2000)  # 每2秒检查一次
-
-        self.highlighter = None
-        self.theme_changed.connect(self.on_theme_changed)  # 连接主题改变信号到槽函数
-        self.syntax_highlight_toggled.connect(self.toggle_syntax_highlight)
-
         # 读取settings.json文件
         self.settings_file = os.path.join(resource_path, "settings.json")
         self.immersive_mode = False  # 记录是否处于沉浸模式
@@ -1257,6 +1248,15 @@ class Notepad(QMainWindow):
 
         # UI初始化，菜单栏以及编辑器，状态栏，各个子菜单，自定义的右键菜单
         self.setup_menu_and_actions()
+
+        self._styles_cache = {}  # 用于缓存已加载的样式
+        # 预加载基础主题
+        self.apply_theme(self.theme)
+        self.highlighter = None
+        self.theme_changed.connect(self.on_theme_changed)  # 连接主题改变信号到槽函数
+        self.syntax_highlight_toggled.connect(self.toggle_syntax_highlight)
+
+        self.apply_wrap_status()  # 应用状态栏，自动换行设置
 
         # 创建剪贴板管理器
         self.clipboard_manager = ClipboardManager(os.path.join(resource_path,"clipboard_list.json"))
@@ -1275,10 +1275,11 @@ class Notepad(QMainWindow):
         self.load_recent_files_thread.start()
         QGuiApplication.instance().aboutToQuit.connect(self.clean_up_on_exit)
 
-        self._styles_cache = {}  # 用于缓存已加载的样式
-        # 预加载基础主题
-        self.apply_theme(self.theme)
-        self.apply_wrap_status()  # 应用状态栏，自动换行设置
+
+        self.last_modified_time = None
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.check_file_modification)
+        self.timer.start(2000)  # 每2秒检查一次
 
     def setup_menu_and_actions(self):
         # 初始化界面，依次添加菜单栏，text_edit，status_bar
@@ -1332,6 +1333,9 @@ class Notepad(QMainWindow):
         self.save_action.setShortcut("Ctrl+S")
         self.save_action.triggered.connect(self.save)
         self.file_menu.addAction(self.save_action)
+        self.text_edit.document().modificationChanged.connect(self.update_save_action_state)
+        # 手动调用一次，确保按钮初始状态正确
+        self.update_save_action_state()
 
         self.save_as_action = QAction("另存(&A)", self)
         self.save_as_action.setShortcut("Alt+S")
@@ -1600,6 +1604,11 @@ class Notepad(QMainWindow):
         self.help_action.triggered.connect(self.help_info)
         self.tool_menu.addAction(self.help_action)
 
+    def update_save_action_state(self):
+        # 获取当前文档的修改状态
+        is_modified = self.text_edit.document().isModified()
+        self.save_action.setEnabled(is_modified)
+
     def set_custom_comment_char(self):
         dialog = CustomCommentCharDialog(current_comment_char=self.custom_comment_char, parent=self)
         if dialog.exec() == QDialog.Accepted:
@@ -1800,22 +1809,11 @@ class Notepad(QMainWindow):
                 # 更新最后修改时间
             self.text_edit.document().setModified(False)
             self.last_modified_time = QFileInfo(file_name).lastModified().toMSecsSinceEpoch()
+            self.setWindowTitle(f"{self.app_name} - {self.current_file_encoding.upper()} - {self.current_file_name} - 保存成功")
 
             return True
         except IOError as e:
             QMessageBox.warning(self, self.app_name, f"文件 {file_name} 保存失败:\n{e}")
-        except UnicodeEncodeError as e:
-            # 如果编码错误，尝试使用UTF-8重新保存
-            try:
-                with codecs.open(file_name, "w", encoding="utf-8") as outfile:
-                    text = self.text_edit.toPlainText()
-                    outfile.write(text)
-                self.text_edit.document().setModified(False)
-                # 更新最后修改时间
-                self.last_modified_time = QFileInfo(file_name).lastModified().toMSecsSinceEpoch()
-                return True
-            except Exception as e:
-                QMessageBox.warning(self, self.app_name, f"编码错误，文件 {file_name} 保存失败:\n{e}")
         except Exception as e:
             QMessageBox.warning(self, self.app_name, f"文件 {file_name} 保存时发生未知错误:\n{e}")
         return False
@@ -1856,13 +1854,10 @@ class Notepad(QMainWindow):
             if self.syntax_highlight_enabled:
                 self.reload_highlighter(self.theme, self.current_file_extension)
             self.start_file_loader(filename, encoding,position)
+            self.update_save_action_state()
 
-        except FileNotFoundError:
-            QMessageBox.warning(self, "错误", "文件未找到，请检查路径是否正确！")
         except PermissionError:
             QMessageBox.warning(self, "错误", "没有足够的权限打开文件！")
-        except UnicodeDecodeError:
-            QMessageBox.warning(self, "错误", "文件编码无法识别，请尝试手动选择编码！")
         except Exception as e:
             QMessageBox.warning(self, "错误", f"打开文件时发生错误（很可能不支持该文件类型）:{e}")
 
@@ -2204,82 +2199,84 @@ class Notepad(QMainWindow):
         filename_lineedit = QApplication.focusWidget()
         if isinstance(filename_lineedit, QLineEdit):
             filename_lineedit.selectAll()
+        with open(filename, "w", encoding=encoding,errors="replace") as w:
+            w.write(self.text_edit.toPlainText())
 
-        try:
-            with open(filename, "w", encoding=encoding) as w:
-                w.write(self.text_edit.toPlainText())
-            # 更新最后修改时间
-            self.last_modified_time = QFileInfo(filename).lastModified().toMSecsSinceEpoch()
-            # 更新窗口标题以显示保存成功
-            QMessageBox.information(self, "提示",
-                                f"文件{filename}已经使用 {encoding.upper()} 编码另存至指定位置！")
+        # 更新窗口标题以显示保存成功
+        QMessageBox.information(self, "提示",
+                            f"文件{filename}已经使用 {encoding.upper()} 编码另存至指定位置！")
+        self.text_edit.clear()
+        self.start_file_loader(filename, encoding, 0)
+        # 更新最后修改时间
+        self.add_recent_file(filename)
+        self.last_modified_time = QFileInfo(filename).lastModified().toMSecsSinceEpoch()
+        self.current_file_encoding = encoding
+        filename = os.path.normpath(filename)
+        self.current_file_name = filename
+        self.setWindowTitle(f"{self.app_name} - {encoding.upper()} - {filename}")
+        self.update_save_action_state()
 
-            # 如果用户选择覆盖当前打开的文件，则更新窗口标题(编辑器内容没必要更新)
-            if filename == self.current_file_name:
-                self.current_file_name = filename
-                self.current_file_encoding = encoding
-                self.setWindowTitle(f"{self.app_name} - {encoding.upper()} - {filename}")
-
-        except Exception as e:
-            # 在这里处理异常，例如通过日志记录或更新窗口标题来显示错误信息
-            print(f"保存文件时出错：{e}")
 
     @Slot()
     def re_open(self, coding, *args):
-        # 指定编码加载文件
-        try:
-            with open(self.current_file_name, "r", encoding=coding,errors="ignore") as f:
-                content = f.read()
-            self.text_edit.setPlainText(content)
-            self.current_file_encoding = coding
-            self.last_modified_time = QFileInfo(self.current_file_name).lastModified().toMSecsSinceEpoch()
-            self.setWindowTitle(self.app_name + " - " + coding.upper() + " - " + self.current_file_name)
-        except FileNotFoundError:
-            QMessageBox.warning(self, "错误", "还没打开文件！")
+        if not self.current_file_name:
+            QMessageBox.warning(self, "错误", "请先打开一个文件！")
+            return
+
+        self.text_edit.clear()
+
+        self.start_file_loader(self.current_file_name, coding,0)
+        self.add_recent_file(self.current_file_name)
+        self.last_modified_time = QFileInfo(self.current_file_name).lastModified().toMSecsSinceEpoch()
+        self.current_file_encoding = coding
+        self.setWindowTitle(f"{self.app_name} - {coding.upper()} - {self.current_file_name}")
+        self.update_save_action_state()
 
     @Slot()
     def open_dialog(self):
         if self.tip_to_save():
             filename, _ = QFileDialog.getOpenFileName(self, "打开", "",
                                                       "*.txt *.py *.xml *.html *.json *.qss *.c *.java *.sql *.pl *.kt *.sh *.cpp *.ini *.bat;;所有文件(*.*)")
-            self.read_file(filename)
+            if filename :
+                self.read_file(filename)
 
     # 根据当前是否打开文件来决定是直接保存，还是另存至其他位置（）
     @Slot()
     def save(self):
-        encoding = self.current_file_encoding.upper()
-        if self.text_edit.document().isModified():  # 检查文档是否被修改过
-            if self.current_file_name:
-                saved = self.save_file(self.current_file_name)
-                if saved:
-                    self.setWindowTitle(f"{self.app_name} - {encoding} - {self.current_file_name} - 保存成功")
+        if os.path.exists(self.current_file_name):
+            if self.text_edit.document().isModified():  # 检查文档是否被修改过
+                self.save_file(self.current_file_name)
             else:
-                saved_file = self.save_as()
-                if saved_file:
-                    self.setWindowTitle(f"{self.app_name} - {encoding} - {self.current_file_name} - 保存成功")
+                print("文档未修改，无需保存")
         else:
-            print("文档未修改，无需保存")
+            self.save_as()
+
 
     @Slot()
     def save_as(self):
         default_filename = self.current_file_name if self.current_file_name else self.text_edit.untitled_name
-        filename, _ = QFileDialog.getSaveFileName(None, "保存文件", default_filename,
-                                                  "所有文件类型(*.*);;文本文件 (*.txt)")
-        # 如果用户取消保存操作，直接返回 None
+        filename, _ = QFileDialog.getSaveFileName(None, "保存文件", default_filename,"所有文件类型(*.*);;文本文件 (*.txt)")
+        filename=os.path.normpath(filename)
         if not filename:
-            return None
+            return False
 
         # 获取文件名输入框并选中文本
         filename_lineedit = QApplication.focusWidget()
         if isinstance(filename_lineedit, QLineEdit):
             filename_lineedit.selectAll()
+        if self.current_file_encoding == None:
+            self.current_file_encoding = "utf-8"
+        with open(filename, "w", encoding=self.current_file_encoding) as outfile:
+            text = self.text_edit.toPlainText()
+            outfile.write(text)
+            # 更新最后修改时间
 
-        saved = self.save_file(filename)
-        if saved:
-            self.current_file_name = filename
-            return True
-        else:
-            return False
+        self.text_edit.document().clear()
+        self.start_file_loader(filename, self.current_file_encoding, 0)
+        self.add_recent_file(filename)
+        self.last_modified_time = QFileInfo(filename).lastModified().toMSecsSinceEpoch()
+        self.setWindowTitle(f"{self.app_name} - {self.current_file_encoding.upper()} - {filename}")
+        self.current_file_name = filename
 
     @Slot()
     def new_file(self):
@@ -2288,6 +2285,7 @@ class Notepad(QMainWindow):
             self.current_file_name=""
             self.work_dir = self.desktop_dir
             self.setWindowTitle(f"{self.app_name} - [{self.text_edit.untitled_name}]")
+            self.update_save_action_state()
 
     @Slot()
     def modify_font(self):
