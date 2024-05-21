@@ -4,12 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="新增自定义注释符号修改，新增选区替换按行处理，修复沉浸模式因为菜单隐藏导致某些快捷键不能使用的问题">
-      <change afterPath="$PROJECT_DIR$/1.py" afterDir="false" />
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="完全复刻PycharmIDE中的匹对输出删除功能，''&quot;&quot;[]{}()。新增连接行（含选区连接行）功能">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_setup.exe" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inno_setup.iss" beforeDir="false" afterPath="$PROJECT_DIR$/inno_setup.iss" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/clipboard_list.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/clipboard_list.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -595,7 +594,15 @@
       <option name="project" value="LOCAL" />
       <updated>1716212168594</updated>
     </task>
-    <option name="localTasksCounter" value="42" />
+    <task id="LOCAL-00042" summary="完全复刻PycharmIDE中的匹对输出删除功能，''&quot;&quot;[]{}()。新增连接行（含选区连接行）功能">
+      <option name="closed" value="true" />
+      <created>1716284585087</created>
+      <option name="number" value="00042" />
+      <option name="presentableId" value="LOCAL-00042" />
+      <option name="project" value="LOCAL" />
+      <updated>1716284585087</updated>
+    </task>
+    <option name="localTasksCounter" value="43" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -651,7 +658,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="增加关键字高亮的粗体与斜体设置，使用内存映射读取文件" />
     <MESSAGE value="代码重构，使用QThreadPool" />
     <MESSAGE value="增加语法高亮切换开关。" />
     <MESSAGE value="查找替换功能中，搜索实时显示结果" />
@@ -676,7 +682,8 @@
     <MESSAGE value="主题读取重构，移除选区缩进无法修复的代码。。。（缩进完成恢复选区时会导致界面僵死）" />
     <MESSAGE value="修复选区缩进僵死问题，完美运行" />
     <MESSAGE value="新增自定义注释符号修改，新增选区替换按行处理，修复沉浸模式因为菜单隐藏导致某些快捷键不能使用的问题" />
-    <option name="LAST_COMMIT_MESSAGE" value="新增自定义注释符号修改，新增选区替换按行处理，修复沉浸模式因为菜单隐藏导致某些快捷键不能使用的问题" />
+    <MESSAGE value="完全复刻PycharmIDE中的匹对输出删除功能，''&quot;&quot;[]{}()。新增连接行（含选区连接行）功能" />
+    <option name="LAST_COMMIT_MESSAGE" value="完全复刻PycharmIDE中的匹对输出删除功能，''&quot;&quot;[]{}()。新增连接行（含选区连接行）功能" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>

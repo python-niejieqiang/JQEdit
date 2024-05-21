@@ -255,39 +255,44 @@ class TextEditor(QPlainTextEdit):
         key = event.key()
 
         if key == Qt.Key_Backspace:
-            if cursor.hasSelection():  # 添加回处理选区的逻辑
+            cursor = self.textCursor()
+            if cursor.hasSelection():
                 cursor.removeSelectedText()
-                event.accept()
-                return
+            else:
+                current_block = cursor.block()
+                current_line = current_block.text()
+                cursor_position = cursor.positionInBlock()
+                pos = cursor.position()
 
-            pos = cursor.position()
-            if pos > 0:
-                # Check if we're at the beginning of a line with only spaces
-                cursor.movePosition(QTextCursor.StartOfLine)
-                current_line = cursor.block().text()
+                # 检查当前行是否为全空格（空行）
                 if current_line.isspace():
-                    # Calculate the number of spaces from cursor position to the start of the line
-                    spaces_to_delete = pos
-                    if spaces_to_delete > 3:  # Ensure we have at least 4 spaces to delete
-                        delete_start = cursor.position() - spaces_to_delete
+                    # 确保光标位置不是行首，并且从光标位置开始有至少4个空格可以删除
+                    if cursor_position > 3:  # 由于索引是从0开始，cursor_position为4时才能删除四个空格
+                        # 计算删除的起始位置（从光标前四个字符开始）
+                        delete_start = cursor.block().position() + cursor_position - 4
                         cursor.setPosition(delete_start)
-                        cursor.setPosition(delete_start + spaces_to_delete, QTextCursor.KeepAnchor)
+                        cursor.setPosition(delete_start + 4, QTextCursor.KeepAnchor)  # 选择四个空格
                         cursor.removeSelectedText()
-                        event.accept()  # Prevent default backspace behavior
-                        return
-
-                # Regular backspace handling for paired symbols
-                prev_char = self.toPlainText()[pos - 1]
-                if prev_char in self.special_pairs:
-                    next_char_pos = pos
-                    if pos < len(self.toPlainText()) and self.toPlainText()[pos] == self.special_pairs[prev_char]:
-                        next_char_pos += 1
-                    cursor.setPosition(pos - 1)
-                    cursor.setPosition(next_char_pos, QTextCursor.KeepAnchor)
-                    cursor.removeSelectedText()
-                    event.accept()
+                        event.accept()  # 阻止默认的退格行为
+                    else:
+                        # 如果没有找到可以配对删除的字符，允许默认的退格键行为
+                        super().keyPressEvent(event)
+                    # 如果光标位置不足以删除四个空格，则不做处理，保持默认行为
                 else:
-                    super().keyPressEvent(event)
+                    # 当前行不全是空格，进行常规的特殊字符对处理
+                    prev_char = self.toPlainText()[pos - 1]
+                    if prev_char in self.special_pairs:
+                        next_char_pos = pos
+                        if pos < len(self.toPlainText()) and self.toPlainText()[pos] == self.special_pairs[prev_char]:
+                            next_char_pos += 1
+                        cursor.setPosition(pos - 1)
+                        cursor.setPosition(next_char_pos, QTextCursor.KeepAnchor)
+                        cursor.removeSelectedText()
+                        event.accept()
+                    else:
+                        # 如果没有找到可以配对删除的字符，允许默认的退格键行为
+                        super().keyPressEvent(event)
+
         elif key == Qt.Key_Delete:
             if cursor.hasSelection():  # 处理Delete键时的选区删除逻辑
                 cursor.removeSelectedText()

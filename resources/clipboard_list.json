@@ -1,1 +1,1 @@
-[]
+["                cursor_position = cursor.positionInBlock()\n                pos = cursor.position()", "        pos = cursor.position()\n", "prev_char = self.toPlainText()[pos - 1]"]
