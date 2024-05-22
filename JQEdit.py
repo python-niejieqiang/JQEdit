@@ -211,10 +211,10 @@ class TextEditor(QPlainTextEdit):
     def keyPressEvent(self, event):
         key = event.key()
         text = event.text()
+        cursor = self.textCursor()
         if key in (Qt.Key_Backspace, Qt.Key_Delete):
             self.handle_deletion(event)
         elif text and text in self.special_pairs:
-            cursor = self.textCursor()
             if cursor.hasSelection():  # 新增：处理有选区的情况
                 start_pos, end_pos = cursor.selectionStart(), cursor.selectionEnd()
                 selected_text = self.toPlainText()[start_pos:end_pos]
@@ -248,8 +248,167 @@ class TextEditor(QPlainTextEdit):
         elif key == Qt.Key_Tab and event.modifiers() & Qt.ShiftModifier:
             self.shift_unindent_selected_text()
             event.accept()
+        elif key == Qt.Key_X and event.modifiers() == Qt.ControlModifier:
+            if not cursor.hasSelection():
+                self.notepad.delete_line()
+            else:
+                # 如果有选区，遵循默认剪切行为
+                super().keyPressEvent(event)
+            event.accept()
+            return
+        elif key == Qt.Key_C and event.modifiers() == Qt.ControlModifier:
+            if not cursor.hasSelection():
+                self.notepad.copy_line()
+            else:
+                # 如果有选区，遵循默认复制行为
+                super().keyPressEvent(event)
+            event.accept()
+            return
+        # Ctrl+Shift+Z 重做
+        elif key == Qt.Key_Z and event.modifiers() == (Qt.ControlModifier | Qt.ShiftModifier):
+            self.notepad.redo()  # 假设你的TextEditor类继承了QTextEdit或类似类，它们通常有redo方法
+            event.accept()
+            return
+        #Ctrl+W 扩展选区
+        elif event.modifiers() == Qt.ControlModifier and key == Qt.Key_W:
+            cursor = self.textCursor()
+            if not cursor.hasSelection():
+                self.orign_pos = cursor.position()
+
+                # 检查光标是否位于行首
+                at_start = cursor.atBlockStart()
+
+                # 检查光标是否位于行尾或之后紧跟非单词字符
+                at_end_or_after_non_word = cursor.atBlockEnd() or not cursor.movePosition(QTextCursor.Right,
+                                                                                          QTextCursor.MoveAnchor, 1)
+
+                if at_start:
+                    # 如果光标位于行首，直接选中当前单词
+                    cursor.select(QTextCursor.WordUnderCursor)
+                elif at_end_or_after_non_word:
+                    # 如果光标位于行尾或紧跟非单词字符之后，先向左移到前一个单词的边界
+                    cursor.movePosition(QTextCursor.WordLeft, QTextCursor.MoveAnchor)
+                    cursor.select(QTextCursor.WordUnderCursor)
+                else:
+                    # 光标位于单词内部时，直接选中当前单词
+                    cursor.select(QTextCursor.WordUnderCursor)
+
+                self.setTextCursor(cursor)
+                self.selection_anchor_position = cursor.position()
+                self.selection_phase = 1
+            elif self.selection_phase == 1:
+                # 第二阶段：扩展选区至行首并包含第一阶段的单词
+                cursor.setPosition(self.selection_anchor_position)  # 回到记录的起始位置
+                cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.KeepAnchor)
+                self.setTextCursor(cursor)
+                self.selection_phase = 2
+            elif self.selection_phase == 2:
+                # 第三阶段：扩展选区至当前整行
+                cursor.select(QTextCursor.LineUnderCursor)
+                self.setTextCursor(cursor)
+                self.selection_phase = 3
+            elif self.selection_phase == 3:
+                # 确保光标位于当前行的开始
+                cursor.movePosition(QTextCursor.StartOfLine)
+
+                # 开始选中（设置KeepAnchor标志），首先向上去选上一行
+                cursor.movePosition(QTextCursor.Up, QTextCursor.KeepAnchor)
+                cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.KeepAnchor)  # 确保从上一行的行首开始选中
+
+                # 现在向下移动，先回到当前行的行首，然后继续向下选中下一行
+                cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor)
+                cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor)
+
+                # 为了确保选区结束在下一行的末尾，再次移到行尾
+                cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor)
+
+                # 设置新的光标位置和选区
+                self.setTextCursor(cursor)
+                self.selection_phase = 4
+            else:
+                self.selection_phase = 0
+            event.accept()
+            return
+        # 新增：Ctrl+Shift+Right 扩大选区到下一个单词
+        elif event.modifiers() == (Qt.ControlModifier | Qt.ShiftModifier) and key == Qt.Key_Right:
+            cursor = self.textCursor()
+            if cursor.hasSelection():
+                cursor.movePosition(QTextCursor.WordRight, QTextCursor.KeepAnchor)
+            else:
+                cursor.movePosition(QTextCursor.WordRight)
+            self.setTextCursor(cursor)
+            event.accept()
+            return
+        # 检查是否按下Ctrl+Shift+W以取消选区
+        elif event.modifiers() == (Qt.ControlModifier | Qt.ShiftModifier) and key == Qt.Key_W:
+            cursor = self.textCursor()
+            cursor.clearSelection()
+            # 恢复光标到原始位置
+            if self.orign_pos != -1:
+                cursor.setPosition(self.orign_pos)
+                self.setTextCursor(cursor)
+            event.accept()
+            return
         else:
-            super().keyPressEvent(event)
+            # 在其他处理之前，检查是否是Ctrl+Shift+上下箭头的组合
+            if event.modifiers() == (Qt.ControlModifier | Qt.ShiftModifier):
+                cursor = self.textCursor()
+                if key == Qt.Key_Up:
+                    self.moveLineUp(cursor)
+                elif key == Qt.Key_Down:
+                    self.moveLineDown(cursor)
+                event.accept()  # 事件已被处理，防止后续默认处理
+            else:
+                super().keyPressEvent(event)
+
+    def moveLineUp(self, cursor):
+        # 如果没有选中文本，构造一个从当前行到上一行的选区
+
+        if not cursor.hasSelection():
+            orign_pos = cursor.position()  # 记录光标位置
+            cursor.movePosition(QTextCursor.StartOfLine)
+            line_start = cursor.position()
+            cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor)
+            offset = orign_pos-line_start
+        text = cursor.selectedText()
+        cursor.beginEditBlock()
+        cursor.removeSelectedText()
+        cursor.movePosition(QTextCursor.Up)
+        cursor.insertText(text)
+        cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor)
+        text = cursor.selectedText()
+        cursor.removeSelectedText()
+        cursor.movePosition(QTextCursor.Down)
+        cursor.insertText(text)
+        cursor.movePosition(QTextCursor.Up)
+        cursor.movePosition(QTextCursor.StartOfLine)
+        cursor.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor, offset)
+        cursor.endEditBlock()
+        self.setTextCursor(cursor)
+    # 如果不足两行，不做任何操作或根据需要添加其他处理逻辑
+
+    def moveLineDown(self, cursor):
+        if not cursor.hasSelection():
+            orign_pos = cursor.position()  # 记录光标位置
+            cursor.movePosition(QTextCursor.StartOfLine)
+            line_start = cursor.position()
+            cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor)
+            offset = orign_pos-line_start
+        text = cursor.selectedText()
+        cursor.beginEditBlock()
+        cursor.removeSelectedText()
+        cursor.movePosition(QTextCursor.Down)
+        cursor.insertText(text)
+        cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor)
+        text = cursor.selectedText()
+        cursor.removeSelectedText()
+        cursor.movePosition(QTextCursor.Up)
+        cursor.insertText(text)
+        cursor.movePosition(QTextCursor.Down)
+        cursor.movePosition(QTextCursor.StartOfLine)
+        cursor.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor, offset)
+        cursor.endEditBlock()
+        self.setTextCursor(cursor)
 
     def handle_deletion(self, event):
         cursor = self.textCursor()
@@ -1414,12 +1573,10 @@ class Notepad(QMainWindow):
         self.line_menu.addAction(self.emptyline_action)
 
         self.copyline_action = QAction("复制行", self)
-        self.copyline_action.setShortcut("Alt+C")
         self.copyline_action.triggered.connect(self.copy_line)
         self.line_menu.addAction(self.copyline_action)
 
         self.del_line_action = QAction("删除行", self)
-        self.del_line_action.setShortcut("Ctrl+Del")
         self.del_line_action.triggered.connect(self.delete_line)
         self.line_menu.addAction(self.del_line_action)
         self.edit_menu.addMenu(self.line_menu)
@@ -1699,17 +1856,9 @@ class Notepad(QMainWindow):
             self.combined_lines_shortcut.activated.connect(self.combined_lines)
             self.combined_lines_shortcut.setEnabled(True)
 
-            self.del_line_shortcut = QShortcut(QKeySequence("Ctrl+Del"), self)
-            self.del_line_shortcut.activated.connect(self.delete_line)
-            self.del_line_shortcut.setEnabled(True)
-
             self.empty_line_shortcut = QShortcut(QKeySequence("Ctrl+K"), self)
             self.empty_line_shortcut.activated.connect(self.empty_line)
             self.empty_line_shortcut.setEnabled(True)
-
-            self.copy_line_shortcut = QShortcut(QKeySequence("Alt+C"), self)
-            self.copy_line_shortcut.activated.connect(self.copy_line)
-            self.copy_line_shortcut.setEnabled(True)
 
             self.delete_word_right_shortcut = QShortcut(QKeySequence("Alt+D"), self)
             self.delete_word_right_shortcut.activated.connect(self.delete_word_right)
@@ -2131,13 +2280,17 @@ class Notepad(QMainWindow):
     @Slot()
     def help_info(self):
         help_txt = r"""<ol>
-       <li><span style='font-size:14px'>匹配中文：[\u4e00-\u9fff]+ ,查找框三个选项对应Perl正则中的/i,/m,/s开关)。</span></li>
-       <li><span style='font-size:14px'>鼠标选中想要的文字，按CTRL-F就可以搜索了.按Ctrl-G 可以跳转行号类似PyCharmIDE中的查找</span></li>
-       <li><span style='font-size:14px'>取色器，点击PICK SCREEN COLOR 拾取颜色，那个英文暂时没法汉化</span></li>
-       <li><span style='font-size:14px'>默认高亮的语言有:Java,Javascript,Kotlin,Perl,Python,Bat,Bash,Xml，C,C++,修改关键字颜色在程序目录下的resources/syntax_highlighter_file.json，修改文本区域颜色在主题对应的qss文件中修改。</span></li>
-       <li><span style='font-size:14px'>自定义命令行，$1 表示当前文件名。</span></li>
-       <li><span style='font-size:14px'>设置自动保存在settings.json中</span></li>
-       <li><span style='font-size:14px'>清空剪贴板，需要打开resources目录下的clipboard_list.json,删除所有内容，然后在输入法的英文状态下输入“ [] ”（就是数组的符号）,保存为UTF-8编码就可以了.另外按CTRL-SHIFT-V也可以弹出剪贴板窗口</span></li>
+       <li><span style='font-size:12px'>输入括号 ( 会匹配得到 (),并且光标位于括号中间，此时按Backspace删除会删除这一对符号，按Delete删除只会删除右边一半，另外如果有选择文本，此时输入',",{,[,(，得到的匹配对符号会包围选区</span></li>
+       <li><span style='font-size:12px'>复刻PyCharmIDE中的一些快捷键，在没有选择文本时，Ctrl-C是复制当前行，Ctrl-X是删除当前行，Ctrl-Shift-Z是重做，Ctrl-Shift-↑是向上移动行，Ctrl-Shift-↓向下移动行，Ctrl-Shift-→ 是让选区向右移动一个单词，Ctrl-W是扩展选区，Ctrl-Shift-W 取消选区，扩展选区功能远不如PycharmIDE强大，Ctrl-Shift-W也只能取消选区</span></li>
+       <li><span style='font-size:12px'>Ctrl-J会将当前行与下一行连接成一行，有选择文本时将会把选区所有行连接成一行</span></li>
+       <li><span style='font-size:12px'>选区替换没法直接替换\n,查找替换功能中倒是可以直接将\n替换为空，还有可以使用Ctrl-J连接行功能解决问题。^$匹配行首行尾指正则表达式将按行处理，此时^和$匹配的是行首行尾。匹配中文：[\u4e00-\u9fff]+ ,查找框三个选项对应Perl正则中的/i,/m,/s开关)。</span></li>
+       <li><span style='font-size:12px'>鼠标选中想要的文字，按CTRL-F就可以搜索了.按Ctrl-G 可以跳转行号类似PyCharmIDE中的查找</span></li>
+       <li><span style='font-size:12px'>取色器，点击PICK SCREEN COLOR 拾取颜色，那个英文暂时没法汉化</span></li>
+       <li><span style='font-size:12px'>默认高亮的语言有:Java,Javascript,Kotlin,Perl,Python,Bat,Bash,Xml，C,C++,修改关键字颜色在程序目录下的resources/syntax_highlighter_file.json，修改文本区域颜色在主题对应的qss文件中修改。</span></li>
+       <li><span style='font-size:12px'>自定义命令行，$1 表示当前文件名。</span></li>
+        <li><span style='font-size:12px'>自定义注释符号也可以的</span></li>
+       <li><span style='font-size:12px'>设置自动保存在settings.json中，改配置文件或者图形界面都可以</span></li>
+       <li><span style='font-size:12px'>清空剪贴板，需要打开resources目录下的clipboard_list.json,删除所有内容，然后在输入法的英文状态下输入“ [] ”（就是数组的符号）,保存为UTF-8编码就可以了.另外按CTRL-SHIFT-V也可以弹出剪贴板窗口</span></li>
     </ol>"""
 
         QMessageBox.information(self, self.app_name, help_txt)
@@ -2396,7 +2549,6 @@ class Notepad(QMainWindow):
             cursor.deleteChar()
             # 更新文本编辑器的光标位置
         self.text_edit.setTextCursor(cursor)
-
     @Slot()
     def copy_line(self):
         # 保存当前光标的位置
@@ -2405,7 +2557,13 @@ class Notepad(QMainWindow):
         cursor = self.text_edit.textCursor()
         cursor.select(QTextCursor.LineUnderCursor)
         clipboard = QApplication.clipboard()
-        clipboard.setText("\n" + cursor.selectedText())
+        clipboard.setText(cursor.selectedText() + "\n" )
+        # 重新设置光标以选中当前行
+        cursor.clearSelection()  # 清除可能存在的旧选区
+        cursor.setPosition(original_cursor_position)  # 返回原始光标位置
+        cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor)  # 移动到行首
+        cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor)  # 向下选中至行尾
+        self.text_edit.setTextCursor(cursor)  # 更新光标位置，使当前行被选中
 
     @Slot()
     def empty_line(self):
