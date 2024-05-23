@@ -16,7 +16,7 @@ from PySide6.QtCore import (QTranslator, QFile, QRunnable, QThreadPool, QThread,
                             Qt, QEvent, QRect,
                             Signal, QUrl, Slot,
                             QRegularExpression)
-from PySide6.QtGui import (QAction, QIntValidator, QGuiApplication, QKeySequence, QShortcut, QPalette, QPainter,
+from PySide6.QtGui import (QAction, QIntValidator,QFontMetrics, QGuiApplication, QKeySequence, QShortcut, QPalette, QPainter,
                            QSyntaxHighlighter,
                            QColor, QTextCharFormat,
                            QIcon, QFont,
@@ -60,6 +60,7 @@ class LineNumberArea(QWidget):
         super().__init__(editor)
         self.editor = editor  # 保存与之关联的文本编辑器实例
 
+        self.font_metric = QFontMetrics(self.editor.fontMetrics())
     def sizeHint(self):
         return QSize(self.editor.line_number_area_width(), 0)  # 返回建议的尺寸
 
@@ -84,7 +85,7 @@ class LineNumberArea(QWidget):
             if block.isVisible() and bottom >= event.rect().top():
                 number = str(block_number + 1)
                 # 在行号区域绘制行号
-                painter.drawText(0, top, self.width(), self.editor.fontMetrics().height(),
+                painter.drawText(0, top, self.width(), self.font_metric.height(),
                                  Qt.AlignCenter, number)
 
             block = block.next()
@@ -129,7 +130,7 @@ class TextEditor(QPlainTextEdit):
         self.paste_shortcut.activated.connect(self.notepad.show_paste_dialog)
 
         self.setFont(self.notepad.font) # 设置文本区域字体
-        self.init_context_menu()
+        # self.init_context_menu()
 
         self.thread_pool = QThreadPool.globalInstance()
 
@@ -312,10 +313,12 @@ class TextEditor(QPlainTextEdit):
                 cursor.movePosition(QTextCursor.StartOfLine)
 
                 # 开始选中（设置KeepAnchor标志），首先向上去选上一行
+                cursor.movePosition(QTextCursor.Up)
                 cursor.movePosition(QTextCursor.Up, QTextCursor.KeepAnchor)
                 cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.KeepAnchor)  # 确保从上一行的行首开始选中
 
                 # 现在向下移动，先回到当前行的行首，然后继续向下选中下一行
+                cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor)
                 cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor)
                 cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor)
 
@@ -325,6 +328,7 @@ class TextEditor(QPlainTextEdit):
                 # 设置新的光标位置和选区
                 self.setTextCursor(cursor)
                 self.selection_phase = 4
+
             else:
                 self.selection_phase = 0
             event.accept()
@@ -354,14 +358,14 @@ class TextEditor(QPlainTextEdit):
             if event.modifiers() == (Qt.ControlModifier | Qt.ShiftModifier):
                 cursor = self.textCursor()
                 if key == Qt.Key_Up:
-                    self.moveLineUp(cursor)
+                    self.move_line_up(cursor)
                 elif key == Qt.Key_Down:
-                    self.moveLineDown(cursor)
+                    self.move_line_down(cursor)
                 event.accept()  # 事件已被处理，防止后续默认处理
             else:
                 super().keyPressEvent(event)
 
-    def moveLineUp(self, cursor):
+    def move_line_up(self, cursor):
         # 如果没有选中文本，构造一个从当前行到上一行的选区
 
         if not cursor.hasSelection():
@@ -387,7 +391,7 @@ class TextEditor(QPlainTextEdit):
         self.setTextCursor(cursor)
     # 如果不足两行，不做任何操作或根据需要添加其他处理逻辑
 
-    def moveLineDown(self, cursor):
+    def move_line_down(self, cursor):
         if not cursor.hasSelection():
             orign_pos = cursor.position()  # 记录光标位置
             cursor.movePosition(QTextCursor.StartOfLine)
@@ -565,80 +569,6 @@ class TextEditor(QPlainTextEdit):
             cursor.setPosition(cursor_position - min(cursor_position, spaces_to_remove))
 
             self.setTextCursor(cursor)
-
-    def init_context_menu(self):
-        #   自定义右键菜单
-        self.context_menu = QMenu()
-        self.undo_context = QAction("撤销", self)
-        self.undo_context.triggered.connect(self.notepad.undo)
-        self.context_menu.addAction(self.undo_context)
-
-        self.selection_replace_context = QAction("选区替换", self)
-        self.selection_replace_context.triggered.connect(self.notepad.show_replace_dialog)
-        self.context_menu.addAction(self.selection_replace_context)
-
-        # 添加菜单分割线
-        self.context_menu.addSeparator()
-        self.copy_context = QAction("复制", self)
-        self.copy_context.triggered.connect(self.notepad.copy)
-        self.context_menu.addAction(self.copy_context)
-
-        self.paste_context = QAction("粘贴", self)
-        self.paste_context.triggered.connect(self.notepad.paste)
-        self.context_menu.addAction(self.paste_context)
-
-        self.cut_context = QAction("剪切", self)
-        self.cut_context.triggered.connect(self.notepad.cut)
-        self.context_menu.addAction(self.cut_context)
-
-        self.del_context = QAction("删除", self)
-        self.del_context.triggered.connect(self.notepad.delete)
-        self.context_menu.addAction(self.del_context)
-        # 添加菜单分割线
-        self.context_menu.addSeparator()
-
-        self.cp_line_context = QAction("复制行", self)
-        self.cp_line_context.triggered.connect(self.notepad.copy_line)
-        self.context_menu.addAction(self.cp_line_context)
-
-        self.del_line_ = QAction("删除行", self)
-        self.del_line_.triggered.connect(self.notepad.delete_line)
-        self.context_menu.addAction(self.del_line_)
-
-        self.empty_context = QAction("清空行", self)
-        self.empty_context.triggered.connect(self.notepad.empty_line)
-        self.context_menu.addAction(self.empty_context)
-
-        # 添加菜单分割线
-        self.context_menu.addSeparator()
-
-        self.search_action = QAction("百度搜索", self)
-        self.search_action.triggered.connect(self.search_in_baidu)
-        self.context_menu.addAction(self.search_action)
-
-        self.redo_context = QAction("重做", self)
-        self.redo_context.triggered.connect(self.notepad.redo)
-        self.context_menu.addAction(self.redo_context)
-
-        self.select_context = QAction("全选", self)
-        self.select_context.triggered.connect(self.notepad.select_all)
-        self.context_menu.addAction(self.select_context)
-
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.customContextMenuRequested.connect(self.show_contextmenu)
-
-    @Slot()
-    def search_in_baidu(self):
-        cursor = self.textCursor()
-        if cursor.hasSelection():
-            keyword = cursor.selectedText()
-            url = QUrl("https://www.baidu.com/s?wd=" + keyword)
-            QDesktopServices.openUrl(url)
-
-    @Slot()
-    def show_contextmenu(self, pos):
-        # text_edit中的右键菜单
-        self.context_menu.exec(self.mapToGlobal(pos))
 
 class SyntaxHighlighterBase(QSyntaxHighlighter):
     def __init__(self, parent=None, theme_name="dark"):
@@ -1405,21 +1335,28 @@ class Notepad(QMainWindow):
         # 读取并设置启动窗口尺寸,主题字体等设置
         self.load_settings()
 
-        # UI初始化，菜单栏以及编辑器，状态栏，各个子菜单，自定义的右键菜单
-        self.setup_menu_and_actions()
-
+        # 第一步加载用户第一眼能看到的菜单栏，文本区域，状态栏，主题，然后再加载看不到的菜单子项
+        self.setup_menubar_statusbar_plaintextedit()
         self._styles_cache = {}  # 用于缓存已加载的样式
+        self.setup_theme_menu()
         # 预加载基础主题
         self.apply_theme(self.theme)
         self.highlighter = None
         self.theme_changed.connect(self.on_theme_changed)  # 连接主题改变信号到槽函数
         self.syntax_highlight_toggled.connect(self.toggle_syntax_highlight)
-
         self.apply_wrap_status()  # 应用状态栏，自动换行设置
 
-        # 创建剪贴板管理器
-        self.clipboard_manager = ClipboardManager(os.path.join(resource_path,"clipboard_list.json"))
-
+        # 加载剩下的子菜单，用户第一眼看不到的地方
+        self.setup_other_actions()
+        # 加载鼠标右键菜单
+        self.setup_context_menu()
+        # 加载最近打开模块
+        self.recent_files_menu = QMenu("最近打开")
+        self.file_menu.insertMenu(self.new_file_action,self.recent_files_menu)
+        # 添加清空记录的菜单项
+        self.clear_recent_files_action = QAction("清空记录", self)
+        self.clear_recent_files_action.triggered.connect(self.clear_recent_files)
+        self.recent_files_menu.addAction(self.clear_recent_files_action)
         # 最近打开的文件列表
         self.action_connections = {}
         # 使用os模块读取路径只是为了pyinstaller打包成exe的时候不会报错
@@ -1435,12 +1372,106 @@ class Notepad(QMainWindow):
         QGuiApplication.instance().aboutToQuit.connect(self.clean_up_on_exit)
 
 
+        # 加载剪贴板管理器
+        self.clipboard_manager = ClipboardManager(os.path.join(resource_path,"clipboard_list.json"))
+
+        # 监控文件是否被外部程序改动，暂时使用这个笨方法
         self.last_modified_time = None
         self.timer = QTimer()
         self.timer.timeout.connect(self.check_file_modification)
         self.timer.start(2000)  # 每2秒检查一次
 
-    def setup_menu_and_actions(self):
+    def setup_context_menu(self):
+        #   自定义右键菜单
+        self.context_menu = QMenu()
+        self.undo_context = QAction("撤销", self)
+        self.undo_context.triggered.connect(self.undo)
+        self.context_menu.addAction(self.undo_context)
+
+        self.selection_replace_context = QAction("选区替换", self)
+        self.selection_replace_context.triggered.connect(self.show_replace_dialog)
+        self.context_menu.addAction(self.selection_replace_context)
+
+        # 添加菜单分割线
+        self.context_menu.addSeparator()
+        self.copy_context = QAction("复制", self)
+        self.copy_context.triggered.connect(self.copy)
+        self.context_menu.addAction(self.copy_context)
+
+        self.paste_context = QAction("粘贴", self)
+        self.paste_context.triggered.connect(self.paste)
+        self.context_menu.addAction(self.paste_context)
+
+        self.cut_context = QAction("剪切", self)
+        self.cut_context.triggered.connect(self.cut)
+        self.context_menu.addAction(self.cut_context)
+
+        self.del_context = QAction("删除", self)
+        self.del_context.triggered.connect(self.delete)
+        self.context_menu.addAction(self.del_context)
+        # 添加菜单分割线
+        self.context_menu.addSeparator()
+
+        self.cp_line_context = QAction("复制行", self)
+        self.cp_line_context.triggered.connect(self.copy_line)
+        self.context_menu.addAction(self.cp_line_context)
+
+        self.del_line_ = QAction("删除行", self)
+        self.del_line_.triggered.connect(self.delete_line)
+        self.context_menu.addAction(self.del_line_)
+
+        self.empty_context = QAction("清空行", self)
+        self.empty_context.triggered.connect(self.empty_line)
+        self.context_menu.addAction(self.empty_context)
+
+        # 添加菜单分割线
+        self.context_menu.addSeparator()
+
+        self.search_action = QAction("百度搜索", self)
+        self.search_action.triggered.connect(self.search_in_baidu)
+        self.context_menu.addAction(self.search_action)
+
+        self.redo_context = QAction("重做", self)
+        self.redo_context.triggered.connect(self.redo)
+        self.context_menu.addAction(self.redo_context)
+
+        self.select_context = QAction("全选", self)
+        self.select_context.triggered.connect(self.select_all)
+        self.context_menu.addAction(self.select_context)
+
+        self.text_edit.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.text_edit.customContextMenuRequested.connect(self.show_contextmenu)
+
+    def setup_theme_menu(self):
+        # 主题菜单, 将主题样式存入数组全部设为未选中，当用户选中哪一个，就把哪一个设为True
+        # 也就是点击哪个主题，哪个主题样式前面就显示打勾
+        self.theme_actions = []
+        # 初始化动作时设置data属性
+        self.intellijlight_theme_action = QAction("Intellij Light", self, checkable=True)
+        self.intellijlight_theme_action.setData("intellijlight")  # 设置data
+        self.intellijlight_theme_action.triggered.connect(lambda: self.apply_theme("intellijlight"))
+        self.theme_menu.addAction(self.intellijlight_theme_action)
+        self.theme_actions.append(self.intellijlight_theme_action)
+
+        self.dark_theme_action = QAction("Dark", self, checkable=True)
+        self.dark_theme_action.setData("dark")  # 设置data
+        self.dark_theme_action.triggered.connect(lambda: self.apply_theme("dark"))
+        self.theme_menu.addAction(self.dark_theme_action)
+        self.theme_actions.append(self.dark_theme_action)
+
+        self.gerrylight_theme_action = QAction("Gerry Light", self, checkable=True)
+        self.gerrylight_theme_action.setData("gerrylight")  # 设置data
+        self.gerrylight_theme_action.triggered.connect(lambda: self.apply_theme("gerrylight"))
+        self.theme_menu.addAction(self.gerrylight_theme_action)
+        self.theme_actions.append(self.gerrylight_theme_action)
+
+        self.xcode_theme_action = QAction("Xcode", self, checkable=True)
+        self.xcode_theme_action.setData("xcode")  # 设置data
+        self.xcode_theme_action.triggered.connect(lambda: self.apply_theme("xcode"))
+        self.theme_menu.addAction(self.xcode_theme_action)
+        self.theme_actions.append(self.xcode_theme_action)
+
+    def setup_menubar_statusbar_plaintextedit(self):
         # 初始化界面，依次添加菜单栏，text_edit，status_bar
         self.menu_bar = QMenuBar(self)
         self.setMenuBar(self.menu_bar)
@@ -1471,13 +1502,7 @@ class Notepad(QMainWindow):
         self.tool_menu = QMenu("工具", self.menu_bar)
         self.menu_bar.addMenu(self.tool_menu)
 
-        # 添加最近打开的文件子菜单
-        self.recent_files_menu = self.file_menu.addMenu("最近打开")
-        # 添加清空记录的菜单项
-        self.clear_recent_files_action = QAction("清空记录", self)
-        self.clear_recent_files_action.triggered.connect(self.clear_recent_files)
-        self.recent_files_menu.addAction(self.clear_recent_files_action)
-
+    def setup_other_actions(self):
         self.new_file_action = QAction("新建(&N)", self)
         self.new_file_action.setShortcut("Ctrl+N")
         self.new_file_action.triggered.connect(self.new_file)
@@ -1623,34 +1648,6 @@ class Notepad(QMainWindow):
         self.date_action.triggered.connect(self.get_date)
         self.edit_menu.addAction(self.date_action)
 
-        # 主题菜单, 将主题样式存入数组全部设为未选中，当用户选中哪一个，就把哪一个设为True
-        # 也就是点击哪个主题，哪个主题样式前面就显示打勾
-        self.theme_actions = []
-        # 初始化动作时设置data属性
-        self.intellijlight_theme_action = QAction("Intellij Light", self, checkable=True)
-        self.intellijlight_theme_action.setData("intellijlight")  # 设置data
-        self.intellijlight_theme_action.triggered.connect(lambda: self.apply_theme("intellijlight"))
-        self.theme_menu.addAction(self.intellijlight_theme_action)
-        self.theme_actions.append(self.intellijlight_theme_action)
-
-        self.dark_theme_action = QAction("Dark", self, checkable=True)
-        self.dark_theme_action.setData("dark")  # 设置data
-        self.dark_theme_action.triggered.connect(lambda: self.apply_theme("dark"))
-        self.theme_menu.addAction(self.dark_theme_action)
-        self.theme_actions.append(self.dark_theme_action)
-
-        self.gerrylight_theme_action = QAction("Gerry Light", self, checkable=True)
-        self.gerrylight_theme_action.setData("gerrylight")  # 设置data
-        self.gerrylight_theme_action.triggered.connect(lambda: self.apply_theme("gerrylight"))
-        self.theme_menu.addAction(self.gerrylight_theme_action)
-        self.theme_actions.append(self.gerrylight_theme_action)
-
-        self.xcode_theme_action = QAction("Xcode", self, checkable=True)
-        self.xcode_theme_action.setData("xcode")  # 设置data
-        self.xcode_theme_action.triggered.connect(lambda: self.apply_theme("xcode"))
-        self.theme_menu.addAction(self.xcode_theme_action)
-        self.theme_actions.append(self.xcode_theme_action)
-
         self.font_action = QAction("字体(&Z)", self)
         self.font_action.setShortcut("Alt+Z")
         self.font_action.triggered.connect(self.modify_font)
@@ -1760,6 +1757,18 @@ class Notepad(QMainWindow):
         self.help_action = QAction("帮助")
         self.help_action.triggered.connect(self.help_info)
         self.tool_menu.addAction(self.help_action)
+
+    @Slot()
+    def search_in_baidu(self):
+        cursor = self.textCursor()
+        if cursor.hasSelection():
+            keyword = cursor.selectedText()
+            url = QUrl("https://www.baidu.com/s?wd=" + keyword)
+            QDesktopServices.openUrl(url)
+
+    @Slot()
+    def show_contextmenu(self, pos):
+        self.context_menu.exec(self.text_edit.mapToGlobal(pos))
 
     def update_save_action_state(self):
         # 获取当前文档的修改状态
@@ -1990,13 +1999,6 @@ class Notepad(QMainWindow):
             initial_content = b"".join(lines).decode(encoding,"ignore")
             self.text_edit.setPlainText(initial_content.rstrip())
             self.setWindowTitle(f"{self.app_name} - {encoding.upper()} - {filename}")
-            # 记录当前文件名,编码,以及当前目录
-            self.current_file_name = filename
-            self.current_file_encoding = encoding
-            self.work_dir = os.path.dirname(os.path.abspath(filename))
-            # 将打开记录添加到最近打开
-            self.add_recent_file(filename)
-            self.last_modified_time = QFileInfo(filename).lastModified().toMSecsSinceEpoch()
 
             # 使用文件后缀判断使用何种语言高亮
             self.current_file_extension = os.path.splitext(filename)[1]
@@ -2004,6 +2006,13 @@ class Notepad(QMainWindow):
                 self.reload_highlighter(self.theme, self.current_file_extension)
             self.start_file_loader(filename, encoding,position)
             self.update_save_action_state()
+            # 记录当前文件名,编码,以及当前目录
+            self.current_file_name = filename
+            self.current_file_encoding = encoding
+            self.work_dir = os.path.dirname(os.path.abspath(filename))
+            # 将打开记录添加到最近打开
+            self.add_recent_file(filename)
+            self.last_modified_time = QFileInfo(filename).lastModified().toMSecsSinceEpoch()
 
         except PermissionError:
             QMessageBox.warning(self, "错误", "没有足够的权限打开文件！")
@@ -2280,6 +2289,8 @@ class Notepad(QMainWindow):
     @Slot()
     def help_info(self):
         help_txt = r"""<ol>
+       <li><span style='font-size:12px'>已知bug: 自动换行下，会将视觉行识别为两行</span></li>
+        
        <li><span style='font-size:12px'>输入括号 ( 会匹配得到 (),并且光标位于括号中间，此时按Backspace删除会删除这一对符号，按Delete删除只会删除右边一半，另外如果有选择文本，此时输入',",{,[,(，得到的匹配对符号会包围选区</span></li>
        <li><span style='font-size:12px'>复刻PyCharmIDE中的一些快捷键，在没有选择文本时，Ctrl-C是复制当前行，Ctrl-X是删除当前行，Ctrl-Shift-Z是重做，Ctrl-Shift-↑是向上移动行，Ctrl-Shift-↓向下移动行，Ctrl-Shift-→ 是让选区向右移动一个单词，Ctrl-W是扩展选区，Ctrl-Shift-W 取消选区，扩展选区功能远不如PycharmIDE强大，Ctrl-Shift-W也只能取消选区</span></li>
        <li><span style='font-size:12px'>Ctrl-J会将当前行与下一行连接成一行，有选择文本时将会把选区所有行连接成一行</span></li>
