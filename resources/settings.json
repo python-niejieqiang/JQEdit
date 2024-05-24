@@ -8,7 +8,7 @@
         "strikeOut": false
     },
     "theme": "intellijlight",
-    "wrap_line_on": true,
+    "wrap_line_on": false,
     "statusbar_shown": true,
     "startup_size": {
         "width": 800,
