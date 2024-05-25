@@ -14,7 +14,7 @@
 ; 注: AppId的值为单独标识该应用程序。
 ; 不要为其他安装程序使用相同的AppId值。
 ; (若要生成新的 GUID，可在菜单中点击 "工具|生成 GUID"。)
-AppId={{0B56641D-F6A6-4472-8BB7-BF357D675837}
+AppId={{0B56641D-F6A6-4472-8BB7-BF357D675837}}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 ;AppVerName={#MyAppName} {#MyAppVersion}
@@ -111,4 +111,44 @@ begin
         ewWaitUntilTerminated, ResultCode);
     end;
   end;
+end;
+
+const
+  UninstallRegKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{{0B56641D-F6A6-4472-8BB7-BF357D675837}}';
+
+function InitializeSetup(): Boolean;
+var
+  UninstallString: string;
+  ResultCode: Integer;
+begin
+  Result := True;
+
+  // 检查是否已安装旧版本
+  if RegQueryStringValue(HKLM, UninstallRegKey, 'UninstallString', UninstallString) or
+     RegQueryStringValue(HKCU, UninstallRegKey, 'UninstallString', UninstallString) then
+  begin
+    // 去除卸载字符串中的引号，因为CmdLine参数可能包含它们
+    UninstallString := RemoveQuotes(UninstallString);
+
+    // 确保我们找到的是有效的路径
+    if FileExists(ExtractFilePath(UninstallString)) then
+    begin
+      Log('发现旧版本，即将启动卸载程序: ' + UninstallString);
+      // 运行卸载程序
+      Exec(UninstallString, '/SILENT', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+      if ResultCode <> 0 then
+      begin
+        MsgBox('卸载旧版本失败，请手动卸载后重试。错误代码: ' + IntToStr(ResultCode), mbError, MB_OK);
+        Result := False;
+      end;
+    end else
+    begin
+      Log('卸载程序路径无效');
+    end;
+  end else
+  begin
+    Log('未找到旧版本的卸载信息');
+  end;
+
+  Result := Result and (ResultCode = 0); // 确保只有在卸载成功后才继续安装
 end;
