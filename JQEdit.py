@@ -11,7 +11,7 @@ from functools import partial
 import time
 import chardet
 import pyperclip
-from PySide6.QtCore import (QTranslator, QFile, QRunnable, QThreadPool, QThread, QObject, QTextStream, QTimer, QSize,
+from PySide6.QtCore import (QTranslator, Q_ARG,QFile,QMetaObject, QRunnable, QThreadPool, QThread, QObject, QTextStream, QTimer, QSize,
                             QFileInfo,
                             Qt, QEvent, QRect,
                             Signal, QUrl, Slot,
@@ -696,28 +696,28 @@ class SyntaxHighlighterBase(QSyntaxHighlighter):
             (QRegularExpression(r"[\/\*\.\-\+\=\:\|\,\>\<\!\&\%]"), self.operator_format),
             (QRegularExpression(r"\"[^\n]*?\"|\'[^\n]*?\'"), self.string_format)
         ]
-        self.load_theme_colors(theme_name)
+        self.load_keyword_colors(theme_name)
 
-    def load_theme_colors(self, theme_name):
+    def load_keyword_colors(self, theme_name):
         try:
             syntax_highlighter_file = os.path.join(resource_path, "syntax_highlighter_file.json")
             with open(syntax_highlighter_file, "r") as f:
-                themes = json.load(f)
-                theme_colors = themes.get(theme_name, {})
+                color_data = json.load(f)
+                keyword_colors = color_data.get(theme_name, {})
                 self.keyword_format.setForeground(
-                    QColor(*theme_colors.get("keyword", {}).get("color", [200, 120, 50])))
+                    QColor(*keyword_colors.get("keyword", {}).get("color", [200, 120, 50])))
                 self.comment_format.setForeground(
-                    QColor(*theme_colors.get("comment", {}).get("color", [150, 150, 150])))
+                    QColor(*keyword_colors.get("comment", {}).get("color", [150, 150, 150])))
                 self.string_format.setForeground(
-                    QColor(*theme_colors.get("string", {}).get("color", [42, 161, 152])))
+                    QColor(*keyword_colors.get("string", {}).get("color", [42, 161, 152])))
                 self.operator_format.setForeground(
-                    QColor(*theme_colors.get("operator", {}).get("color", [200, 120, 50])))
+                    QColor(*keyword_colors.get("operator", {}).get("color", [200, 120, 50])))
 
                 # 设置粗体和斜体
-                self.set_format_attributes(self.comment_format, theme_colors.get("comment", {}))
-                self.set_format_attributes(self.string_format, theme_colors.get("string", {}))
-                self.set_format_attributes(self.operator_format, theme_colors.get("operator", {}))
-                self.set_format_attributes(self.keyword_format, theme_colors.get("keyword", {}))
+                self.set_format_attributes(self.comment_format, keyword_colors.get("comment", {}))
+                self.set_format_attributes(self.string_format, keyword_colors.get("string", {}))
+                self.set_format_attributes(self.operator_format, keyword_colors.get("operator", {}))
+                self.set_format_attributes(self.keyword_format, keyword_colors.get("keyword", {}))
 
         except FileNotFoundError:
             # 如果文件不存在，使用默认颜色
@@ -881,7 +881,7 @@ class CssHighlighter(SyntaxHighlighterBase):
         self.highlight_rules.extend([
             (QRegularExpression(r"^\s*\.*[\w\d_%/\\-]+\s*(?=\{)",QRegularExpression.MultilineOption),self.keyword_format),
             # 注释：以 /* 开头，以 */ 结尾的注释
-            (QRegularExpression(r"^\s*(?:/\*\*/|\/\/[^\n]*)",QRegularExpression.MultilineOption), self.comment_format)
+            (QRegularExpression(r"^\s*(?:/\*[^\n]*?\*/|\/\/[^\n]*)",QRegularExpression.MultilineOption), self.comment_format)
         ])
 
 class JavaScriptHighlighter(SyntaxHighlighterBase):
@@ -921,6 +921,27 @@ class HighlighterFactory:
         else:
             return None
 
+class CountMatchesWorker(QRunnable):
+    def __init__(self, regex, text, window):
+        super().__init__()
+        self.regex = regex
+        self.text = text
+        self.window = window  # 引用窗口对象以便于更新UI
+
+    def run(self):
+        match_iter = self.regex.globalMatch(self.text)
+        count = 0
+        while match_iter.hasNext():  # 使用hasNext和next方法遍历匹配结果
+            match_iter.next()
+            count += 1
+        # 使用QMetaObject.invokeMethod在主线程更新UI
+        QMetaObject.invokeMethod(
+            self.window,
+            "update_match_count",
+            Qt.QueuedConnection,
+            Q_ARG(int, count)
+        )
+
 class FindReplaceDialog(QDialog, Ui_replace_window):
     def __init__(self, text_edit, parent=None):
         super().__init__(parent)
@@ -943,14 +964,12 @@ class FindReplaceDialog(QDialog, Ui_replace_window):
         self.search_text.installEventFilter(self)
         self.replacewith_text.installEventFilter(self)
 
-        # 设置初始焦点
-        self.search_text.setFocus()
-
         self.search_timer = QTimer()  # 定义定时器
         self.search_timer.setInterval(200)  # 设置定时器间隔为500毫秒
         self.search_timer.setSingleShot(True)  # 设置为单次触发
         self.search_timer.timeout.connect(self.update_search)
-
+        self.thread_pool = QThreadPool.globalInstance()  # 线程池
+        self.match_count = 0  # 匹配总数
         # 如果有选中的文本，则将其填充到查找对话框的搜索框中
         selected_text = self.text_edit.textCursor().selectedText()
         if selected_text:
@@ -989,7 +1008,12 @@ class FindReplaceDialog(QDialog, Ui_replace_window):
             self.regex = None
 
     def update_search(self):
+        if not self.search_text.text().strip():
+            self.match_count = 0
+            self.setWindowTitle("查找替换")
+            return
         self.find_matches()
+        self.calculate_total_matches()  # 在后台线程中计算总匹配数
 
     def find_matches(self):
         self.update_regex()
@@ -997,8 +1021,7 @@ class FindReplaceDialog(QDialog, Ui_replace_window):
         plain_text = self.text_edit.toPlainText()
 
         match_iter = self.regex.globalMatch(plain_text)
-
-        while match_iter.hasNext():
+        if match_iter.hasNext():
             match = match_iter.next()
             match_start = match.capturedStart()
             match_end = match.capturedEnd()
@@ -1006,10 +1029,18 @@ class FindReplaceDialog(QDialog, Ui_replace_window):
             cursor.setPosition(match_start)
             cursor.setPosition(match_end, QTextCursor.KeepAnchor)
             self.text_edit.setTextCursor(cursor)
-            self.text_edit.centerCursor()  # 居中显示光标所在位置
-            return
+            self.text_edit.centerCursor()
+
+    def calculate_total_matches(self):
+        worker = CountMatchesWorker(self.regex, self.text_edit.toPlainText(), self)
+        self.thread_pool.start(worker)
+    @Slot(int)
+    def update_match_count(self, count):
+        self.match_count = count
+        self.setWindowTitle(f'查找替换 - 找到 {self.match_count} 项匹配结果')
 
     def find_next(self):
+        self.setWindowTitle("查找替换")
         self.update_regex()
         cursor = self.text_edit.textCursor()
         plain_text = self.text_edit.toPlainText()
@@ -1087,7 +1118,9 @@ class FindReplaceDialog(QDialog, Ui_replace_window):
                 self.loop_count = 0
                 return self.find_next()  # 继续从头搜索
 
+
     def replace(self):
+        self.setWindowTitle("查找替换")
         cursor = self.text_edit.textCursor()
         if cursor.hasSelection():
             cursor.insertText(self.replacewith_text.text())
@@ -1114,14 +1147,17 @@ class FindReplaceDialog(QDialog, Ui_replace_window):
         cursor.beginEditBlock()
 
         plain_text = self.text_edit.toPlainText()
-        new_text = re.sub(pattern, replacement, plain_text, flags=flags)
+        new_text, replace_count = re.subn(pattern, replacement, plain_text, flags=flags)
 
-        if new_text == plain_text:
+        if replace_count == 0:
             QApplication.instance().beep()
+        else:
+            cursor.select(QTextCursor.Document)
+            cursor.removeSelectedText()
+            cursor.insertText(new_text)
 
-        cursor.select(QTextCursor.Document)
-        cursor.removeSelectedText()
-        cursor.insertText(new_text)
+            # 直接使用replace_count更新窗口标题
+            self.setWindowTitle(f"查找替换 - {replace_count} 项替换完成")
 
         cursor.endEditBlock()
 
@@ -1199,9 +1235,9 @@ class SelectionReplaceDialog(QDialog, Ui_replace_window):
                 new_text = "\n".join(lines)
             # 执行替换操作
             else:
-                new_text = re.sub(pattern, replacement, selected_text, flags=flags)
+                new_text,replace_count = re.subn(pattern, replacement, selected_text, flags=flags)
 
-
+                self.setWindowTitle(f"查找替换 - {replace_count} 项替换完成")
             cursor.removeSelectedText()
             cursor.insertText(new_text)
             cursor.endEditBlock()
@@ -1424,6 +1460,50 @@ class CustomCommentCharDialog(QDialog):
     def getCommentChar(self):
         return self.lineEdit.text().strip()
 
+class CharacterCountDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle('统计结果')
+        layout = QVBoxLayout(self)
+
+        self.stats_label = QLabel(self)
+        self.stats_label.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.LinksAccessibleByMouse)
+        self.stats_label.setStyleSheet("""
+            QLabel {
+                color: black;
+                selection-background-color: rgb(166,210,255);
+                selection-color: black;
+            }
+        """)
+        self.initContextMenu(self.stats_label)
+        layout.addWidget(self.stats_label)
+
+        # 创建一个水平布局来放置按钮，并使其在垂直布局中居中
+        button_layout = QHBoxLayout()
+        button_layout.setAlignment(Qt.AlignHCenter)  # 设置按钮水平居中
+        self.ok_button = QPushButton("确定", self)
+        self.ok_button.setFixedWidth(80)  # 如果需要调整按钮宽度
+        self.ok_button.clicked.connect(self.accept)
+        button_layout.addWidget(self.ok_button)  # 将按钮添加到水平布局中
+        layout.addLayout(button_layout)  # 将水平布局添加到主垂直布局中
+
+        self.resize(160, 20)
+
+    def set_stats_message(self, message):
+        # 设置统计信息的显示内容
+        self.stats_label.setText(message)
+        # 这里可以进一步设置文字样式，如加粗等
+
+    def initContextMenu(self, label):
+        context_menu = QMenu(label)
+        copy_action = QAction("复制", label)
+        copy_action.triggered.connect(lambda: QApplication.clipboard().setText(label.selectedText()))
+        context_menu.addAction(copy_action)
+
+        # 当鼠标右键点击时显示上下文菜单
+        label.setContextMenuPolicy(Qt.CustomContextMenu)
+        label.customContextMenuRequested.connect(lambda pos: context_menu.exec(label.mapToGlobal(pos)))
+
 class Notepad(QMainWindow):
     syntax_highlight_toggled = Signal(bool)
     # 定义主题改变信号
@@ -1554,6 +1634,27 @@ class Notepad(QMainWindow):
 
         self.text_edit.setContextMenuPolicy(Qt.CustomContextMenu)
         self.text_edit.customContextMenuRequested.connect(self.show_contextmenu)
+
+    def show_count_result(self):
+        # 获取文本内容
+        text = self.text_edit.toPlainText()
+
+        # 统计逻辑
+        byte_count = len(text.encode('utf-8'))
+        char_count = len(text.replace('\n', ''))  # 不计换行符的字符数
+        words = re.findall(r'\b\w+\b', text)  # 单词分割（简单实现，可能不完全准确）
+        word_count = len(words)
+        chinese_count = len(re.findall(r'[\u4e00-\u9fa5]', text))  # 统计中文字符数
+        lines = text.split("\n") # 分割得到行数
+        total_lines = len(lines)
+
+        # 构建统计信息字符串，标题采用粗体
+        message = f"<b>统计</b><br>字节数：{byte_count}<br>字符数：{char_count}<br>单词数：{word_count}<br>中文数：{chinese_count}<br>总行数：{total_lines}"
+
+        # 使用自定义对话框显示统计信息
+        dialog = CharacterCountDialog(self)
+        dialog.set_stats_message(message)
+        dialog.exec()
 
     def setup_theme_menu(self):
         # 主题菜单, 将主题样式存入数组全部设为未选中，当用户选中哪一个，就把哪一个设为True
@@ -1809,7 +1910,10 @@ class Notepad(QMainWindow):
         self.selection_replace_action = QAction("选区替换(&R)", self)
         self.selection_replace_action.triggered.connect(self.show_replace_dialog)
         self.find_menu.addAction(self.selection_replace_action)
-
+        # 主窗口部分
+        self.CharacterCount = QAction("统计", self)
+        self.CharacterCount.triggered.connect(self.show_count_result)
+        self.find_menu.addAction(self.CharacterCount)
         encodings = {
             "gb18030": "中文（GB18030）",
             "utf-8": "UTF-8",

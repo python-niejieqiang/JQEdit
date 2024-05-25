@@ -4,12 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="调整UI加载顺序，变相优化启动效率">
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="新增Ctrl-Shift-上下方向键移动选区，按键时间间隔设定为0.2秒">
       <change afterPath="$PROJECT_DIR$/1.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_setup.exe" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/inno_setup.iss" beforeDir="false" afterPath="$PROJECT_DIR$/inno_setup.iss" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/replace_window_ui.py" beforeDir="false" afterPath="$PROJECT_DIR$/replace_window_ui.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -99,31 +100,32 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
-    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;Python.1.executor&quot;: &quot;Run&quot;,
-    &quot;Python.2.executor&quot;: &quot;Debug&quot;,
-    &quot;Python.JQEdit (1).executor&quot;: &quot;Run&quot;,
-    &quot;Python.JQEdit.executor&quot;: &quot;Run&quot;,
-    &quot;Python.file_find.executor&quot;: &quot;Run&quot;,
-    &quot;Python.find_test.executor&quot;: &quot;Run&quot;,
-    &quot;Python.search_lines_by_keyword_ui.executor&quot;: &quot;Run&quot;,
-    &quot;Python.trim.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/迅雷下载/JQEdit/resources/screenshot&quot;,
-    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.gitee.ui.GiteeSettingsConfigurable&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_ADD_EXTERNAL_FILES": "true",
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "Python.1.executor": "Run",
+    "Python.2.executor": "Debug",
+    "Python.JQEdit (1).executor": "Run",
+    "Python.JQEdit.executor": "Run",
+    "Python.file_find.executor": "Run",
+    "Python.find_test.executor": "Run",
+    "Python.replace_window_ui.executor": "Run",
+    "Python.search_lines_by_keyword_ui.executor": "Run",
+    "Python.trim.executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "D:/迅雷下载/JQEdit/resources/screenshot",
+    "run.code.analysis.last.selected.profile": "pProject Default",
+    "settings.editor.selected.configurable": "com.gitee.ui.GiteeSettingsConfigurable"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;ChangesTree.GroupingKeys&quot;: [
-      &quot;directory&quot;
+  "keyToStringList": {
+    "ChangesTree.GroupingKeys": [
+      "directory"
     ]
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\迅雷下载\JQEdit\resources\screenshot" />
@@ -193,6 +195,28 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="replace_window_ui" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="JQEdit" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/replace_window_ui.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="search_lines_by_keyword_ui" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="JQEdit" />
       <option name="ENV_FILES" value="" />
@@ -238,6 +262,7 @@
       <method v="2" />
     </configuration>
     <list>
+      <item itemvalue="Python.replace_window_ui" />
       <item itemvalue="Python.1" />
       <item itemvalue="Python.JQEdit" />
       <item itemvalue="Python.search_lines_by_keyword_ui" />
@@ -246,6 +271,7 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.JQEdit" />
+        <item itemvalue="Python.replace_window_ui" />
         <item itemvalue="Python.1" />
         <item itemvalue="Python.trim" />
         <item itemvalue="Python.search_lines_by_keyword_ui" />
@@ -636,7 +662,15 @@
       <option name="project" value="LOCAL" />
       <updated>1716449647734</updated>
     </task>
-    <option name="localTasksCounter" value="47" />
+    <task id="LOCAL-00047" summary="新增Ctrl-Shift-上下方向键移动选区，按键时间间隔设定为0.2秒">
+      <option name="closed" value="true" />
+      <created>1716550333178</created>
+      <option name="number" value="00047" />
+      <option name="presentableId" value="LOCAL-00047" />
+      <option name="project" value="LOCAL" />
+      <updated>1716550333179</updated>
+    </task>
+    <option name="localTasksCounter" value="48" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -692,7 +726,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="取色器添加复制颜色按钮，优化查找替换框体验" />
     <MESSAGE value="增加单词移动，删除，大小写转换功能" />
     <MESSAGE value="增加沉浸模式，大幅完善编码1支持（希伯来语，希腊，泰文，越南语，俄语），修复剪贴板bug" />
     <MESSAGE value="继续完善剪贴板管理器，最近打开菜单文件路径如果已经删除的话就会自动消失" />
@@ -717,7 +750,8 @@
     <MESSAGE value="编码，保存模块重构" />
     <MESSAGE value="复刻PycharmIDE中没有选择文本时，Ctrl-X,Ctrl-C对应的删除行，复制行功能，Ctrl-W扩展选区，Ctrl-Shift-W取消选区（此功能远不如Pycharm强大，只能将就使用），新增Ctrl-Shift-上箭头键向上移动当前行，Ctrl-Shift-下箭头键向下移动当前行" />
     <MESSAGE value="调整UI加载顺序，变相优化启动效率" />
-    <option name="LAST_COMMIT_MESSAGE" value="调整UI加载顺序，变相优化启动效率" />
+    <MESSAGE value="新增Ctrl-Shift-上下方向键移动选区，按键时间间隔设定为0.2秒" />
+    <option name="LAST_COMMIT_MESSAGE" value="新增Ctrl-Shift-上下方向键移动选区，按键时间间隔设定为0.2秒" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>

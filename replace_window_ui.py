@@ -76,7 +76,7 @@ class Ui_replace_window(object):
     # setupUi
 
     def retranslateUi(self, replace_window):
-        replace_window.setWindowTitle(QCoreApplication.translate("replace_window", u"\u66ff\u6362", None))
+        replace_window.setWindowTitle(QCoreApplication.translate("replace_window", u"\u67e5\u627e\u66ff\u6362", None))
         self.label_chazhao.setText(QCoreApplication.translate("replace_window", u"\u67e5  \u627e\uff1a", None))
         self.multiline_check.setText(QCoreApplication.translate("replace_window", u"^$\u5339\u914d\u884c\u5934\u884c\u5c3e", None))
         self.findnext_btn.setText(QCoreApplication.translate("replace_window", u"\u4e0b\u4e00\u4e2a", None))
