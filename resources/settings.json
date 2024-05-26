@@ -1,7 +1,7 @@
 {
     "font": {
         "font_family": "Microsoft YaHei UI",
-        "point_size": 14,
+        "point_size": 10,
         "bold": false,
         "italic": false,
         "underline": false,
@@ -13,7 +13,7 @@
     "startup_size": {
         "width": 800,
         "height": 600,
-        "start_maximized": false
+        "start_maximized": true
     },
     "show_line_numbers": true,
     "syntax_on": true,

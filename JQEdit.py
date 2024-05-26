@@ -60,7 +60,6 @@ class LineNumberArea(QWidget):
         super().__init__(editor)
         self.editor = editor  # 保存与之关联的文本编辑器实例
 
-        self.font_metric = QFontMetrics(self.editor.fontMetrics())
     def sizeHint(self):
         return QSize(self.editor.line_number_area_width(), 0)  # 返回建议的尺寸
 
@@ -85,7 +84,7 @@ class LineNumberArea(QWidget):
             if block.isVisible() and bottom >= event.rect().top():
                 number = str(block_number + 1)
                 # 在行号区域绘制行号
-                painter.drawText(0, top, self.width(), self.font_metric.height(),
+                painter.drawText(0, top, self.width(), self.editor.fontMetrics().height(),
                                  Qt.AlignCenter, number)
 
             block = block.next()
@@ -101,8 +100,7 @@ class LineNumberWorker(QRunnable):
         self.dy = dy
 
     def run(self):
-        # 确保此处的更新逻辑正确处理event_rect和dy
-        self.editor.line_number_area.update(self.event_rect)
+        self.editor.line_number_area.update()
 
 class TextEditor(QPlainTextEdit):
     def __init__(self, notepad_instance):
@@ -138,10 +136,9 @@ class TextEditor(QPlainTextEdit):
     def display_default_file_name(self, filename_):
         # 只需要设置文档的修改状态，窗口的修改状态会自动更新
         self.document().setModified(False)
-        encoding = self.notepad.current_file_encoding
         # 合并条件判断，并设置窗口标题
         if filename_:
-            self.notepad.setWindowTitle(f"{self.notepad.app_name} - {encoding.upper()} - {filename_}")
+            self.notepad.setWindowTitle(f"{self.notepad.app_name} - {filename_}")
         else:
             self.notepad.setWindowTitle(f"{self.notepad.app_name} - [{self.untitled_name}]")
 
@@ -175,9 +172,8 @@ class TextEditor(QPlainTextEdit):
         if dy:
             self.line_number_area.scroll(dy, 0)
         else:
-            # 限制重绘区域
-            self.line_number_area.update(
-                event_rect.intersected(QRect(0, 0, self.line_number_area.width(), event_rect.height())))
+            self.line_number_area.update(0, event_rect.y(), self.line_number_area.width(),
+                                         event_rect.height())
 
         if event_rect.contains(self.viewport().rect()):
             self.update_line_number_area_width()
@@ -2108,9 +2104,7 @@ class Notepad(QMainWindow):
             self.menuBar().show()
             self.immersive_mode_action.setChecked(False)  # 更新菜单项状态
             self.toggle_comment_shortcut.setEnabled(False)
-            self.del_line_shortcut.setEnabled(False)
             self.empty_line_shortcut.setEnabled(False)
-            self.copy_line_shortcut.setEnabled(False)
             self.delete_word_right_shortcut.setEnabled(False)
             self.delete_word_left_shortcut.setEnabled(False)
             self.move_word_right_shortcut.setEnabled(False)
