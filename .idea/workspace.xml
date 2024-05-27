@@ -4,11 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="优化打包脚本，安装程序安装是自动清理程序">
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="行号模块回滚到5月15日版本">
       <change afterPath="$PROJECT_DIR$/1.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_setup.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/inno_setup.iss" beforeDir="false" afterPath="$PROJECT_DIR$/inno_setup.iss" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -269,8 +270,8 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.JQEdit" />
-        <item itemvalue="Python.replace_window_ui" />
         <item itemvalue="Python.1" />
+        <item itemvalue="Python.replace_window_ui" />
         <item itemvalue="Python.trim" />
         <item itemvalue="Python.search_lines_by_keyword_ui" />
       </list>
@@ -291,14 +292,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1712137288400</updated>
-    </task>
-    <task id="LOCAL-00001" summary="实现循环查找，解决GB18030正则查找失效，替换未实现，全部替换只勉强实现undo_stack，替换后按CTRL-Z只能恢复删除内容，点击撤销才能恢复替换内容">
-      <option name="closed" value="true" />
-      <created>1712398345272</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
-      <option name="project" value="LOCAL" />
-      <updated>1712398345273</updated>
     </task>
     <task id="LOCAL-00002" summary="修复不能逐项替换，修复全部替换不能无法撤销恢复bug">
       <option name="closed" value="true" />
@@ -684,7 +677,15 @@
       <option name="project" value="LOCAL" />
       <updated>1716649310839</updated>
     </task>
-    <option name="localTasksCounter" value="50" />
+    <task id="LOCAL-00050" summary="行号模块回滚到5月15日版本">
+      <option name="closed" value="true" />
+      <created>1716699492157</created>
+      <option name="number" value="00050" />
+      <option name="presentableId" value="LOCAL-00050" />
+      <option name="project" value="LOCAL" />
+      <updated>1716699492157</updated>
+    </task>
+    <option name="localTasksCounter" value="51" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -740,7 +741,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="继续完善剪贴板管理器，最近打开菜单文件路径如果已经删除的话就会自动消失" />
     <MESSAGE value="完善文件读取的异常处理" />
     <MESSAGE value="修复泰文编码错误" />
     <MESSAGE value="上传打包好的exe" />
@@ -765,7 +765,8 @@
     <MESSAGE value="新增Ctrl-Shift-上下方向键移动选区，按键时间间隔设定为0.2秒" />
     <MESSAGE value="新增字符统计，查找替换实时显示匹配结果。" />
     <MESSAGE value="优化打包脚本，安装程序安装是自动清理程序" />
-    <option name="LAST_COMMIT_MESSAGE" value="优化打包脚本，安装程序安装是自动清理程序" />
+    <MESSAGE value="行号模块回滚到5月15日版本" />
+    <option name="LAST_COMMIT_MESSAGE" value="行号模块回滚到5月15日版本" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>

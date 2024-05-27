@@ -445,7 +445,7 @@ class TextEditor(QPlainTextEdit):
             cursor.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor, offset)
             cursor.endEditBlock()
         self.setTextCursor(cursor)
-    # 如果不足两行，不做任何操作或根据需要添加其他处理逻辑
+        self.centerCursor()
 
     def move_line_down(self, cursor):
         if cursor.hasSelection():
@@ -1005,8 +1005,12 @@ class FindReplaceDialog(QDialog, Ui_replace_window):
 
     def update_search(self):
         if not self.search_text.text().strip():
+            cursor = self.text_edit.textCursor()
             self.match_count = 0
             self.setWindowTitle("查找替换")
+            cursor = self.text_edit.textCursor()
+            cursor.clearSelection()
+            self.text_edit.setTextCursor(cursor)
             return
         self.find_matches()
         self.calculate_total_matches()  # 在后台线程中计算总匹配数
@@ -1036,7 +1040,6 @@ class FindReplaceDialog(QDialog, Ui_replace_window):
         self.setWindowTitle(f'查找替换 - 找到 {self.match_count} 项匹配结果')
 
     def find_next(self):
-        self.setWindowTitle("查找替换")
         self.update_regex()
         cursor = self.text_edit.textCursor()
         plain_text = self.text_edit.toPlainText()
@@ -1114,12 +1117,12 @@ class FindReplaceDialog(QDialog, Ui_replace_window):
                 self.loop_count = 0
                 return self.find_next()  # 继续从头搜索
 
-
     def replace(self):
-        self.setWindowTitle("查找替换")
         cursor = self.text_edit.textCursor()
         if cursor.hasSelection():
             cursor.insertText(self.replacewith_text.text())
+            self.match_count -= 1
+            self.setWindowTitle(f"查找替换 - 找到 {self.match_count} 项匹配结果")
         self.find_next()
 
     def replace_all(self):
@@ -1471,7 +1474,7 @@ class CharacterCountDialog(QDialog):
                 selection-color: black;
             }
         """)
-        self.initContextMenu(self.stats_label)
+        self.init_context_menu(self.stats_label)
         layout.addWidget(self.stats_label)
 
         # 创建一个水平布局来放置按钮，并使其在垂直布局中居中
@@ -1490,7 +1493,7 @@ class CharacterCountDialog(QDialog):
         self.stats_label.setText(message)
         # 这里可以进一步设置文字样式，如加粗等
 
-    def initContextMenu(self, label):
+    def init_context_menu(self, label):
         context_menu = QMenu(label)
         copy_action = QAction("复制", label)
         copy_action.triggered.connect(lambda: QApplication.clipboard().setText(label.selectedText()))
@@ -2193,6 +2196,10 @@ class Notepad(QMainWindow):
         if self.highlighter:
             self.highlighter.deleteLater()
             self.highlighter = None
+        # 使用文件后缀判断使用何种语言高亮
+        self.current_file_extension = os.path.splitext(filename)[1]
+        if self.syntax_highlight_enabled:
+            self.reload_highlighter(self.theme, self.current_file_extension)
         if not filename:
             return
         try:
@@ -2217,10 +2224,6 @@ class Notepad(QMainWindow):
             self.text_edit.setPlainText(initial_content.rstrip())
             self.setWindowTitle(f"{self.app_name} - {encoding.upper()} - {filename}")
 
-            # 使用文件后缀判断使用何种语言高亮
-            self.current_file_extension = os.path.splitext(filename)[1]
-            if self.syntax_highlight_enabled:
-                self.reload_highlighter(self.theme, self.current_file_extension)
             self.start_file_loader(filename, encoding,position)
             self.update_save_action_state()
             # 记录当前文件名,编码,以及当前目录
