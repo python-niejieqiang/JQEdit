@@ -2178,21 +2178,36 @@ class Notepad(QMainWindow):
 
     def save_file(self, file_name):
         try:
-            with codecs.open(file_name, "w", encoding=self.current_file_encoding) as outfile:
+            with open(file_name, "w", encoding=self.current_file_encoding, errors='strict') as outfile:
                 text = self.text_edit.toPlainText()
                 outfile.write(text)
-                # 更新最后修改时间
-            self.text_edit.document().setModified(False)
             self.last_modified_time = QFileInfo(file_name).lastModified().toMSecsSinceEpoch()
-            self.setWindowTitle(f"{self.app_name} - {self.current_file_encoding.upper()} - {self.current_file_name} - 保存成功")
-
-            return True
+        except UnicodeEncodeError:
+            # 捕获编码异常，并使用UTF-8重新尝试保存
+            try:
+                with open(file_name, "w", encoding='utf-8') as outfile:
+                    text = self.text_edit.toPlainText()
+                    outfile.write(text)
+                    # 更新当前文件编码为UTF-8（如果需要的话）
+                    self.current_file_encoding = 'utf-8'
+                self.last_modified_time = QFileInfo(file_name).lastModified().toMSecsSinceEpoch()
+            except IOError as e:
+                QMessageBox.warning(self, self.app_name, f"文件 {file_name} 保存失败:\n{e}")
+            except Exception as e:
+                QMessageBox.warning(self, self.app_name, f"文件 {file_name} 保存时发生未知错误:\n{e}")
+            return False  # 如果使用UTF-8保存也失败，则返回False
         except IOError as e:
             QMessageBox.warning(self, self.app_name, f"文件 {file_name} 保存失败:\n{e}")
+            return False
         except Exception as e:
             QMessageBox.warning(self, self.app_name, f"文件 {file_name} 保存时发生未知错误:\n{e}")
-        return False
+            return False
 
+            # 更新最后修改时间
+        self.text_edit.document().setModified(False)
+        self.setWindowTitle(
+            f"{self.app_name} - {self.current_file_encoding.upper()} - {self.current_file_name} - 保存成功")
+        return True
     def read_file(self, filename):
         filename = os.path.normpath(filename)
         # 关闭语法高亮
