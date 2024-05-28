@@ -1861,10 +1861,13 @@ class Notepad(QMainWindow):
         self.date_action.triggered.connect(self.get_date)
         self.edit_menu.addAction(self.date_action)
 
-        self.font_action = QAction("字体(&Z)", self)
-        self.font_action.setShortcut("Alt+Z")
+        self.font_action = QAction("设置主字体)", self)
         self.font_action.triggered.connect(self.modify_font)
         self.theme_menu.addAction(self.font_action)
+
+        self.fallback_font_action = QAction("设置回滚字体", self)
+        self.fallback_font_action.triggered.connect(self.set_fallback_font)
+        self.theme_menu.addAction(self.fallback_font_action)
 
         #添加一个操作来切换行号的可见性
         self.line_numbers_action = QAction("行号", self, checkable=True)
@@ -2357,6 +2360,8 @@ class Notepad(QMainWindow):
         self.font.setItalic(font_data.get("italic", False))
         self.font.setUnderline(font_data.get("underline", False))
         self.font.setStrikeOut(font_data.get("strikeOut", False))
+        self.fallback_font = settings.get("fallback_font")
+        self.font.setFamilies([self.font.family(), self.fallback_font])
 
         # 更新其他设置
         self.theme = settings.get("theme", "intellijlight")
@@ -2388,6 +2393,7 @@ class Notepad(QMainWindow):
         # 更新现有设置
         existing_settings.update({
             "font":{"font_family": self.font.family(),"point_size": self.font.pointSize(),"bold": self.font.bold(),"italic": self.font.italic(),"underline": self.font.underline(),"strikeOut": self.font.strikeOut()},
+            "fallback_font": self.fallback_font,  # 假设你已经在设置回滚字体时更新了这个变量
             "theme": self.theme,
             "wrap_line_on": self.wrap_line_on,
             "statusbar_shown": self.statusbar_shown,
@@ -2509,6 +2515,7 @@ class Notepad(QMainWindow):
     @Slot()
     def help_info(self):
         help_txt = r"""<ol>
+       <li><span style='font-size:12px'>JQEdit支持中英双字体，比如想要JetBrains Mono字体显示代码，中文显示使用微软雅黑,那么点击”设置主字体“，选择JetBrains Mono,再点击”设置回滚字体“，选择微软雅黑，即可，如果没有第一步，则需要重启记事本才能看到效果，另外如果主字体如果能显示中文字符，那么设置回滚字体将会无效</span></li>
        <li><span style='font-size:12px'>已知bug: 自动换行下，会将视觉行识别为两行，鼠标选择正常，注释功能以及移行功能会受影响</span></li>
        <li><span style='font-size:12px'>选区移动（Ctrl-Shift-上下方向键）功能设定按键间隔为0.2秒，按快了也没用</span></li>
        <li><span style='font-size:12px'>有选择文本时，Ctrl-Shift-↑将选区往上移动一行，反之往下移动一行，无选区移动当前行，Ctrl-Shift-←按单词距离缩小选区，反之扩大选区</span></li>
@@ -2673,13 +2680,23 @@ class Notepad(QMainWindow):
             self.update_save_action_state()
 
     @Slot()
-    def modify_font(self):
+    def set_fallback_font(self): # 设置回滚字体，可以实现代码使用Monaco显示，中文使用雅黑显示
+        # 选择字体
+        ok, fallback_font = QFontDialog.getFont()
+        if ok:
+            self.fallback_font = fallback_font.family()
+            self.font.setFamilies([self.font.family(), self.fallback_font])
+            self.text_edit.setFont(self.font)
+            self.save_settings()  # 保存字体设置到json
+
+    @Slot()
+    def modify_font(self): # 设置第一字体
         # 选择字体
         ok, font = QFontDialog.getFont()
-        if not ok: return
-        self.text_edit.setFont(font)
-        self.font = font  # 更新字体
-        self.save_settings()  # 保存字体设置到json
+        if ok:
+            self.text_edit.setFont(font)
+            self.font = font  # 更新字体
+            self.save_settings()  # 保存字体设置到json
 
     @Slot()
     def wrap_line_toggle(self):

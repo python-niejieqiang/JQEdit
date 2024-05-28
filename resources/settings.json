@@ -1,12 +1,13 @@
 {
     "font": {
         "font_family": "JetBrains Mono",
-        "point_size": 16,
+        "point_size": 14,
         "bold": false,
         "italic": false,
         "underline": false,
         "strikeOut": false
     },
+    "fallback_font": "Microsoft YaHei UI",
     "theme": "intellijlight",
     "wrap_line_on": false,
     "statusbar_shown": true,
