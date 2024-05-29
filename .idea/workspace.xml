@@ -4,11 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="新增中英双字体支持功能，例如，代码显示使用Monaco，中文显示使用雅黑（心心念念的功能终于实现了）">
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="补充提交exe">
       <change afterPath="$PROJECT_DIR$/1.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_setup.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/inno_setup.iss" beforeDir="false" afterPath="$PROJECT_DIR$/inno_setup.iss" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -115,7 +118,7 @@
     "git-widget-placeholder": "master",
     "last_opened_file_path": "D:/迅雷下载/JQEdit/resources/screenshot",
     "run.code.analysis.last.selected.profile": "pProject Default",
-    "settings.editor.selected.configurable": "editor.preferences.fonts.default"
+    "settings.editor.selected.configurable": "reference.settingsdialog.IDE.editor.colors.常规"
   },
   "keyToStringList": {
     "ChangesTree.GroupingKeys": [
@@ -290,22 +293,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1712137288400</updated>
-    </task>
-    <task id="LOCAL-00004" summary="优化行号跳转效率,大文件读取修复分块读取不能无缝衔接bug">
-      <option name="closed" value="true" />
-      <created>1713448660109</created>
-      <option name="number" value="00004" />
-      <option name="presentableId" value="LOCAL-00004" />
-      <option name="project" value="LOCAL" />
-      <updated>1713448660109</updated>
-    </task>
-    <task id="LOCAL-00005" summary="增加选区替换功能。">
-      <option name="closed" value="true" />
-      <created>1713536648842</created>
-      <option name="number" value="00005" />
-      <option name="presentableId" value="LOCAL-00005" />
-      <option name="project" value="LOCAL" />
-      <updated>1713536648842</updated>
     </task>
     <task id="LOCAL-00006" summary="优化设置窗口尺寸体验">
       <option name="closed" value="true" />
@@ -683,7 +670,23 @@
       <option name="project" value="LOCAL" />
       <updated>1716891295337</updated>
     </task>
-    <option name="localTasksCounter" value="53" />
+    <task id="LOCAL-00053" summary="编码ASCII码，保存中文时使用utf-8替代">
+      <option name="closed" value="true" />
+      <created>1716896814119</created>
+      <option name="number" value="00053" />
+      <option name="presentableId" value="LOCAL-00053" />
+      <option name="project" value="LOCAL" />
+      <updated>1716896814119</updated>
+    </task>
+    <task id="LOCAL-00054" summary="补充提交exe">
+      <option name="closed" value="true" />
+      <created>1716896991829</created>
+      <option name="number" value="00054" />
+      <option name="presentableId" value="LOCAL-00054" />
+      <option name="project" value="LOCAL" />
+      <updated>1716896991830</updated>
+    </task>
+    <option name="localTasksCounter" value="55" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -739,8 +742,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="上传打包好的exe" />
-    <MESSAGE value="修正首字母大写转换错误，标题栏，最近打开中的文件路径统一使用正斜杠" />
     <MESSAGE value="utf-16le编码文件设定为强制打开，需手动切换才能显示正常" />
     <MESSAGE value="补充EXE打包" />
     <MESSAGE value="行号模块重构" />
@@ -764,7 +765,9 @@
     <MESSAGE value="行号模块回滚到5月15日版本" />
     <MESSAGE value="优化开启关键字高亮后的启动速度（感觉至少提升了0.3秒。哈哈），其实只是把高亮器的初始化放在读取文件之前，对于启动效率提升确实有用，另外选区移动时，默认使光标所在行居文本区域中央" />
     <MESSAGE value="新增中英双字体支持功能，例如，代码显示使用Monaco，中文显示使用雅黑（心心念念的功能终于实现了）" />
-    <option name="LAST_COMMIT_MESSAGE" value="新增中英双字体支持功能，例如，代码显示使用Monaco，中文显示使用雅黑（心心念念的功能终于实现了）" />
+    <MESSAGE value="编码ASCII码，保存中文时使用utf-8替代" />
+    <MESSAGE value="补充提交exe" />
+    <option name="LAST_COMMIT_MESSAGE" value="补充提交exe" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>

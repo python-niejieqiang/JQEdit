@@ -1,6 +1,6 @@
 {
     "font": {
-        "font_family": "JetBrains Mono",
+        "font_family": "Consolas",
         "point_size": 14,
         "bold": false,
         "italic": false,
@@ -13,8 +13,30 @@
     "statusbar_shown": true,
     "startup_size": {
         "width": 800,
-        "height": 600,
+        "height": 580,
         "start_maximized": false
+    },
+    "current_line_color": {
+        "intellijlight": [
+            245,
+            248,
+            254
+        ],
+        "dark": [
+            43,
+            53,
+            59
+        ],
+        "gerrylight": [
+            245,
+            248,
+            254
+        ],
+        "xcode": [
+            35,
+            37,
+            43
+        ]
     },
     "show_line_numbers": true,
     "syntax_on": true,

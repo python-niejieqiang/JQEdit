@@ -7,26 +7,31 @@ import shutil
 import subprocess
 import sys
 import threading
-from functools import partial
 import time
+from functools import partial
+
 import chardet
 import pyperclip
-from PySide6.QtCore import (QTranslator, Q_ARG,QFile,QMetaObject, QRunnable, QThreadPool, QThread, QObject, QTextStream, QTimer, QSize,
+from PySide6.QtCore import (QTranslator, Q_ARG, QFile, QMetaObject, QRunnable, QThreadPool, QThread, QObject,
+                            QTextStream, QTimer, QSize,
                             QFileInfo,
                             Qt, QEvent, QRect,
                             Signal, QUrl, Slot,
                             QRegularExpression)
-from PySide6.QtGui import (QAction, QIntValidator,QFontMetrics, QGuiApplication, QKeySequence, QShortcut, QPalette, QPainter,
+from PySide6.QtGui import (QAction, QIntValidator, QTextFormat, QGuiApplication, QKeySequence, QShortcut, QPalette,
+                           QPainter,
                            QSyntaxHighlighter,
                            QColor, QTextCharFormat,
                            QIcon, QFont,
                            QTextCursor, QDesktopServices)
-from PySide6.QtWidgets import (QApplication, QListWidget, QDialog, QHBoxLayout, QWidget, QLabel, QLineEdit, QCheckBox,
+from PySide6.QtWidgets import (QApplication, QListWidget, QTextEdit, QDialog, QHBoxLayout, QWidget, QLabel, QLineEdit,
+                               QCheckBox,
                                QVBoxLayout, QPushButton,
                                QFileDialog, QMainWindow, QDialogButtonBox, QFontDialog, QPlainTextEdit,
                                QMenu, QInputDialog, QMenuBar, QStatusBar, QMessageBox, QColorDialog)
 
 from replace_window_ui import Ui_replace_window
+
 
 class FileLoader(QThread):
     contentLoaded = Signal(str)
@@ -103,12 +108,13 @@ class LineNumberWorker(QRunnable):
         self.editor.line_number_area.update()
 
 class TextEditor(QPlainTextEdit):
-    def __init__(self, notepad_instance):
+    def __init__(self, notepad_instance,current_line_color):
         super().__init__()
         self.special_pairs = {'"': '"', "'": "'", '{': '}', '(': ')', '[': ']'}
         self.last_presstime =0  # 选区移动上次按键时间，需要设定按键间隔为0.2秒
         self.selection_phase = 0 # 扩展选区计数器
         self.untitled_name = "Untitled.txt"
+        self.current_line_color = current_line_color
         self.notepad = notepad_instance  # 保存与之关联的记事本实例
         # 数字9最高最宽，由此计算出行号所需的最合适的宽度
         self.line_number_digit_width = self.fontMetrics().horizontalAdvance('9')
@@ -119,6 +125,8 @@ class TextEditor(QPlainTextEdit):
         # 连接文本块计数变化和更新请求信号到对应槽函数
         self.blockCountChanged.connect(self.update_line_number_area_width)
         self.updateRequest.connect(self.update_line_number_area)
+        self.highlight_current_line() #高亮当前行
+        self.cursorPositionChanged.connect(self.highlight_current_line)
 
         self.update_line_number_area_width()  # 初始化行号区域的宽度
 
@@ -129,9 +137,31 @@ class TextEditor(QPlainTextEdit):
         self.paste_shortcut.activated.connect(self.notepad.show_paste_dialog)
 
         self.setFont(self.notepad.font) # 设置文本区域字体
-        # self.init_context_menu()
 
         self.thread_pool = QThreadPool.globalInstance()
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        painter = QPainter(self.viewport())
+        option = QStyleOption()
+        option.initFrom(self)
+        current_block = self.document().findBlock(self.textCursor().position())
+        block_rect = self.cursorRect(self.textCursor()).translated(QPoint(0, self.document().documentMargin()))
+        highlight_color = QColor(*self.current_line_color)
+        painter.fillRect(block_rect, highlight_color)
+        painter.end()
+
+    def highlight_current_line(self):
+        extra_selections = []
+        if not self.isReadOnly():
+            selection = QTextEdit.ExtraSelection()  # 使用QTextEdit.ExtraSelection
+            line_color = QColor(*self.current_line_color)
+            selection.format.setBackground(line_color)
+            selection.format.setProperty(QTextFormat.FullWidthSelection, True)
+            selection.cursor = self.textCursor()
+            selection.cursor.clearSelection()
+            extra_selections.append(selection)
+        self.setExtraSelections(extra_selections)  # QPlainTextEdit也支持此方法
 
     def display_default_file_name(self, filename_):
         # 只需要设置文档的修改状态，窗口的修改状态会自动更新
@@ -1689,7 +1719,7 @@ class Notepad(QMainWindow):
         self.menu_bar = QMenuBar(self)
         self.setMenuBar(self.menu_bar)
 
-        self.text_edit = TextEditor(self)
+        self.text_edit = TextEditor(self,self.current_line_color)
         self.setCentralWidget(self.text_edit)
 
         # 添加底部状态栏
@@ -2012,9 +2042,17 @@ class Notepad(QMainWindow):
         self.load_recent_files_thread.quit()  # 请求线程退出
         self.load_recent_files_thread.wait()  # 请求线程退出
 
+    def update_current_line_color(self):
+        """更新当前行高亮颜色以匹配当前主题"""
+        new_color = self.settings.get("current_line_color", {}).get(self.theme)
+        self.text_edit.current_line_color = new_color
+        # 强制重新高亮当前行以应用新的颜色
+        self.text_edit.highlight_current_line()
+
     def on_theme_changed(self, new_theme):
         if self.syntax_highlight_enabled:
             self.reload_highlighter(new_theme, self.current_file_extension)
+        self.update_current_line_color()
 
     def reload_highlighter(self, new_theme, file_extension):
         if self.highlighter:
@@ -2364,31 +2402,31 @@ class Notepad(QMainWindow):
         try:
             # 读取现有的设置
             with open(self.settings_file, "r") as f:
-                settings = json.load(f)
+                self.settings = json.load(f)
         except FileNotFoundError:
-            settings = {}  # 如果文件不存在，创建一个空字典
+            self.settings = {}  # 如果文件不存在，创建一个空字典
 
         # 更新字体设置
-        font_data = settings.get("font", {})
+        font_data = self.settings.get("font", {})
         self.font = QFont(font_data.get("font_family", "Microsoft YaHei UI"), font_data.get("point_size", 12))
         self.font.setBold(font_data.get("bold", False))
         self.font.setItalic(font_data.get("italic", False))
         self.font.setUnderline(font_data.get("underline", False))
         self.font.setStrikeOut(font_data.get("strikeOut", False))
-        self.fallback_font = settings.get("fallback_font")
+        self.fallback_font = self.settings.get("fallback_font")
         self.font.setFamilies([self.font.family(), self.fallback_font])
 
         # 更新其他设置
-        self.theme = settings.get("theme", "intellijlight")
-        self.syntax_highlight_enabled = settings.get("syntax_on", False)
-        self.custom_command = settings.get("custom_command", "python $1")
-        self.custom_comment_char = settings.get("custom_comment_char","#")
-        self.wrap_line_on = settings.get("wrap_line_on", True)
-        self.statusbar_shown = settings.get("statusbar_shown", True)
-        self.show_line_numbers = settings.get("show_line_numbers", True)
-
+        self.theme = self.settings.get("theme", "intellijlight")
+        self.syntax_highlight_enabled = self.settings.get("syntax_on", False)
+        self.custom_command = self.settings.get("custom_command", "python $1")
+        self.custom_comment_char = self.settings.get("custom_comment_char","#")
+        self.wrap_line_on = self.settings.get("wrap_line_on", True)
+        self.statusbar_shown = self.settings.get("statusbar_shown", True)
+        self.show_line_numbers = self.settings.get("show_line_numbers", True)
+        self.current_line_color = self.settings.get("current_line_color",{}).get(self.theme)
         # 读取并应用窗口大小设置
-        startup_size = settings.get("startup_size", {})
+        startup_size = self.settings.get("startup_size", {})
         width = startup_size.get("width", 800)
         height = startup_size.get("height", 600)
         is_maximized = startup_size.get("start_maximized", False)
@@ -2493,12 +2531,6 @@ class Notepad(QMainWindow):
             QMessageBox.critical(self, "错误", "请输入有效的数字", QMessageBox.Ok)
             return
 
-        # 如果用户选择了最大化，则设置窗口尺寸为屏幕尺寸，并记录最大化状态
-        if is_maximized:
-            self.showMaximized()
-        else:
-            self.resize(width, height)
-
         # 保存启动窗口尺寸及最大化状态到 settings.json
         with open(self.settings_file, 'r+') as f:
             settings = json.load(f)
@@ -2507,6 +2539,12 @@ class Notepad(QMainWindow):
             json.dump(settings, f, indent=4)
             f.truncate()  # 截断文件，删除多余的内容
         dialog.close()
+        # 如果用户选择了最大化，则设置窗口尺寸为屏幕尺寸，并记录最大化状态
+        if is_maximized:
+            self.showMaximized()
+        else:
+            self.resize(width, height)
+
 
     def read_startup_size(self):
         try:
