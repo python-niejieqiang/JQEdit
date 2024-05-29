@@ -13,7 +13,7 @@
     "statusbar_shown": true,
     "startup_size": {
         "width": 800,
-        "height": 580,
+        "height": 600,
         "start_maximized": false
     },
     "current_line_color": {
@@ -21,6 +21,16 @@
             245,
             248,
             254
+        ],
+        "dacula_darker": [
+            50,
+            51,
+            53
+        ],
+        "grovbox_soft": [
+            235,
+            219,
+            178
         ],
         "dark": [
             43,

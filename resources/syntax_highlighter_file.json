@@ -1,7 +1,7 @@
 {
   "intellijlight": {
     "keyword": {
-      "color":[0, 51, 179],
+      "color":[0,51, 179],
       "bold": true,
       "italic": false
     },
@@ -11,12 +11,56 @@
       "italic": false
     },
     "comment": {
-      "color":[140, 140,140],
+      "color":[140,140,140],
       "bold": false,
       "italic": true
     },
     "operator": {
-      "color":[0, 0,0],
+      "color":[0,0,0],
+      "bold": false,
+      "italic": false
+    }
+  },
+  "dacula_darker": {
+    "keyword": {
+      "color":[204, 120, 50],
+      "bold": true,
+      "italic": false
+    },
+    "string":{
+      "color": [142,167,101],
+      "bold": false,
+      "italic": false
+    },
+    "comment": {
+      "color":[128,128,128],
+      "bold": false,
+      "italic": true
+    },
+    "operator": {
+      "color":[207,210,213],
+      "bold": false,
+      "italic": false
+    }
+  },
+    "grovbox_soft": {
+    "keyword": {
+      "color":[157,0, 6],
+      "bold": true,
+      "italic": false
+    },
+    "string":{
+      "color": [121,116,14],
+      "bold": false,
+      "italic": false
+    },
+    "comment": {
+      "color":[146, 131,116],
+      "bold": false,
+      "italic": true
+    },
+    "operator": {
+      "color":[60, 56,54],
       "bold": false,
       "italic": false
     }

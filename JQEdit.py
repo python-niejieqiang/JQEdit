@@ -1696,6 +1696,18 @@ class Notepad(QMainWindow):
         self.theme_menu.addAction(self.intellijlight_theme_action)
         self.theme_actions.append(self.intellijlight_theme_action)
 
+        self.dacula_darker_soft_theme_action = QAction("Darcula Darker", self, checkable=True)
+        self.dacula_darker_soft_theme_action.setData("dacula_darker")  # 设置data
+        self.dacula_darker_soft_theme_action.triggered.connect(lambda: self.apply_theme("dacula_darker"))
+        self.theme_menu.addAction(self.dacula_darker_soft_theme_action)
+        self.theme_actions.append(self.dacula_darker_soft_theme_action)
+
+        self.grovbox_soft_theme_action = QAction("Grovbox Soft", self, checkable=True)
+        self.grovbox_soft_theme_action.setData("grovbox_soft")  # 设置data
+        self.grovbox_soft_theme_action.triggered.connect(lambda: self.apply_theme("grovbox_soft"))
+        self.theme_menu.addAction(self.grovbox_soft_theme_action)
+        self.theme_actions.append(self.grovbox_soft_theme_action)
+
         self.dark_theme_action = QAction("Dark", self, checkable=True)
         self.dark_theme_action.setData("dark")  # 设置data
         self.dark_theme_action.triggered.connect(lambda: self.apply_theme("dark"))

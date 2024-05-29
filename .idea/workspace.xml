@@ -4,14 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="补充提交exe">
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="新增高亮当前行功能，颜色可在settings.json，current_line_color属性里面修改">
       <change afterPath="$PROJECT_DIR$/1.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/dacula_darker_style.qss" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/grovbox_soft_style.qss" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_setup.exe" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inno_setup.iss" beforeDir="false" afterPath="$PROJECT_DIR$/inno_setup.iss" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/syntax_highlighter_file.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/syntax_highlighter_file.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -118,7 +119,7 @@
     "git-widget-placeholder": "master",
     "last_opened_file_path": "D:/迅雷下载/JQEdit/resources/screenshot",
     "run.code.analysis.last.selected.profile": "pProject Default",
-    "settings.editor.selected.configurable": "reference.settingsdialog.IDE.editor.colors.常规"
+    "settings.editor.selected.configurable": "reference.settingsdialog.IDE.editor.colors.语言默认设置"
   },
   "keyToStringList": {
     "ChangesTree.GroupingKeys": [
@@ -293,14 +294,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1712137288400</updated>
-    </task>
-    <task id="LOCAL-00006" summary="优化设置窗口尺寸体验">
-      <option name="closed" value="true" />
-      <created>1713542768952</created>
-      <option name="number" value="00006" />
-      <option name="presentableId" value="LOCAL-00006" />
-      <option name="project" value="LOCAL" />
-      <updated>1713542768952</updated>
     </task>
     <task id="LOCAL-00007" summary="优化查找替换体验，按TAB键从搜索框跳到替换框">
       <option name="closed" value="true" />
@@ -686,7 +679,15 @@
       <option name="project" value="LOCAL" />
       <updated>1716896991830</updated>
     </task>
-    <option name="localTasksCounter" value="55" />
+    <task id="LOCAL-00055" summary="新增高亮当前行功能，颜色可在settings.json，current_line_color属性里面修改">
+      <option name="closed" value="true" />
+      <created>1716988184307</created>
+      <option name="number" value="00055" />
+      <option name="presentableId" value="LOCAL-00055" />
+      <option name="project" value="LOCAL" />
+      <updated>1716988184308</updated>
+    </task>
+    <option name="localTasksCounter" value="56" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -742,7 +743,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="utf-16le编码文件设定为强制打开，需手动切换才能显示正常" />
     <MESSAGE value="补充EXE打包" />
     <MESSAGE value="行号模块重构" />
     <MESSAGE value="同步到github" />
@@ -767,7 +767,8 @@
     <MESSAGE value="新增中英双字体支持功能，例如，代码显示使用Monaco，中文显示使用雅黑（心心念念的功能终于实现了）" />
     <MESSAGE value="编码ASCII码，保存中文时使用utf-8替代" />
     <MESSAGE value="补充提交exe" />
-    <option name="LAST_COMMIT_MESSAGE" value="补充提交exe" />
+    <MESSAGE value="新增高亮当前行功能，颜色可在settings.json，current_line_color属性里面修改" />
+    <option name="LAST_COMMIT_MESSAGE" value="新增高亮当前行功能，颜色可在settings.json，current_line_color属性里面修改" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>
