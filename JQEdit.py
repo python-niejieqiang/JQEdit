@@ -2266,6 +2266,7 @@ class Notepad(QMainWindow):
         return True
 
     def read_file(self, filename):
+        filename = os.path.normpath(filename)
         # 关闭语法高亮
         if self.highlighter:
             self.highlighter.deleteLater()
@@ -2306,6 +2307,7 @@ class Notepad(QMainWindow):
                 initial_content = b"".join(lines).decode(encoding,"ignore")
                 self.text_edit.setPlainText(initial_content.rstrip())
             else:
+                self.text_edit.clear()
                 position = 2
             self.setWindowTitle(f"{self.app_name} - {encoding.upper()} - {filename}")
 
