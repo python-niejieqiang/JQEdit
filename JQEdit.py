@@ -1708,6 +1708,12 @@ class Notepad(QMainWindow):
         self.theme_menu.addAction(self.grovbox_soft_theme_action)
         self.theme_actions.append(self.grovbox_soft_theme_action)
 
+        self.nature_green_theme_action = QAction("Nature Green", self, checkable=True)
+        self.nature_green_theme_action.setData("nature_green")  # 设置data
+        self.nature_green_theme_action.triggered.connect(lambda: self.apply_theme("nature_green"))
+        self.theme_menu.addAction(self.nature_green_theme_action)
+        self.theme_actions.append(self.nature_green_theme_action)
+
         self.dark_theme_action = QAction("Dark", self, checkable=True)
         self.dark_theme_action.setData("dark")  # 设置data
         self.dark_theme_action.triggered.connect(lambda: self.apply_theme("dark"))
@@ -2258,8 +2264,8 @@ class Notepad(QMainWindow):
         self.setWindowTitle(
             f"{self.app_name} - {self.current_file_encoding.upper()} - {self.current_file_name} - 保存成功")
         return True
+
     def read_file(self, filename):
-        filename = os.path.normpath(filename)
         # 关闭语法高亮
         if self.highlighter:
             self.highlighter.deleteLater()
@@ -2271,7 +2277,15 @@ class Notepad(QMainWindow):
         if not filename:
             return
         try:
-            lines,position = self.read_100_lines(filename,100)
+            lines = []
+            position = 0
+            with open(filename, 'rb') as f:
+                for _ in range(80):
+                    line = f.readline()
+                    if not line:
+                        break
+                    lines.append(line)
+                position = f.tell()  # 在循环外获取位置
             encoding_info = chardet.detect(b"".join(lines))
             if encoding_info is None:
                 encoding = "utf-8"
@@ -2288,8 +2302,11 @@ class Notepad(QMainWindow):
                             encoding = 'utf-16be'
                         elif byte1 == 0xFF and byte2 == 0xFE:
                             encoding = 'utf-16le'
-            initial_content = b"".join(lines).decode(encoding,"ignore")
-            self.text_edit.setPlainText(initial_content.rstrip())
+            if not encoding.startswith("utf-16"):
+                initial_content = b"".join(lines).decode(encoding,"ignore")
+                self.text_edit.setPlainText(initial_content.rstrip())
+            else:
+                position = 2
             self.setWindowTitle(f"{self.app_name} - {encoding.upper()} - {filename}")
 
             self.start_file_loader(filename, encoding,position)
@@ -2317,18 +2334,6 @@ class Notepad(QMainWindow):
         self.text_edit.appendPlainText(chunk)
         self.text_edit.document().setModified(False)
         self.text_edit.update_total_lines()
-
-    def read_100_lines(self, filename, num_lines):
-        lines = []
-        position = 0
-        with open(filename, 'rb') as f:
-            for _ in range(num_lines):
-                line = f.readline()
-                if not line:
-                    break
-                lines.append(line)
-            position = f.tell()  # 在循环外获取位置
-        return lines,position
 
     def add_recent_file(self, file_path):
         # 添加最近打开的文件路径到列表中

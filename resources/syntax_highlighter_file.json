@@ -43,6 +43,28 @@
       "italic": false
     }
   },
+  "nature_green": {
+    "keyword": {
+      "color":[46, 169, 170],
+      "bold": true,
+      "italic": false
+    },
+    "string":{
+      "color": [166,170,67],
+      "bold": false,
+      "italic": false
+    },
+    "comment": {
+      "color":[84,128,109],
+      "bold": false,
+      "italic": true
+    },
+    "operator": {
+      "color":[168,178,190],
+      "bold": false,
+      "italic": false
+    }
+  },
     "grovbox_soft": {
     "keyword": {
       "color":[157,0, 6],
@@ -77,7 +99,7 @@
       "italic": false
     },
     "operator": {
-      "color": [200, 120, 50],
+      "color": [168, 153, 132],
       "bold": false,
       "italic": false
     },
