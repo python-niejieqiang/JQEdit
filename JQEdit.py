@@ -691,8 +691,14 @@ class TextEditor(QPlainTextEdit):
                         space_delta = 0
             cursor.insertText("\n".join(lines))
             # 在完成所有文本操作之后，尝试恢复选区
-            cursor.setPosition(initial_selection_start + space_delta)
-            cursor.setPosition(initial_selection_end - num*4, QTextCursor.KeepAnchor)
+            if initial_selection_start + space_delta < self.document().findBlockByNumber(start_block).position():
+                cursor.setPosition(self.document().findBlockByNumber(start_block).position())
+            else:
+                cursor.setPosition(initial_selection_start + space_delta)
+            if initial_selection_end - num*4 < self.document().findBlockByNumber(end_block).position():
+                cursor.setPosition(self.document().findBlockByNumber(end_block).position(),QTextCursor.KeepAnchor)
+            else:
+                cursor.setPosition(initial_selection_end - num*4, QTextCursor.KeepAnchor)
             self.setTextCursor(cursor)
         else:
             # 处理未选中文本的情况

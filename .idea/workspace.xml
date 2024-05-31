@@ -4,12 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="新增主题：Nature Green,完善UTF-16编码支持buchongtijiao">
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="新增ini文件高亮，完善Shift-Tab反向缩进功能">
       <change afterPath="$PROJECT_DIR$/1.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -291,14 +289,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1712137288400</updated>
-    </task>
-    <task id="LOCAL-00010" summary="加入行号功能">
-      <option name="closed" value="true" />
-      <created>1713946678377</created>
-      <option name="number" value="00010" />
-      <option name="presentableId" value="LOCAL-00010" />
-      <option name="project" value="LOCAL" />
-      <updated>1713946678377</updated>
     </task>
     <task id="LOCAL-00011" summary="改为单例模式，增加按tab缩进，选区缩进等功能（仍有bug待解决）">
       <option name="closed" value="true" />
@@ -684,7 +674,15 @@
       <option name="project" value="LOCAL" />
       <updated>1717073005982</updated>
     </task>
-    <option name="localTasksCounter" value="59" />
+    <task id="LOCAL-00059" summary="新增ini文件高亮，完善Shift-Tab反向缩进功能">
+      <option name="closed" value="true" />
+      <created>1717160925146</created>
+      <option name="number" value="00059" />
+      <option name="presentableId" value="LOCAL-00059" />
+      <option name="project" value="LOCAL" />
+      <updated>1717160925146</updated>
+    </task>
+    <option name="localTasksCounter" value="60" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -740,7 +738,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="修复打开recent_files.json会触发“文件内容有变动，是否加载”提示的bug" />
     <MESSAGE value="命令行参数使用绝对路径，" />
     <MESSAGE value="剪贴板小修改" />
     <MESSAGE value="新增小功能：选中文本AAA输入'或者&quot;,得到'AAA'或者&quot;AAA&quot;" />
@@ -765,7 +762,8 @@
     <MESSAGE value="新增主题：Dacula Darker，Grovbox Soft" />
     <MESSAGE value="新增主题：Nature Green,完善UTF-16编码支持" />
     <MESSAGE value="新增主题：Nature Green,完善UTF-16编码支持buchongtijiao" />
-    <option name="LAST_COMMIT_MESSAGE" value="新增主题：Nature Green,完善UTF-16编码支持buchongtijiao" />
+    <MESSAGE value="新增ini文件高亮，完善Shift-Tab反向缩进功能" />
+    <option name="LAST_COMMIT_MESSAGE" value="新增ini文件高亮，完善Shift-Tab反向缩进功能" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>
