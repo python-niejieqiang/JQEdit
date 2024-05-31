@@ -8,7 +8,7 @@
         "strikeOut": false
     },
     "fallback_font": "Microsoft YaHei UI",
-    "theme": "intellijlight",
+    "theme": "gerrylight",
     "wrap_line_on": false,
     "statusbar_shown": true,
     "startup_size": {

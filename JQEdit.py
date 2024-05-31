@@ -658,39 +658,42 @@ class TextEditor(QPlainTextEdit):
         initial_selection_start = cursor.selectionStart()
         initial_selection_end = cursor.selectionEnd()
         if cursor.hasSelection():
-            cursor.beginEditBlock()
+            start_block = self.document().findBlock(initial_selection_start).blockNumber()
+            end_block = self.document().findBlock(initial_selection_end).blockNumber()
 
-            cursor.setPosition(initial_selection_start)
-            num = 0
-            while cursor.position() < initial_selection_end and not cursor.atEnd():
-                cursor.movePosition(QTextCursor.StartOfLine)
+            start_is_line_start = (initial_selection_start == self.document().findBlockByNumber(start_block).position())
+            end_is_line_end = initial_selection_end == self.document().findBlockByNumber(end_block).position() + self.document().findBlockByNumber(end_block).length() - 1
 
+            if start_is_line_start and end_is_line_end:
+                lines_in_selection = cursor.selectedText()
+                cursor.removeSelectedText()
+            else:
+                middle_of_selection = cursor.selectedText()
+                cursor.removeSelectedText()
                 cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor)
-                line_text = cursor.selectedText()
-
-                if line_text.startswith(" " * 4):
-                    # 记录是否所有行都以四个空格开头
-                    num += 1
-                    # 删除前四个空格
-                    cursor.movePosition(QTextCursor.StartOfLine)
-                    cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 4)
-                    cursor.removeSelectedText()
-                # 移动到下一行
-                cursor.movePosition(QTextCursor.NextBlock)
-
-                # 检查是否已经到达选区的结束位置
-                if cursor.position() >= initial_selection_end:
-                    break
-
-            cursor.endEditBlock()
-
-            if num > 0:
-                # 调整选区的起始位置
-                new_selection_start = max(initial_selection_start - 4, 0)
-                new_selection_end = initial_selection_end - 4 * num
-                cursor.setPosition(new_selection_start)
-                cursor.setPosition(new_selection_end, QTextCursor.KeepAnchor)
-                self.setTextCursor(cursor)
+                end_of_selection = cursor.selectedText()
+                cursor.removeSelectedText()
+                cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.KeepAnchor)
+                start_of_selection = cursor.selectedText()
+                cursor.removeSelectedText()
+                lines_in_selection = start_of_selection + middle_of_selection + end_of_selection
+            lines = lines_in_selection.splitlines()
+            num = 0
+            space_delta = 0
+            for i,line in enumerate(lines):
+                if line.startswith("    "):
+                    num+=1
+                    lines[i] = line[4:]
+                    if i == 0  and not start_is_line_start:
+                        space_delta = -4
+                else:
+                    if i == 0:
+                        space_delta = 0
+            cursor.insertText("\n".join(lines))
+            # 在完成所有文本操作之后，尝试恢复选区
+            cursor.setPosition(initial_selection_start + space_delta)
+            cursor.setPosition(initial_selection_end - num*4, QTextCursor.KeepAnchor)
+            self.setTextCursor(cursor)
         else:
             # 处理未选中文本的情况
             cursor_position = cursor.position()
@@ -763,6 +766,15 @@ class SyntaxHighlighterBase(QSyntaxHighlighter):
                 start = match.capturedStart()
                 length = match.capturedLength()
                 self.setFormat(start, length, format_)
+
+class IniFileHighlighter(SyntaxHighlighterBase):
+    def __init__(self, parent=None, theme_name="dark"):  # 添加 theme_name 参数
+        super().__init__(parent, theme_name=theme_name)  # 传递 theme_name 参数
+
+        self.highlight_rules.extend([
+            (QRegularExpression(r"^\s*\[.*?\]",QRegularExpression.MultilineOption), self.keyword_format),
+            (QRegularExpression(r"^\s*\#[^\n]*",QRegularExpression.MultilineOption), self.comment_format)
+        ])
 
 class PythonHighlighter(SyntaxHighlighterBase):
     def __init__(self, parent=None, theme_name="dark"):  # 添加 theme_name 参数
@@ -938,7 +950,8 @@ class HighlighterFactory:
             ".sh": BashHighlighter,
             ".html": HTMLHighlighter,
             ".css": CssHighlighter,
-            ".cpp": CppHighlighter
+            ".cpp": CppHighlighter,
+            ".ini": IniFileHighlighter,
         }
 
         highlighter_class = highlighters.get(file_extension)
