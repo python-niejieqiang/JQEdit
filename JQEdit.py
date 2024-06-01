@@ -236,6 +236,19 @@ class TextEditor(QPlainTextEdit):
     def paintEvent(self, event):
         super().paintEvent(event)
 
+    def is_cursor_between_matching_characters(self, cursor, line_text, matching_pairs):
+        cursor_position = cursor.positionInBlock()
+
+        for left_char, right_char in matching_pairs:
+            left_index = line_text.rfind(left_char, 0, cursor_position)
+            right_index = line_text.find(right_char, cursor_position)
+
+            if left_index != -1 and right_index != -1:
+                if left_index < right_index:
+                    if left_index < cursor_position < right_index:
+                        return True, left_index, right_index
+        return False, None, None
+
     def keyPressEvent(self, event):
         key = event.key()
         text = event.text()
@@ -300,67 +313,61 @@ class TextEditor(QPlainTextEdit):
         #Ctrl+W 扩展选区
         elif event.modifiers() == Qt.ControlModifier and key == Qt.Key_W:
             cursor = self.textCursor()
+            line_text = cursor.block().text()
+
+            # Phase 1: Select the word under the cursor
             if not cursor.hasSelection():
                 self.orign_pos = cursor.position()
-
-                # 检查光标是否位于行首
-                at_start = cursor.atBlockStart() or not cursor.movePosition(QTextCursor.Left, QTextCursor.MoveAnchor, 1)
-
-                # 检查光标是否位于行尾或之后紧跟非单词字符
-                at_end_or_after_non_word = cursor.atBlockEnd() or not cursor.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor, 1)
-                if at_start:
-                    # 如果光标位于行首，直接选中当前单词
-                    cursor.movePosition(QTextCursor.WordRight, QTextCursor.MoveAnchor)
-                    cursor.select(QTextCursor.WordUnderCursor)
-                elif at_end_or_after_non_word:
-                    # 如果光标位于行尾或紧跟非单词字符之后，先向左移到前一个单词的边界
-                    cursor.movePosition(QTextCursor.WordLeft, QTextCursor.MoveAnchor)
-                    cursor.select(QTextCursor.WordUnderCursor)
-                elif not cursor.select(QTextCursor.WordUnderCursor):
-                    cursor.movePosition(QTextCursor.Left, QTextCursor.MoveAnchor, 2)
-                    # 光标位于单词内部时，直接选中当前单词
+                if not cursor.select(QTextCursor.WordUnderCursor):
+                    cursor.movePosition(QTextCursor.Left, QTextCursor.KeepAnchor, 1)
                     cursor.select(QTextCursor.WordUnderCursor)
                 else:
-                    # 光标位于单词内部时，直接选中当前单词
                     cursor.select(QTextCursor.WordUnderCursor)
-
                 self.setTextCursor(cursor)
                 self.selection_anchor_position = cursor.position()
                 self.selection_phase = 1
+
+            # Phase 2: Select content within matching characters
             elif self.selection_phase == 1:
-                # 第二阶段：扩展选区至行首并包含第一阶段的单词
-                cursor.setPosition(self.selection_anchor_position)  # 回到记录的起始位置
+                matching_pairs = [('(', ')'), ('[', ']'), ('{', '}'), ('"', '"'), ("'", "'"), ('<', '>'), ('>', '<')]
+                is_between, left_side_index, right_side_index = self.is_cursor_between_matching_characters(cursor,line_text,matching_pairs)
+                if is_between:
+                    cursor.clearSelection()
+                    block_position = cursor.block().position()
+                    cursor.setPosition(block_position + left_side_index + 1)
+                    cursor.setPosition(block_position + right_side_index, QTextCursor.KeepAnchor)
+                    self.setTextCursor(cursor)
+                    event.accept()
+                    return
+
+                self.selection_phase = 2
+
+            # Phase 3: Select the entire line
+            elif self.selection_phase == 2:
+                cursor.setPosition(self.selection_anchor_position)
                 cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.KeepAnchor)
                 self.setTextCursor(cursor)
-                self.selection_phase = 2
-            elif self.selection_phase == 2:
-                # 第三阶段：扩展选区至当前整行
-                cursor.select(QTextCursor.LineUnderCursor)
-                self.setTextCursor(cursor)
                 self.selection_phase = 3
+
+            # Phase 4: Select the previous three lines
             elif self.selection_phase == 3:
-                # 确保光标位于当前行的开始
-                cursor.movePosition(QTextCursor.StartOfLine)
-
-                # 开始选中（设置KeepAnchor标志），首先向上去选上一行
-                cursor.movePosition(QTextCursor.Up)
-                cursor.movePosition(QTextCursor.Up, QTextCursor.KeepAnchor)
-                cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.KeepAnchor)  # 确保从上一行的行首开始选中
-
-                # 现在向下移动，先回到当前行的行首，然后继续向下选中下一行
-                cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor)
-                cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor)
-                cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor)
-
-                # 为了确保选区结束在下一行的末尾，再次移到行尾
-                cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor)
-
-                # 设置新的光标位置和选区
+                cursor.select(QTextCursor.LineUnderCursor)
                 self.setTextCursor(cursor)
                 self.selection_phase = 4
 
+            elif self.selection_phase == 4:
+                cursor.movePosition(QTextCursor.StartOfLine)
+                cursor.movePosition(QTextCursor.Up)
+                cursor.movePosition(QTextCursor.Up, QTextCursor.KeepAnchor)
+                cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.KeepAnchor)
+                cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor)
+                cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor)
+                cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor)
+                cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor)
+                self.setTextCursor(cursor)
             else:
                 self.selection_phase = 0
+
             event.accept()
             return
         # 新增：Ctrl+Shift+Left 扩大选区到下一个单词

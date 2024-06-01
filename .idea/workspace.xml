@@ -4,10 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="新增ini文件高亮，完善Shift-Tab反向缩进功能">
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="继续完善Shift-Tab反向缩进功能">
       <change afterPath="$PROJECT_DIR$/1.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/inno_setup.iss" beforeDir="false" afterPath="$PROJECT_DIR$/inno_setup.iss" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -289,14 +292,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1712137288400</updated>
-    </task>
-    <task id="LOCAL-00011" summary="改为单例模式，增加按tab缩进，选区缩进等功能（仍有bug待解决）">
-      <option name="closed" value="true" />
-      <created>1714131169228</created>
-      <option name="number" value="00011" />
-      <option name="presentableId" value="LOCAL-00011" />
-      <option name="project" value="LOCAL" />
-      <updated>1714131169228</updated>
     </task>
     <task id="LOCAL-00012" summary="增加 C,C++,Javascript,Java,SQL,Perl,Bash,Bat,XML,Kotlin关键字高亮">
       <option name="closed" value="true" />
@@ -682,7 +677,15 @@
       <option name="project" value="LOCAL" />
       <updated>1717160925146</updated>
     </task>
-    <option name="localTasksCounter" value="60" />
+    <task id="LOCAL-00060" summary="继续完善Shift-Tab反向缩进功能">
+      <option name="closed" value="true" />
+      <created>1717163861109</created>
+      <option name="number" value="00060" />
+      <option name="presentableId" value="LOCAL-00060" />
+      <option name="project" value="LOCAL" />
+      <updated>1717163861109</updated>
+    </task>
+    <option name="localTasksCounter" value="61" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -738,7 +741,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="命令行参数使用绝对路径，" />
     <MESSAGE value="剪贴板小修改" />
     <MESSAGE value="新增小功能：选中文本AAA输入'或者&quot;,得到'AAA'或者&quot;AAA&quot;" />
     <MESSAGE value="readme增加图片显示" />
@@ -763,7 +765,8 @@
     <MESSAGE value="新增主题：Nature Green,完善UTF-16编码支持" />
     <MESSAGE value="新增主题：Nature Green,完善UTF-16编码支持buchongtijiao" />
     <MESSAGE value="新增ini文件高亮，完善Shift-Tab反向缩进功能" />
-    <option name="LAST_COMMIT_MESSAGE" value="新增ini文件高亮，完善Shift-Tab反向缩进功能" />
+    <MESSAGE value="继续完善Shift-Tab反向缩进功能" />
+    <option name="LAST_COMMIT_MESSAGE" value="继续完善Shift-Tab反向缩进功能" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>
