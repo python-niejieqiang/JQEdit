@@ -742,8 +742,7 @@ class SyntaxHighlighterBase(QSyntaxHighlighter):
                 self.set_format_attributes(self.keyword_format, keyword_colors.get("keyword", {}))
 
         except FileNotFoundError:
-            # 如果文件不存在，使用默认颜色
-            pass
+            QMessageBox.warning(self,"错误",f"没有找到{syntax_highlighter_file}文件！")
 
     def set_format_attributes(self, format_, attributes):
         bold = attributes.get("bold", False)
@@ -2033,7 +2032,7 @@ class Notepad(QMainWindow):
 
     @Slot()
     def search_in_baidu(self):
-        cursor = self.textCursor()
+        cursor = self.text_edit.textCursor()
         if cursor.hasSelection():
             keyword = cursor.selectedText()
             url = QUrl("https://www.baidu.com/s?wd=" + keyword)

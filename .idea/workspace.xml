@@ -6,7 +6,10 @@
   <component name="ChangeListManager">
     <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="精简Ctrl-W扩展选区功能，第一次按下选择光标处单词，第二次按下选择匹对字符(),[],&quot;&quot;,{}之间的内容。重构Tab缩进功能，修复某些情况会插入空行的bug">
       <change afterPath="$PROJECT_DIR$/1.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_setup.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -288,14 +291,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1712137288400</updated>
-    </task>
-    <task id="LOCAL-00014" summary="增加语法高亮配置文件，QSS配置文件，配色方案高度自定义，关键字在不同的主题中有不同表现">
-      <option name="closed" value="true" />
-      <created>1714389459506</created>
-      <option name="number" value="00014" />
-      <option name="presentableId" value="LOCAL-00014" />
-      <option name="project" value="LOCAL" />
-      <updated>1714389459506</updated>
     </task>
     <task id="LOCAL-00015" summary="代码重构，无功能更新，优化选区缩进">
       <option name="closed" value="true" />
@@ -681,7 +676,15 @@
       <option name="project" value="LOCAL" />
       <updated>1717389764960</updated>
     </task>
-    <option name="localTasksCounter" value="63" />
+    <task id="LOCAL-00063" summary="精简Ctrl-W扩展选区功能，第一次按下选择光标处单词，第二次按下选择匹对字符(),[],&quot;&quot;,{}之间的内容。重构Tab缩进功能，修复某些情况会插入空行的bug">
+      <option name="closed" value="true" />
+      <created>1717389837980</created>
+      <option name="number" value="00063" />
+      <option name="presentableId" value="LOCAL-00063" />
+      <option name="project" value="LOCAL" />
+      <updated>1717389837980</updated>
+    </task>
+    <option name="localTasksCounter" value="64" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
