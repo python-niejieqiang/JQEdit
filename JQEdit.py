@@ -243,10 +243,10 @@ class TextEditor(QPlainTextEdit):
             left_index = line_text.rfind(left_char, 0, cursor_position)
             right_index = line_text.find(right_char, cursor_position)
 
+            # 修改判断逻辑，确保当光标在右匹配字符的索引位置也能被正确处理
             if left_index != -1 and right_index != -1:
-                if left_index < right_index:
-                    if left_index < cursor_position < right_index:
-                        return True, left_index, right_index
+                if left_index < cursor_position <= right_index:  # 更改此处条件，允许光标位于right_index位置
+                    return True, left_index, right_index
         return False, None, None
 
     def keyPressEvent(self, event):
@@ -329,42 +329,19 @@ class TextEditor(QPlainTextEdit):
 
             # Phase 2: Select content within matching characters
             elif self.selection_phase == 1:
-                matching_pairs = [('(', ')'), ('[', ']'), ('{', '}'), ('"', '"'), ("'", "'"), ('<', '>'), ('>', '<')]
-                is_between, left_side_index, right_side_index = self.is_cursor_between_matching_characters(cursor,line_text,matching_pairs)
+                matching_pairs = [('(', ')'), ('[', ']'), ('{', '}'), ('"', '"'), ("'", "'"), ('>', '<')]
+                is_between, left_side_index, right_side_index = self.is_cursor_between_matching_characters(cursor,
+                                                                                                           line_text,
+                                                                                                           matching_pairs)
                 if is_between:
                     cursor.clearSelection()
                     block_position = cursor.block().position()
                     cursor.setPosition(block_position + left_side_index + 1)
                     cursor.setPosition(block_position + right_side_index, QTextCursor.KeepAnchor)
+                    self.selection_anchor_position = cursor.position()
                     self.setTextCursor(cursor)
                     event.accept()
                     return
-
-                self.selection_phase = 2
-
-            # Phase 3: Select the entire line
-            elif self.selection_phase == 2:
-                cursor.setPosition(self.selection_anchor_position)
-                cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.KeepAnchor)
-                self.setTextCursor(cursor)
-                self.selection_phase = 3
-
-            # Phase 4: Select the previous three lines
-            elif self.selection_phase == 3:
-                cursor.select(QTextCursor.LineUnderCursor)
-                self.setTextCursor(cursor)
-                self.selection_phase = 4
-
-            elif self.selection_phase == 4:
-                cursor.movePosition(QTextCursor.StartOfLine)
-                cursor.movePosition(QTextCursor.Up)
-                cursor.movePosition(QTextCursor.Up, QTextCursor.KeepAnchor)
-                cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.KeepAnchor)
-                cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor)
-                cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor)
-                cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor)
-                cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor)
-                self.setTextCursor(cursor)
             else:
                 self.selection_phase = 0
 
@@ -560,6 +537,7 @@ class TextEditor(QPlainTextEdit):
         self.setTextCursor(cursor)
         self.centerCursor()
 
+
     def handle_deletion(self, event):
         cursor = self.textCursor()
         key = event.key()
@@ -621,49 +599,51 @@ class TextEditor(QPlainTextEdit):
 
     def indent_selected_text(self):
         cursor = self.textCursor()
-        if not cursor.hasSelection():
-            cursor.insertText(" " * 4)
-            self.setTextCursor(cursor)
-            return
 
         cursor.beginEditBlock()
-        # 获取选区的起始块和结束块
-        at_line_start = cursor.positionInBlock() == 0
-        initial_start_pos = cursor.selectionStart()
-        initial_end_pos = cursor.selectionEnd()
-        cursor.setPosition(initial_start_pos)
-        cursor.movePosition(QTextCursor.StartOfLine)
-        cursor.setPosition(initial_end_pos, QTextCursor.KeepAnchor)
-        # 复制选中文本到新字符串以避免直接操作导致的问题
-        selected_text = cursor.selectedText()
-        lines = selected_text.splitlines()  # 安全地分割为多行
+        if cursor.hasSelection():
+            initial_selection_start = cursor.selectionStart()
+            initial_selection_end = cursor.selectionEnd()
 
-        # 初始化计数器
-        total_spaces_inserted = 0
+            start_block = self.document().findBlock(initial_selection_start).blockNumber()
+            end_block = self.document().findBlock(initial_selection_end).blockNumber()
 
-        # 在每行前添加缩进，并计算插入的空格总数
-        indented_lines = [
-            ("    " + line, 4) for line in lines  # 注意这里每行添加了4个空格
-        ]
-        for _, spaces in indented_lines:  # 这里第二个元素是每行添加的空格数，用于累加
-            total_spaces_inserted += spaces
+            start_is_line_start = (initial_selection_start == self.document().findBlockByNumber(start_block).position())
+            end_is_line_end = initial_selection_end == self.document().findBlockByNumber(end_block).position() + self.document().findBlockByNumber(end_block).length() - 1
 
-        # 合并回字符串（这一步保持不变）
-        indented_text = "\n".join(text for text, _ in indented_lines)
-        if at_line_start:
-            indented_text+="\n"
-        # 清除选区并插入新文本
-        cursor.removeSelectedText()
-        cursor.insertText(indented_text)
-        cursor.setPosition(initial_start_pos + 4)
-        cursor.setPosition(initial_end_pos + total_spaces_inserted, QTextCursor.KeepAnchor)
-        self.setTextCursor(cursor)
+            if start_is_line_start and end_is_line_end:
+                lines_in_selection = cursor.selectedText()
+                cursor.removeSelectedText()
+            else:
+                middle_of_selection = cursor.selectedText()
+                cursor.removeSelectedText()
+                cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor)
+                end_of_selection = cursor.selectedText()
+                cursor.removeSelectedText()
+                cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.KeepAnchor)
+                start_of_selection = cursor.selectedText()
+                cursor.removeSelectedText()
+                lines_in_selection = start_of_selection + middle_of_selection + end_of_selection
+            lines = lines_in_selection.splitlines()
+            num = 0
+            for i,line in enumerate(lines):
+                lines[i] = " "*4 + line
+                num+=1
+
+            cursor.insertText("\n".join(lines))
+            cursor.setPosition(initial_selection_start + 4)
+            cursor.setPosition(initial_selection_end + 4*num, QTextCursor.KeepAnchor)
+            self.setTextCursor(cursor)
+        else:
+            cursor.insertText(" " * 4)
+            self.setTextCursor(cursor)
         cursor.endEditBlock()
 
     def shift_unindent_selected_text(self):
         cursor = self.textCursor()
         initial_selection_start = cursor.selectionStart()
         initial_selection_end = cursor.selectionEnd()
+        cursor.beginEditBlock()
         if cursor.hasSelection():
             start_block = self.document().findBlock(initial_selection_start).blockNumber()
             end_block = self.document().findBlock(initial_selection_end).blockNumber()
@@ -722,8 +702,8 @@ class TextEditor(QPlainTextEdit):
             cursor.insertText(line_text[spaces_to_remove:])
 
             cursor.setPosition(cursor_position - min(cursor_position, spaces_to_remove))
-
             self.setTextCursor(cursor)
+        cursor.endEditBlock()
 
 class SyntaxHighlighterBase(QSyntaxHighlighter):
     def __init__(self, parent=None, theme_name="dark"):
@@ -2618,14 +2598,14 @@ class Notepad(QMainWindow):
        <li><span style='font-size:12px'>选区移动（Ctrl-Shift-上下方向键）功能设定按键间隔为0.2秒，按快了也没用</span></li>
        <li><span style='font-size:12px'>有选择文本时，Ctrl-Shift-↑将选区往上移动一行，反之往下移动一行，无选区移动当前行，Ctrl-Shift-←按单词距离缩小选区，反之扩大选区</span></li>
        <li><span style='font-size:12px'>输入括号 ( 会匹配得到 (),并且光标位于括号中间，此时按Backspace删除会删除这一对符号，按Delete删除只会删除右边一半，另外如果有选择文本，此时输入',",{,[,(，得到的匹配对符号会包围选区</span></li>
-       <li><span style='font-size:12px'>复刻PyCharmIDE中的一些快捷键，在没有选择文本时，Ctrl-C是复制当前行，Ctrl-X是删除当前行，Ctrl-Shift-Z是重做，Ctrl-W是扩展选区，第一次按下选择单词，第二次按下是选择第一次的选区面积一直到行开始的位置，第三次按下是选择当前行，第四次以光标为中心选择三行，Ctrl-Shift-W 取消选区，扩展选区功能远不如PycharmIDE强大，Ctrl-Shift-W也只能取消选区</span></li>
+       <li><span style='font-size:12px'>复刻PyCharmIDE中的一些快捷键，在没有选择文本时，Ctrl-C是复制当前行，Ctrl-X是删除当前行，Ctrl-Shift-Z是重做，Ctrl-W精简为第一次按下选择单词，第二次按下选择匹对字符()[]{}><之间的内容，Ctrl-Shift-W 取消选区，扩展选区功能远不如PycharmIDE强大，Ctrl-Shift-W也只能取消选区</span></li>
        <li><span style='font-size:12px'>Ctrl-J会将当前行与下一行连接成一行，有选择文本时将会把选区所有行连接成一行</span></li>
        <li><span style='font-size:12px'>选区替换没法直接替换\n,查找替换功能中倒是可以直接将\n替换为空，还有可以使用Ctrl-J连接行功能解决问题。^$匹配行首行尾指正则表达式将按行处理，此时^和$匹配的是行首行尾。匹配中文：[\u4e00-\u9fff]+ ,查找框三个选项对应Perl正则中的/i,/m,/s开关)。</span></li>
        <li><span style='font-size:12px'>鼠标选中想要的文字，按CTRL-F就可以搜索了.按Ctrl-G 可以跳转行号类似PyCharmIDE中的查找</span></li>
        <li><span style='font-size:12px'>取色器，点击PICK SCREEN COLOR 拾取颜色，那个英文暂时没法汉化</span></li>
        <li><span style='font-size:12px'>默认高亮的语言有:Java,Javascript,Kotlin,Perl,Python,Bat,Bash,Xml，C,C++,修改关键字颜色在程序目录下的resources/syntax_highlighter_file.json，修改文本区域颜色在主题对应的qss文件中修改。</span></li>
        <li><span style='font-size:12px'>自定义命令行，$1 表示当前文件名。</span></li>
-        <li><span style='font-size:12px'>自定义注释符号也可以的</span></li>
+        <li><span style='font-size:12px'>自定义注释符号也可以的,暂不支持多行注释</span></li>
        <li><span style='font-size:12px'>设置自动保存在settings.json中，改配置文件或者图形界面都可以</span></li>
        <li><span style='font-size:12px'>剪贴板刻意不增加清空按钮，如果需要清空剪贴板，打开resources目录下的clipboard_list.json,删除所有内容，然后在输入法的英文状态下输入“ [] ”（就是数组的符号）,保存为UTF-8编码就可以了.另外按CTRL-SHIFT-V也可以弹出剪贴板窗口</span></li>
     </ol>"""
