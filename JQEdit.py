@@ -140,6 +140,53 @@ class TextEditor(QPlainTextEdit):
 
         self.thread_pool = QThreadPool.globalInstance()
 
+        # 记录光标位置的列表
+        self.position_list = []
+        # 当前光标位置索引
+        self.current_position_index = 0
+
+        # 监听Alt + 和 Alt - 快捷键
+        self.shortcut_forward = QShortcut(QKeySequence(Qt.ALT | Qt.Key_Equal), self)
+        self.shortcut_backward = QShortcut(QKeySequence(Qt.ALT | Qt.Key_Minus), self)
+
+        self.shortcut_forward.activated.connect(self.move_cursor_forward)
+        self.shortcut_backward.activated.connect(self.move_cursor_backward)
+
+        # 监听光标位置变化
+        self.cursorPositionChanged.connect(self.record_cursor_position)
+
+    def record_cursor_position(self):
+        cursor = self.textCursor()
+        current_pos = cursor.position()
+
+        # 只记录不同的光标位置，最多20个
+        if not self.position_list or current_pos not in [pos for pos, _ in self.position_list[-20:]]:
+            self.position_list.append((current_pos, cursor.blockNumber()))
+            self.position_list = self.position_list[-20:]  # 限制最多20条记录
+            self.current_position_index = len(self.position_list) - 1
+
+    def move_cursor_forward(self):
+        if self.current_position_index < len(self.position_list) - 1:
+            self.current_position_index += 1
+            pos, _ = self.position_list[self.current_position_index]
+            cursor = QTextCursor(self.document().findBlock(pos))
+            cursor.setPosition(pos)
+            self.setTextCursor(cursor)
+            self.centerCursor()
+        else:
+            QApplication.beep()
+
+    def move_cursor_backward(self):
+        if self.current_position_index > 0:
+            self.current_position_index -= 1
+            pos, _ = self.position_list[self.current_position_index]
+            cursor = QTextCursor(self.document().findBlock(pos))
+            cursor.setPosition(pos)
+            self.setTextCursor(cursor)
+            self.centerCursor()
+        else:
+            QApplication.beep()
+
     def paintEvent(self, event):
         super().paintEvent(event)
         painter = QPainter(self.viewport())
@@ -1756,6 +1803,9 @@ class Notepad(QMainWindow):
         self.edit_menu = QMenu("编辑", self.menu_bar)
         self.menu_bar.addMenu(self.edit_menu)
 
+        self.jump_to_position_menu = QMenu("跳转", self.menu_bar)
+        self.menu_bar.addMenu(self.jump_to_position_menu)
+
         self.theme_menu = QMenu("主题", self.menu_bar)
         self.menu_bar.addMenu(self.theme_menu)
 
@@ -1865,10 +1915,16 @@ class Notepad(QMainWindow):
 
         self.copyline_action = QAction("复制行", self)
         self.copyline_action.triggered.connect(self.copy_line)
+        self.copyline_action.setShortcut(QKeySequence("Ctrl+C"))
+        self.copyline_action.setShortcutContext(Qt.ShortcutContext(0))  # 或者使用 Qt.NoShortcutContext
+        self.copyline_action.setShortcutVisibleInContextMenu(True)
         self.line_menu.addAction(self.copyline_action)
 
         self.del_line_action = QAction("删除行", self)
         self.del_line_action.triggered.connect(self.delete_line)
+        self.del_line_action.setShortcut(QKeySequence("Ctrl+X"))
+        self.del_line_action.setShortcutContext(Qt.ShortcutContext(0))  # 或者使用 Qt.NoShortcutContext
+        self.del_line_action.setShortcutVisibleInContextMenu(True)
         self.line_menu.addAction(self.del_line_action)
         self.edit_menu.addMenu(self.line_menu)
 
@@ -1914,6 +1970,28 @@ class Notepad(QMainWindow):
         self.date_action.triggered.connect(self.get_date)
         self.edit_menu.addAction(self.date_action)
 
+        self.line_number_action = QAction("行号", self)
+        self.line_number_action.triggered.connect(self.jump_to_line)
+        # 设置快捷键仅用于显示，不激活其功能
+        self.line_number_action.setShortcut(QKeySequence("Ctrl+G"))
+        self.line_number_action.setShortcutContext(Qt.ShortcutContext(0))  # 或者使用 Qt.NoShortcutContext
+        self.line_number_action.setShortcutVisibleInContextMenu(True)
+        self.jump_to_position_menu.addAction(self.line_number_action)
+
+        self.jump_backward_action = QAction("上一位置", self)
+        self.jump_backward_action.triggered.connect(self.text_edit.move_cursor_backward)
+        self.jump_backward_action.setShortcut(QKeySequence("Alt+-"))
+        self.jump_backward_action.setShortcutContext(Qt.ShortcutContext(0))  # 或者使用 Qt.NoShortcutContext
+        self.jump_backward_action.setShortcutVisibleInContextMenu(True)
+        self.jump_to_position_menu.addAction(self.jump_backward_action)
+
+        self.jump_forward_action = QAction("下一位置", self)
+        self.jump_forward_action.triggered.connect(self.text_edit.move_cursor_forward)
+        self.jump_forward_action.setShortcut(QKeySequence("Alt+="))
+        self.jump_forward_action.setShortcutContext(Qt.ShortcutContext(0))  # 或者使用 Qt.NoShortcutContext
+        self.jump_forward_action.setShortcutVisibleInContextMenu(True)
+        self.jump_to_position_menu.addAction(self.jump_forward_action)
+
         self.font_action = QAction("设置主字体)", self)
         self.font_action.triggered.connect(self.modify_font)
         self.theme_menu.addAction(self.font_action)
@@ -1958,11 +2036,14 @@ class Notepad(QMainWindow):
         self.theme_menu.addAction(self.immersive_mode_action)
 
         # 主窗口部分
-        self.replace_action = QAction("查找/替换(&Z)", self)
+        self.replace_action = QAction("查找/替换", self)
         self.replace_action.triggered.connect(self.display_replace)
+        self.replace_action.setShortcut(QKeySequence("Ctrl+F"))
+        self.replace_action.setShortcutContext(Qt.ShortcutContext(0))  # 或者使用 Qt.NoShortcutContext
+        self.replace_action.setShortcutVisibleInContextMenu(True)
         self.find_menu.addAction(self.replace_action)
 
-        self.selection_replace_action = QAction("选区替换(&R)", self)
+        self.selection_replace_action = QAction("选区替换", self)
         self.selection_replace_action.triggered.connect(self.show_replace_dialog)
         self.find_menu.addAction(self.selection_replace_action)
         # 主窗口部分
@@ -2201,9 +2282,7 @@ class Notepad(QMainWindow):
             return
         # 处理组合键 Ctrl+G
         if event.key() == Qt.Key_G and event.modifiers() & Qt.ControlModifier:
-            line_number, ok = QInputDialog.getInt(self, "跳转到行", "请输入行号:")
-            if ok and line_number > 0:
-                self.jump_to_line(line_number - 1)  # 行号从1开始计数，但QTextCursor从0开始
+            self.jump_to_line()
             event.accept()
             return
         # 默认情况下，调用父类的事件处理函数
@@ -2485,20 +2564,22 @@ class Notepad(QMainWindow):
         with open(self.settings_file, "w") as f:
             json.dump(existing_settings, f, indent=4)
 
-    def jump_to_line(self, line_number):
-        # 获取文档对象
-        doc = self.text_edit.document()
-        # 查找指定行号对应的文本块
-        block = doc.findBlockByLineNumber(line_number)
-        if block.isValid():
-            # 创建 QTextCursor 对象
-            cursor = QTextCursor(block)
-            # 移动到块的开始位置
-            cursor.movePosition(QTextCursor.StartOfBlock)
-            # 将光标设置到文本编辑器中
-            self.text_edit.setTextCursor(cursor)
-            # 确保光标所在的行是可见的
-            self.text_edit.ensureCursorVisible()
+    def jump_to_line(self):
+        line_number, ok = QInputDialog.getInt(self, "跳转到行", "请输入行号:")
+        if ok and line_number > 0:
+            # 获取文档对象
+            doc = self.text_edit.document()
+            # 查找指定行号对应的文本块
+            block = doc.findBlockByLineNumber(line_number)
+            if block.isValid():
+                # 创建 QTextCursor 对象
+                cursor = QTextCursor(block)
+                # 移动到块的开始位置
+                cursor.movePosition(QTextCursor.StartOfBlock)
+                # 将光标设置到文本编辑器中
+                self.text_edit.setTextCursor(cursor)
+                # 确保光标所在的行是可见的
+                self.text_edit.ensureCursorVisible()
 
     def is_cursor_at_empty_line_start(self):
         cursor = self.text_edit.textCursor()

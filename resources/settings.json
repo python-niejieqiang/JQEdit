@@ -1,14 +1,14 @@
 {
     "font": {
-        "font_family": "Consolas",
-        "point_size": 14,
+        "font_family": "JetBrains Mono",
+        "point_size": 12,
         "bold": false,
         "italic": false,
         "underline": false,
         "strikeOut": false
     },
     "fallback_font": "Microsoft YaHei UI",
-    "theme": "xcode",
+    "theme": "nature_green",
     "wrap_line_on": true,
     "statusbar_shown": true,
     "startup_size": {
