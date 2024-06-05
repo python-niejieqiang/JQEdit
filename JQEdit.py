@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import codecs
-import json
 import os
 import re
 import shutil
@@ -12,6 +11,7 @@ from functools import partial
 
 import chardet
 import pyperclip
+import ujson
 from PySide6.QtCore import (QTranslator, Q_ARG, QFile, QMetaObject, QRunnable, QThreadPool, QThread, QObject,
                             QTextStream, QTimer, QSize,
                             QFileInfo,
@@ -145,7 +145,7 @@ class TextEditor(QPlainTextEdit):
         # 当前光标位置索引
         self.current_position_index = 0
 
-        # 监听Alt + 和 Alt - 快捷键
+        # 监听Alt + 等号 和 Alt + 减号 快捷键
         self.shortcut_forward = QShortcut(QKeySequence(Qt.ALT | Qt.Key_Equal), self)
         self.shortcut_backward = QShortcut(QKeySequence(Qt.ALT | Qt.Key_Minus), self)
 
@@ -154,6 +154,13 @@ class TextEditor(QPlainTextEdit):
 
         # 监听光标位置变化
         self.cursorPositionChanged.connect(self.record_cursor_position)
+
+        # 添加监听Alt + Up和Alt + Down快捷键
+        self.shortcut_to_start = QShortcut(QKeySequence(Qt.ALT | Qt.Key_Up), self)
+        self.shortcut_to_end = QShortcut(QKeySequence(Qt.ALT | Qt.Key_Down), self)
+
+        self.shortcut_to_start.activated.connect(self.move_cursor_to_start)
+        self.shortcut_to_end.activated.connect(self.move_cursor_to_end)
 
     def record_cursor_position(self):
         cursor = self.textCursor()
@@ -186,6 +193,17 @@ class TextEditor(QPlainTextEdit):
             self.centerCursor()
         else:
             QApplication.beep()
+
+    # 添加跳转到文档开头和结尾的方法
+    def move_cursor_to_start(self):
+        cursor = QTextCursor(self.document())
+        cursor.movePosition(QTextCursor.Start)
+        self.setTextCursor(cursor)
+
+    def move_cursor_to_end(self):
+        cursor = QTextCursor(self.document())
+        cursor.movePosition(QTextCursor.End)
+        self.setTextCursor(cursor)
 
     def paintEvent(self, event):
         super().paintEvent(event)
@@ -771,7 +789,7 @@ class SyntaxHighlighterBase(QSyntaxHighlighter):
         try:
             syntax_highlighter_file = os.path.join(resource_path, "syntax_highlighter_file.json")
             with open(syntax_highlighter_file, "r") as f:
-                color_data = json.load(f)
+                color_data = ujson.load(f)
                 keyword_colors = color_data.get(theme_name, {})
                 self.keyword_format.setForeground(
                     QColor(*keyword_colors.get("keyword", {}).get("color", [200, 120, 50])))
@@ -1408,7 +1426,7 @@ class ClipboardManager(QObject):
     def save_history(self):
         try:
             with codecs.open(self.history_file, "w", encoding="utf-8") as f:
-                json.dump(self.history, f, ensure_ascii=True)
+                ujson.dump(self.history, f, ensure_ascii=True)
         except Exception as e:
             print(f"Error saving history: {e}")
 
@@ -1416,8 +1434,8 @@ class ClipboardManager(QObject):
         if os.path.exists(self.history_file):
             try:
                 with codecs.open(self.history_file, "r", encoding="utf-8") as f:
-                    self.history = json.load(f)
-            except json.JSONDecodeError as e:
+                    self.history = ujson.load(f)
+            except ujson.JSONDecodeError as e:
                 print(f"Error loading history: {e}. History reset.")
                 self.backup_history_file()
                 self.history = []
@@ -1514,7 +1532,7 @@ class LoadRecentFilesWorker(QObject):
     def run(self):
         try:
             with open(self.recent_files_path, 'r') as file:
-                recent_files = json.load(file)
+                recent_files = ujson.load(file)
         except FileNotFoundError:
             recent_files = []
         self.recentFilesLoaded.emit(recent_files)
@@ -1992,6 +2010,20 @@ class Notepad(QMainWindow):
         self.jump_forward_action.setShortcutVisibleInContextMenu(True)
         self.jump_to_position_menu.addAction(self.jump_forward_action)
 
+        self.to_begin_action = QAction("顶部", self)
+        self.to_begin_action.triggered.connect(self.text_edit.move_cursor_to_start)
+        self.to_begin_action.setShortcut(QKeySequence("Alt+↑"))
+        self.to_begin_action.setShortcutContext(Qt.ShortcutContext(0))  # 或者使用 Qt.NoShortcutContext
+        self.to_begin_action.setShortcutVisibleInContextMenu(True)
+        self.jump_to_position_menu.addAction(self.to_begin_action)
+
+        self.to_end_action = QAction("末尾", self)
+        self.to_end_action.triggered.connect(self.text_edit.move_cursor_to_end)
+        self.to_end_action.setShortcut(QKeySequence("Alt+↓"))
+        self.to_end_action.setShortcutContext(Qt.ShortcutContext(0))  # 或者使用 Qt.NoShortcutContext
+        self.to_end_action.setShortcutVisibleInContextMenu(True)
+        self.jump_to_position_menu.addAction(self.to_end_action)
+
         self.font_action = QAction("设置主字体)", self)
         self.font_action.triggered.connect(self.modify_font)
         self.theme_menu.addAction(self.font_action)
@@ -2464,11 +2496,11 @@ class Notepad(QMainWindow):
     def load_recent_files(self):
         if os.path.exists(self.recent_files_path):
             with open(self.recent_files_path, "r") as f:
-                self.recent_files = json.load(f)
+                self.recent_files = ujson.load(f)
 
     def save_recent_files(self):
         with open(self.recent_files_path, "w") as f:
-            json.dump(self.recent_files, f)
+            ujson.dump(self.recent_files, f)
 
     def apply_wrap_status(self):
         if self.wrap_line_on:
@@ -2505,7 +2537,7 @@ class Notepad(QMainWindow):
         try:
             # 读取现有的设置
             with open(self.settings_file, "r") as f:
-                self.settings = json.load(f)
+                self.settings = ujson.load(f)
         except FileNotFoundError:
             self.settings = {}  # 如果文件不存在，创建一个空字典
 
@@ -2542,7 +2574,7 @@ class Notepad(QMainWindow):
         try:
             # 读取现有的设置
             with open(self.settings_file, "r") as f:
-                existing_settings = json.load(f)
+                existing_settings = ujson.load(f)
         except FileNotFoundError:
             existing_settings = {}  # 如果文件不存在，创建一个空字典
 
@@ -2562,7 +2594,7 @@ class Notepad(QMainWindow):
 
         # 保存更新后的设置到文件
         with open(self.settings_file, "w") as f:
-            json.dump(existing_settings, f, indent=4)
+            ujson.dump(existing_settings, f, indent=4)
 
     def jump_to_line(self):
         line_number, ok = QInputDialog.getInt(self, "跳转到行", "请输入行号:")
@@ -2638,10 +2670,10 @@ class Notepad(QMainWindow):
 
         # 保存启动窗口尺寸及最大化状态到 settings.json
         with open(self.settings_file, 'r+') as f:
-            settings = json.load(f)
+            settings = ujson.load(f)
             settings["startup_size"] = {"width": width, "height": height, "start_maximized": is_maximized}
             f.seek(0)  # 将文件指针移到文件开头
-            json.dump(settings, f, indent=4)
+            ujson.dump(settings, f, indent=4)
             f.truncate()  # 截断文件，删除多余的内容
         dialog.close()
         # 如果用户选择了最大化，则设置窗口尺寸为屏幕尺寸，并记录最大化状态
@@ -2655,7 +2687,7 @@ class Notepad(QMainWindow):
         try:
             # 从 settings.json 文件读取启动窗口尺寸及最大化状态
             with open(self.settings_file, 'r') as f:
-                settings = json.load(f)
+                settings = ujson.load(f)
                 startup_size = settings.get("startup_size", {})
                 width = startup_size.get("width", 800)
                 height = startup_size.get("height", 600)

@@ -68,6 +68,7 @@ a = Analysis(
         "mccabe",
         "pilkit",
         "six",
+        "json",
         "wrapt",
         "astroid",
         "isort"
