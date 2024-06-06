@@ -9,7 +9,7 @@ import threading
 import time
 from functools import partial
 
-import chardet
+import cchardet
 import pyperclip
 import ujson
 from PySide6.QtCore import (QTranslator, Q_ARG, QFile, QMetaObject, QRunnable, QThreadPool, QThread, QObject,
@@ -135,9 +135,6 @@ class TextEditor(QPlainTextEdit):
 
         self.paste_shortcut = QShortcut(QKeySequence(Qt.CTRL | Qt.SHIFT |Qt.Key_V), self)
         self.paste_shortcut.activated.connect(self.notepad.show_paste_dialog)
-
-        self.setFont(self.notepad.font) # 设置文本区域字体
-
         self.thread_pool = QThreadPool.globalInstance()
 
         # 记录光标位置的列表
@@ -1611,7 +1608,6 @@ class Notepad(QMainWindow):
     def __init__(self):
         super().__init__()
         self.app_name = "JQEdit"
-        self.resize(800,600)
         # 用来记录文件编码，名字
         self.current_file_encoding = None
         # 记录当前文件名
@@ -1808,6 +1804,7 @@ class Notepad(QMainWindow):
         self.setMenuBar(self.menu_bar)
 
         self.text_edit = TextEditor(self,self.current_line_color)
+        self.text_edit.setFont(self.font)
         self.setCentralWidget(self.text_edit)
 
         # 添加底部状态栏
@@ -2403,7 +2400,7 @@ class Notepad(QMainWindow):
                         break
                     lines.append(line)
                 position = f.tell()  # 在循环外获取位置
-            encoding_info = chardet.detect(b"".join(lines))
+            encoding_info = cchardet.detect(b"".join(lines))
             if encoding_info is None:
                 encoding = "utf-8"
             else:
@@ -2561,14 +2558,10 @@ class Notepad(QMainWindow):
         self.show_line_numbers = self.settings.get("show_line_numbers", True)
         self.current_line_color = self.settings.get("current_line_color",{}).get(self.theme)
         # 读取并应用窗口大小设置
-        startup_size = self.settings.get("startup_size", {})
-        width = startup_size.get("width", 800)
-        height = startup_size.get("height", 600)
-        is_maximized = startup_size.get("start_maximized", False)
-        if is_maximized:
-            self.showMaximized()
-        else:
-            self.resize(int(width), int(height))
+        self.startup_data = self.settings.get("startup", {"width": 800,"height": 600,"is_maximized": False})
+        self.window_width = self.startup_data.get("width", 800)
+        self.window_height = self.startup_data.get("height", 600)
+        self.is_maximized = self.startup_data.get("is_maximized", False)
 
     def save_settings(self):
         try:
@@ -2585,7 +2578,6 @@ class Notepad(QMainWindow):
             "theme": self.theme,
             "wrap_line_on": self.wrap_line_on,
             "statusbar_shown": self.statusbar_shown,
-            "startup_size": {"width": self.width(), "height": self.height(), "start_maximized": self.isMaximized()},
             "show_line_numbers": self.show_line_numbers,
             "syntax_on": self.syntax_highlight_enabled,
             "custom_command": self.custom_command,
@@ -2648,10 +2640,9 @@ class Notepad(QMainWindow):
 
         dialog.setLayout(layout)
         # 读取先前保存的窗口尺寸信息并显示在对话框中
-        startup_size = self.read_startup_size()
-        width_edit.setText(str(startup_size["width"]))
-        height_edit.setText(str(startup_size["height"]))
-        maximize_checkbox.setChecked(startup_size["start_maximized"])
+        width_edit.setText(str(self.startup_data["width"]))
+        height_edit.setText(str(self.startup_data["height"]))
+        maximize_checkbox.setChecked(self.startup_data["is_maximized"])
         dialog.exec()
 
     def on_maximize_checkbox_changed(self, state, width_edit, height_edit):
@@ -2671,7 +2662,7 @@ class Notepad(QMainWindow):
         # 保存启动窗口尺寸及最大化状态到 settings.json
         with open(self.settings_file, 'r+') as f:
             settings = ujson.load(f)
-            settings["startup_size"] = {"width": width, "height": height, "start_maximized": is_maximized}
+            settings["startup"] = {"width": width, "height": height, "is_maximized": is_maximized}
             f.seek(0)  # 将文件指针移到文件开头
             ujson.dump(settings, f, indent=4)
             f.truncate()  # 截断文件，删除多余的内容
@@ -2681,26 +2672,6 @@ class Notepad(QMainWindow):
             self.showMaximized()
         else:
             self.resize(width, height)
-
-
-    def read_startup_size(self):
-        try:
-            # 从 settings.json 文件读取启动窗口尺寸及最大化状态
-            with open(self.settings_file, 'r') as f:
-                settings = ujson.load(f)
-                startup_size = settings.get("startup_size", {})
-                width = startup_size.get("width", 800)
-                height = startup_size.get("height", 600)
-                is_maximized = startup_size.get("start_maximized", False)
-                if is_maximized:
-                    self.showMaximized()
-                else:
-                    self.resize(int(width), int(height))
-
-                return {"width": int(width), "height": int(height), "start_maximized": is_maximized}
-        except (FileNotFoundError, ValueError):
-            # json 文件不存在，或者值为空，默认使用 800x600 的尺寸
-            self.resize(800, 600)
 
     @Slot()
     def help_info(self):
@@ -3132,5 +3103,9 @@ if __name__ == "__main__":
     filename = get_file_argument()
     if filename:
         JQEdit.read_file(filename)
-    JQEdit.show()
+    if not JQEdit.is_maximized:
+        JQEdit.resize(JQEdit.window_width, JQEdit.window_height)
+        JQEdit.show()
+    else:
+        JQEdit.showMaximized()
     sys.exit(app.exec())

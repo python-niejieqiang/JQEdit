@@ -2,7 +2,7 @@
 ; 有关创建 Inno Setup 脚本文件的详细资料请查阅帮助文档！
 
 #define MyAppName "JQEdit"
-#define MyAppVersion "0.7.2"
+#define MyAppVersion "0.7.4"
 #define MyAppPublisher "niejieqiang"
 #define MyAppURL "469063190@qq.com"
 #define MyAppExeName "JQEdit.exe"

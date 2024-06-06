@@ -1,20 +1,20 @@
 {
     "font": {
-        "font_family": "JetBrains Mono",
-        "point_size": 12,
+        "font_family": "Consolas",
+        "point_size": 14,
         "bold": false,
         "italic": false,
         "underline": false,
         "strikeOut": false
     },
     "fallback_font": "Microsoft YaHei UI",
-    "theme": "intellijlight",
+    "theme": "grovbox_soft",
     "wrap_line_on": true,
     "statusbar_shown": true,
-    "startup_size": {
+    "startup": {
         "width": 800,
         "height": 600,
-        "start_maximized": false
+        "is_maximized": false
     },
     "current_line_color": {
         "intellijlight": [

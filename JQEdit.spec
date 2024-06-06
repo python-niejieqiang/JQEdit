@@ -17,6 +17,8 @@ a = Analysis(
     excludes=[
         "numpy",
         "jedi",
+        "json",
+        "chardet",
         "PIL",
         "psutil",
         "tk",
@@ -36,6 +38,7 @@ a = Analysis(
         "PyQt4",
         "PyQt5",
         "pydoc",
+        "Pygments",
         "pythoncom",
         "pytz",
         "pywintypes",
