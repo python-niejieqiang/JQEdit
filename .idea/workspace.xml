@@ -4,12 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="使用ccdardet替代chardet,修复最大化启动转圈圈bug,启动速度勉强维持中等水平- -！,python版本降级至3.7.7">
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="初始化小调整，最大化窗口再点击退出最大化时，默认尺寸为800，600">
       <change afterPath="$PROJECT_DIR$/1.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_setup.exe" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inno_setup.iss" beforeDir="false" afterPath="$PROJECT_DIR$/inno_setup.iss" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -217,14 +217,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1712137288400</updated>
-    </task>
-    <task id="LOCAL-00019" summary="增加语法高亮切换开关。">
-      <option name="closed" value="true" />
-      <created>1714619299422</created>
-      <option name="number" value="00019" />
-      <option name="presentableId" value="LOCAL-00019" />
-      <option name="project" value="LOCAL" />
-      <updated>1714619299422</updated>
     </task>
     <task id="LOCAL-00020" summary="查找替换功能中，搜索实时显示结果">
       <option name="closed" value="true" />
@@ -610,7 +602,15 @@
       <option name="project" value="LOCAL" />
       <updated>1717682469457</updated>
     </task>
-    <option name="localTasksCounter" value="68" />
+    <task id="LOCAL-00068" summary="初始化小调整，最大化窗口再点击退出最大化时，默认尺寸为800，600">
+      <option name="closed" value="true" />
+      <created>1717736939747</created>
+      <option name="number" value="00068" />
+      <option name="presentableId" value="LOCAL-00068" />
+      <option name="project" value="LOCAL" />
+      <updated>1717736939747</updated>
+    </task>
+    <option name="localTasksCounter" value="69" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -666,7 +666,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="完全复刻PycharmIDE中的匹对输出删除功能，''&quot;&quot;[]{}()。新增连接行（含选区连接行）功能" />
     <MESSAGE value="模拟PycharmIDE中当光标处于空行，加速删除效率，一次删除4个空格" />
     <MESSAGE value="编码，保存模块重构" />
     <MESSAGE value="复刻PycharmIDE中没有选择文本时，Ctrl-X,Ctrl-C对应的删除行，复制行功能，Ctrl-W扩展选区，Ctrl-Shift-W取消选区（此功能远不如Pycharm强大，只能将就使用），新增Ctrl-Shift-上箭头键向上移动当前行，Ctrl-Shift-下箭头键向下移动当前行" />
@@ -691,7 +690,8 @@
     <MESSAGE value="新增光标跳转功能：Alt+减号往回跳，Alt+等号往前跳" />
     <MESSAGE value="ujson替代json模块，新增顶部，底部跳转功能" />
     <MESSAGE value="使用ccdardet替代chardet,修复最大化启动转圈圈bug,启动速度勉强维持中等水平- -！,python版本降级至3.7.7" />
-    <option name="LAST_COMMIT_MESSAGE" value="使用ccdardet替代chardet,修复最大化启动转圈圈bug,启动速度勉强维持中等水平- -！,python版本降级至3.7.7" />
+    <MESSAGE value="初始化小调整，最大化窗口再点击退出最大化时，默认尺寸为800，600" />
+    <option name="LAST_COMMIT_MESSAGE" value="初始化小调整，最大化窗口再点击退出最大化时，默认尺寸为800，600" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>

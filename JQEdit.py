@@ -6,7 +6,6 @@ import shutil
 import subprocess
 import sys
 import threading
-import cProfile
 import time
 from functools import partial
 
@@ -1627,14 +1626,14 @@ class Notepad(QMainWindow):
         # 第一步加载用户第一眼能看到的菜单栏，文本区域，状态栏，主题，然后再加载看不到的菜单子项
         self.setup_menubar_statusbar_plaintextedit()
         self._styles_cache = {}  # 用于缓存已加载的样式
-        self.setup_theme_menu()
+        self.theme_actions = [] # 将所有主题菜单存入一个数组，确保只勾选选中的主题
         # 预加载基础主题
         self.apply_theme(self.theme)
         self.highlighter = None
         self.theme_changed.connect(self.on_theme_changed)  # 连接主题改变信号到槽函数
         self.syntax_highlight_toggled.connect(self.toggle_syntax_highlight)
         self.apply_wrap_status()  # 应用状态栏，自动换行设置
-
+        self.text_edit.setFont(self.font)
 
         # 加载最近打开模块
         self.new_file_action = QAction("新建(&N)", self)
@@ -1675,14 +1674,15 @@ class Notepad(QMainWindow):
         self.timer.timeout.connect(self.check_file_modification)
         self.timer.start(2000)  # 每2秒检查一次
         QTimer.singleShot(0, self.process_remain_ui)
-        self.text_edit.setFont(self.font)
     def process_remain_ui(self):
-        # 加载剩下的子菜单，用户第一眼看不到的地方
         self.setup_other_actions()
         # 加载鼠标右键菜单
         self.setup_context_menu()
         # 加载剪贴板管理器
         self.clipboard_manager = ClipboardManager(os.path.join(resource_path,"clipboard_list.json"))
+        # 只勾选用户选择的主题
+        for action in self.theme_actions:
+            action.setChecked(action.data() == self.theme)
 
     def setup_context_menu(self):
         #   自定义右键菜单
@@ -1765,53 +1765,6 @@ class Notepad(QMainWindow):
         dialog = CharacterCountDialog(self)
         dialog.set_stats_message(message)
         dialog.exec()
-
-    def setup_theme_menu(self):
-        # 主题菜单, 将主题样式存入数组全部设为未选中，当用户选中哪一个，就把哪一个设为True
-        # 也就是点击哪个主题，哪个主题样式前面就显示打勾
-        self.theme_actions = []
-        # 初始化动作时设置data属性
-        self.intellijlight_theme_action = QAction("Intellij Light", self, checkable=True)
-        self.intellijlight_theme_action.setData("intellijlight")  # 设置data
-        self.intellijlight_theme_action.triggered.connect(lambda: self.apply_theme("intellijlight"))
-        self.theme_menu.addAction(self.intellijlight_theme_action)
-        self.theme_actions.append(self.intellijlight_theme_action)
-
-        self.dacula_darker_soft_theme_action = QAction("Darcula Darker", self, checkable=True)
-        self.dacula_darker_soft_theme_action.setData("dacula_darker")  # 设置data
-        self.dacula_darker_soft_theme_action.triggered.connect(lambda: self.apply_theme("dacula_darker"))
-        self.theme_menu.addAction(self.dacula_darker_soft_theme_action)
-        self.theme_actions.append(self.dacula_darker_soft_theme_action)
-
-        self.grovbox_soft_theme_action = QAction("Grovbox Soft", self, checkable=True)
-        self.grovbox_soft_theme_action.setData("grovbox_soft")  # 设置data
-        self.grovbox_soft_theme_action.triggered.connect(lambda: self.apply_theme("grovbox_soft"))
-        self.theme_menu.addAction(self.grovbox_soft_theme_action)
-        self.theme_actions.append(self.grovbox_soft_theme_action)
-
-        self.nature_green_theme_action = QAction("Nature Green", self, checkable=True)
-        self.nature_green_theme_action.setData("nature_green")  # 设置data
-        self.nature_green_theme_action.triggered.connect(lambda: self.apply_theme("nature_green"))
-        self.theme_menu.addAction(self.nature_green_theme_action)
-        self.theme_actions.append(self.nature_green_theme_action)
-
-        self.dark_theme_action = QAction("Dark", self, checkable=True)
-        self.dark_theme_action.setData("dark")  # 设置data
-        self.dark_theme_action.triggered.connect(lambda: self.apply_theme("dark"))
-        self.theme_menu.addAction(self.dark_theme_action)
-        self.theme_actions.append(self.dark_theme_action)
-
-        self.gerrylight_theme_action = QAction("Gerry Light", self, checkable=True)
-        self.gerrylight_theme_action.setData("gerrylight")  # 设置data
-        self.gerrylight_theme_action.triggered.connect(lambda: self.apply_theme("gerrylight"))
-        self.theme_menu.addAction(self.gerrylight_theme_action)
-        self.theme_actions.append(self.gerrylight_theme_action)
-
-        self.xcode_theme_action = QAction("Xcode", self, checkable=True)
-        self.xcode_theme_action.setData("xcode")  # 设置data
-        self.xcode_theme_action.triggered.connect(lambda: self.apply_theme("xcode"))
-        self.theme_menu.addAction(self.xcode_theme_action)
-        self.theme_actions.append(self.xcode_theme_action)
 
     def setup_menubar_statusbar_plaintextedit(self):
         # 初始化界面，依次添加菜单栏，text_edit，status_bar
@@ -2022,6 +1975,48 @@ class Notepad(QMainWindow):
         self.to_end_action.setShortcutVisibleInContextMenu(True)
         self.jump_to_position_menu.addAction(self.to_end_action)
 
+        self.intellijlight_theme_action = QAction("Intellij Light", self, checkable=True)
+        self.intellijlight_theme_action.setData("intellijlight")  # 设置data
+        self.intellijlight_theme_action.triggered.connect(lambda: self.apply_theme("intellijlight"))
+        self.theme_menu.addAction(self.intellijlight_theme_action)
+        self.theme_actions.append(self.intellijlight_theme_action)
+
+        self.dacula_darker_soft_theme_action = QAction("Darcula Darker", self, checkable=True)
+        self.dacula_darker_soft_theme_action.setData("dacula_darker")  # 设置data
+        self.dacula_darker_soft_theme_action.triggered.connect(lambda: self.apply_theme("dacula_darker"))
+        self.theme_menu.addAction(self.dacula_darker_soft_theme_action)
+        self.theme_actions.append(self.dacula_darker_soft_theme_action)
+
+        self.grovbox_soft_theme_action = QAction("Grovbox Soft", self, checkable=True)
+        self.grovbox_soft_theme_action.setData("grovbox_soft")  # 设置data
+        self.grovbox_soft_theme_action.triggered.connect(lambda: self.apply_theme("grovbox_soft"))
+        self.theme_menu.addAction(self.grovbox_soft_theme_action)
+        self.theme_actions.append(self.grovbox_soft_theme_action)
+
+        self.nature_green_theme_action = QAction("Nature Green", self, checkable=True)
+        self.nature_green_theme_action.setData("nature_green")  # 设置data
+        self.nature_green_theme_action.triggered.connect(lambda: self.apply_theme("nature_green"))
+        self.theme_menu.addAction(self.nature_green_theme_action)
+        self.theme_actions.append(self.nature_green_theme_action)
+
+        self.dark_theme_action = QAction("Dark", self, checkable=True)
+        self.dark_theme_action.setData("dark")  # 设置data
+        self.dark_theme_action.triggered.connect(lambda: self.apply_theme("dark"))
+        self.theme_menu.addAction(self.dark_theme_action)
+        self.theme_actions.append(self.dark_theme_action)
+
+        self.gerrylight_theme_action = QAction("Gerry Light", self, checkable=True)
+        self.gerrylight_theme_action.setData("gerrylight")  # 设置data
+        self.gerrylight_theme_action.triggered.connect(lambda: self.apply_theme("gerrylight"))
+        self.theme_menu.addAction(self.gerrylight_theme_action)
+        self.theme_actions.append(self.gerrylight_theme_action)
+
+        self.xcode_theme_action = QAction("Xcode", self, checkable=True)
+        self.xcode_theme_action.setData("xcode")  # 设置data
+        self.xcode_theme_action.triggered.connect(lambda: self.apply_theme("xcode"))
+        self.theme_menu.addAction(self.xcode_theme_action)
+        self.theme_actions.append(self.xcode_theme_action)
+
         self.font_action = QAction("设置主字体)", self)
         self.font_action.triggered.connect(self.modify_font)
         self.theme_menu.addAction(self.font_action)
@@ -2187,6 +2182,8 @@ class Notepad(QMainWindow):
         if self.syntax_highlight_enabled:
             self.reload_highlighter(new_theme, self.current_file_extension)
         self.update_current_line_color()
+        for action in self.theme_actions:
+            action.setChecked(action.data() == self.theme)
 
     def reload_highlighter(self, new_theme, file_extension):
         if self.highlighter:
@@ -2512,10 +2509,6 @@ class Notepad(QMainWindow):
             self.status_bar.hide()
 
     def apply_theme(self, theme):
-        # 只勾选用户选择的主题
-        for action in self.theme_actions:
-            action.setChecked(action.data() == theme)
-
         if theme in self._styles_cache:
             self.setStyleSheet(self._styles_cache[theme])
         else:
