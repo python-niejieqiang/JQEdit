@@ -4,16 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="使用ujson替代json模块，新增顶部，底部跳转功能">
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="使用ccdardet替代chardet,修复最大化启动转圈圈bug,启动速度勉强维持中等水平- -！,python版本降级至3.7.7">
       <change afterPath="$PROJECT_DIR$/1.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/JQEdit.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/JQEdit.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/JQEdit.spec" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.spec" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_setup.exe" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/inno_setup.iss" beforeDir="false" afterPath="$PROJECT_DIR$/inno_setup.iss" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -221,14 +217,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1712137288400</updated>
-    </task>
-    <task id="LOCAL-00018" summary="代码重构，使用QThreadPool">
-      <option name="closed" value="true" />
-      <created>1714542592121</created>
-      <option name="number" value="00018" />
-      <option name="presentableId" value="LOCAL-00018" />
-      <option name="project" value="LOCAL" />
-      <updated>1714542592121</updated>
     </task>
     <task id="LOCAL-00019" summary="增加语法高亮切换开关。">
       <option name="closed" value="true" />
@@ -614,7 +602,15 @@
       <option name="project" value="LOCAL" />
       <updated>1717586210515</updated>
     </task>
-    <option name="localTasksCounter" value="67" />
+    <task id="LOCAL-00067" summary="使用ccdardet替代chardet,修复最大化启动转圈圈bug,启动速度勉强维持中等水平- -！,python版本降级至3.7.7">
+      <option name="closed" value="true" />
+      <created>1717682469456</created>
+      <option name="number" value="00067" />
+      <option name="presentableId" value="LOCAL-00067" />
+      <option name="project" value="LOCAL" />
+      <updated>1717682469457</updated>
+    </task>
+    <option name="localTasksCounter" value="68" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -670,7 +666,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="新增自定义注释符号修改，新增选区替换按行处理，修复沉浸模式因为菜单隐藏导致某些快捷键不能使用的问题" />
     <MESSAGE value="完全复刻PycharmIDE中的匹对输出删除功能，''&quot;&quot;[]{}()。新增连接行（含选区连接行）功能" />
     <MESSAGE value="模拟PycharmIDE中当光标处于空行，加速删除效率，一次删除4个空格" />
     <MESSAGE value="编码，保存模块重构" />
@@ -695,7 +690,8 @@
     <MESSAGE value="修复右键菜单百度搜索异常问题" />
     <MESSAGE value="新增光标跳转功能：Alt+减号往回跳，Alt+等号往前跳" />
     <MESSAGE value="ujson替代json模块，新增顶部，底部跳转功能" />
-    <option name="LAST_COMMIT_MESSAGE" value="ujson替代json模块，新增顶部，底部跳转功能" />
+    <MESSAGE value="使用ccdardet替代chardet,修复最大化启动转圈圈bug,启动速度勉强维持中等水平- -！,python版本降级至3.7.7" />
+    <option name="LAST_COMMIT_MESSAGE" value="使用ccdardet替代chardet,修复最大化启动转圈圈bug,启动速度勉强维持中等水平- -！,python版本降级至3.7.7" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>

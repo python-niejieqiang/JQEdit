@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import threading
+import cProfile
 import time
 from functools import partial
 
@@ -126,7 +127,7 @@ class TextEditor(QPlainTextEdit):
         self.blockCountChanged.connect(self.update_line_number_area_width)
         self.updateRequest.connect(self.update_line_number_area)
         self.highlight_current_line() #高亮当前行
-        self.cursorPositionChanged.connect(self.highlight_current_line)
+        self.cursorPositionChanged.connect(lambda: self.highlight_current_line() if self.isVisible() else None)
 
         self.update_line_number_area_width()  # 初始化行号区域的宽度
 
@@ -1634,17 +1635,26 @@ class Notepad(QMainWindow):
         self.syntax_highlight_toggled.connect(self.toggle_syntax_highlight)
         self.apply_wrap_status()  # 应用状态栏，自动换行设置
 
-        # 加载剩下的子菜单，用户第一眼看不到的地方
-        self.setup_other_actions()
-        # 加载鼠标右键菜单
-        self.setup_context_menu()
+
         # 加载最近打开模块
+        self.new_file_action = QAction("新建(&N)", self)
+        self.new_file_action.setShortcut("Ctrl+N")
+        self.new_file_action.triggered.connect(self.new_file)
+        self.file_menu.addAction(self.new_file_action)
         self.recent_files_menu = QMenu("最近打开")
         self.file_menu.insertMenu(self.new_file_action,self.recent_files_menu)
         # 添加清空记录的菜单项
         self.clear_recent_files_action = QAction("清空记录", self)
         self.clear_recent_files_action.triggered.connect(self.clear_recent_files)
         self.recent_files_menu.addAction(self.clear_recent_files_action)
+
+        self.save_action = QAction("保存(&S)", self)
+        self.save_action.setShortcut("Ctrl+S")
+        self.save_action.triggered.connect(self.save)
+        self.file_menu.addAction(self.save_action)
+        self.text_edit.document().modificationChanged.connect(self.update_save_action_state)
+        # 手动调用一次，确保按钮初始状态正确
+        self.update_save_action_state()
         # 最近打开的文件列表
         self.action_connections = {}
         # 使用os模块读取路径只是为了pyinstaller打包成exe的时候不会报错
@@ -1659,15 +1669,20 @@ class Notepad(QMainWindow):
         self.load_recent_files_thread.start()
         QGuiApplication.instance().aboutToQuit.connect(self.clean_up_on_exit)
 
-
-        # 加载剪贴板管理器
-        self.clipboard_manager = ClipboardManager(os.path.join(resource_path,"clipboard_list.json"))
-
         # 监控文件是否被外部程序改动，暂时使用这个笨方法
         self.last_modified_time = None
         self.timer = QTimer()
         self.timer.timeout.connect(self.check_file_modification)
         self.timer.start(2000)  # 每2秒检查一次
+        QTimer.singleShot(0, self.process_remain_ui)
+        self.text_edit.setFont(self.font)
+    def process_remain_ui(self):
+        # 加载剩下的子菜单，用户第一眼看不到的地方
+        self.setup_other_actions()
+        # 加载鼠标右键菜单
+        self.setup_context_menu()
+        # 加载剪贴板管理器
+        self.clipboard_manager = ClipboardManager(os.path.join(resource_path,"clipboard_list.json"))
 
     def setup_context_menu(self):
         #   自定义右键菜单
@@ -1804,7 +1819,6 @@ class Notepad(QMainWindow):
         self.setMenuBar(self.menu_bar)
 
         self.text_edit = TextEditor(self,self.current_line_color)
-        self.text_edit.setFont(self.font)
         self.setCentralWidget(self.text_edit)
 
         # 添加底部状态栏
@@ -1834,23 +1848,10 @@ class Notepad(QMainWindow):
         self.menu_bar.addMenu(self.tool_menu)
 
     def setup_other_actions(self):
-        self.new_file_action = QAction("新建(&N)", self)
-        self.new_file_action.setShortcut("Ctrl+N")
-        self.new_file_action.triggered.connect(self.new_file)
-        self.file_menu.addAction(self.new_file_action)
-
         self.open_action = QAction("打开(&O)", self)
         self.open_action.setShortcut("Ctrl+O")
         self.open_action.triggered.connect(self.open_dialog)
         self.file_menu.addAction(self.open_action)
-
-        self.save_action = QAction("保存(&S)", self)
-        self.save_action.setShortcut("Ctrl+S")
-        self.save_action.triggered.connect(self.save)
-        self.file_menu.addAction(self.save_action)
-        self.text_edit.document().modificationChanged.connect(self.update_save_action_state)
-        # 手动调用一次，确保按钮初始状态正确
-        self.update_save_action_state()
 
         self.save_as_action = QAction("另存(&A)", self)
         self.save_as_action.setShortcut("Alt+S")
@@ -3107,5 +3108,6 @@ if __name__ == "__main__":
         JQEdit.resize(JQEdit.window_width, JQEdit.window_height)
         JQEdit.show()
     else:
+        JQEdit.resize(800,600)
         JQEdit.showMaximized()
     sys.exit(app.exec())
