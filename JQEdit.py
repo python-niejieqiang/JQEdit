@@ -8,8 +8,8 @@ import sys
 import threading
 import time
 from functools import partial
-
-import cchardet
+import cProfile
+import chardet
 import pyperclip
 import ujson
 from PySide6.QtCore import (QTranslator, Q_ARG, QFile, QMetaObject, QRunnable, QThreadPool, QThread, QObject,
@@ -988,6 +988,14 @@ class JavaScriptHighlighter(SyntaxHighlighterBase):
             (QRegularExpression(r"^\s*(?:\/\*[^\n]*\*\/|\/\/[^\n]*)",QRegularExpression.MultilineOption), self.comment_format)
         ])
 
+class JsonFileHighlighter(SyntaxHighlighterBase):
+    def __init__(self, parent=None, theme_name="dark"):  # 添加 theme_name 参数
+        super().__init__(parent, theme_name=theme_name)  # 传递 theme_name 参数
+
+        self.highlight_rules.extend([
+            (QRegularExpression(r"[\{\}\[\]\(\)]|(?<=\:)[^\:]*?$",QRegularExpression.MultilineOption), self.keyword_format),
+        ])
+
 class HighlighterFactory:
     @staticmethod
     def create_highlighter(file_extension, theme_name="dark"):
@@ -1004,7 +1012,9 @@ class HighlighterFactory:
             ".sh": BashHighlighter,
             ".html": HTMLHighlighter,
             ".css": CssHighlighter,
+            ".qss": CssHighlighter,
             ".cpp": CppHighlighter,
+            ".json": JsonFileHighlighter,
             ".ini": IniFileHighlighter,
         }
 
@@ -1608,6 +1618,9 @@ class Notepad(QMainWindow):
     def __init__(self):
         super().__init__()
         self.app_name = "JQEdit"
+        # 设置默认字体
+        self.default_font = self.font()
+        self.current_font_size = self.default_font.pointSize()
         # 用来记录文件编码，名字
         self.current_file_encoding = None
         # 记录当前文件名
@@ -1633,27 +1646,16 @@ class Notepad(QMainWindow):
         self.theme_changed.connect(self.on_theme_changed)  # 连接主题改变信号到槽函数
         self.syntax_highlight_toggled.connect(self.toggle_syntax_highlight)
         self.apply_wrap_status()  # 应用状态栏，自动换行设置
-        self.text_edit.setFont(self.font)
 
-        # 加载最近打开模块
-        self.new_file_action = QAction("新建(&N)", self)
-        self.new_file_action.setShortcut("Ctrl+N")
-        self.new_file_action.triggered.connect(self.new_file)
-        self.file_menu.addAction(self.new_file_action)
-        self.recent_files_menu = QMenu("最近打开")
-        self.file_menu.insertMenu(self.new_file_action,self.recent_files_menu)
-        # 添加清空记录的菜单项
-        self.clear_recent_files_action = QAction("清空记录", self)
-        self.clear_recent_files_action.triggered.connect(self.clear_recent_files)
-        self.recent_files_menu.addAction(self.clear_recent_files_action)
+        self.setup_other_actions()
+        # 加载鼠标右键菜单
+        self.setup_context_menu()
+        # 加载剪贴板管理器
+        self.clipboard_manager = ClipboardManager(os.path.join(resource_path,"clipboard_list.json"))
+        # 只勾选用户选择的主题
+        for action in self.theme_actions:
+            action.setChecked(action.data() == self.theme)
 
-        self.save_action = QAction("保存(&S)", self)
-        self.save_action.setShortcut("Ctrl+S")
-        self.save_action.triggered.connect(self.save)
-        self.file_menu.addAction(self.save_action)
-        self.text_edit.document().modificationChanged.connect(self.update_save_action_state)
-        # 手动调用一次，确保按钮初始状态正确
-        self.update_save_action_state()
         # 最近打开的文件列表
         self.action_connections = {}
         # 使用os模块读取路径只是为了pyinstaller打包成exe的时候不会报错
@@ -1673,16 +1675,6 @@ class Notepad(QMainWindow):
         self.timer = QTimer()
         self.timer.timeout.connect(self.check_file_modification)
         self.timer.start(2000)  # 每2秒检查一次
-        QTimer.singleShot(0, self.process_remain_ui)
-    def process_remain_ui(self):
-        self.setup_other_actions()
-        # 加载鼠标右键菜单
-        self.setup_context_menu()
-        # 加载剪贴板管理器
-        self.clipboard_manager = ClipboardManager(os.path.join(resource_path,"clipboard_list.json"))
-        # 只勾选用户选择的主题
-        for action in self.theme_actions:
-            action.setChecked(action.data() == self.theme)
 
     def setup_context_menu(self):
         #   自定义右键菜单
@@ -1801,6 +1793,26 @@ class Notepad(QMainWindow):
         self.menu_bar.addMenu(self.tool_menu)
 
     def setup_other_actions(self):
+        # 加载最近打开模块
+        self.new_file_action = QAction("新建(&N)", self)
+        self.new_file_action.setShortcut("Ctrl+N")
+        self.new_file_action.triggered.connect(self.new_file)
+        self.file_menu.addAction(self.new_file_action)
+        self.recent_files_menu = QMenu("最近打开")
+        self.file_menu.insertMenu(self.new_file_action,self.recent_files_menu)
+        # 添加清空记录的菜单项
+        self.clear_recent_files_action = QAction("清空记录", self)
+        self.clear_recent_files_action.triggered.connect(self.clear_recent_files)
+        self.recent_files_menu.addAction(self.clear_recent_files_action)
+
+        self.save_action = QAction("保存(&S)", self)
+        self.save_action.setShortcut("Ctrl+S")
+        self.save_action.triggered.connect(self.save)
+        self.file_menu.addAction(self.save_action)
+        self.text_edit.document().modificationChanged.connect(self.update_save_action_state)
+        # 手动调用一次，确保按钮初始状态正确
+        self.update_save_action_state()
+
         self.open_action = QAction("打开(&O)", self)
         self.open_action.setShortcut("Ctrl+O")
         self.open_action.triggered.connect(self.open_dialog)
@@ -2016,6 +2028,15 @@ class Notepad(QMainWindow):
         self.xcode_theme_action.triggered.connect(lambda: self.apply_theme("xcode"))
         self.theme_menu.addAction(self.xcode_theme_action)
         self.theme_actions.append(self.xcode_theme_action)
+
+        self.scale_font_size_menu = self.theme_menu.addMenu("放大缩小字体")
+        self.increase_size_action = QAction("放大", self)
+        self.increase_size_action.triggered.connect(self.increase_font_size)
+        self.scale_font_size_menu.addAction(self.increase_size_action)
+
+        self.decrease_size_action = QAction("缩小", self)
+        self.decrease_size_action.triggered.connect(self.decrease_font_size)
+        self.scale_font_size_menu.addAction(self.decrease_size_action)
 
         self.font_action = QAction("设置主字体)", self)
         self.font_action.triggered.connect(self.modify_font)
@@ -2303,17 +2324,36 @@ class Notepad(QMainWindow):
         if event.key() == Qt.Key_F12:
             self.toggle_immersive_mode()
         # 处理组合键 Ctrl+F
-        if event.key() == Qt.Key_F and event.modifiers() & Qt.ControlModifier:
+        elif event.key() == Qt.Key_F and event.modifiers() & Qt.ControlModifier:
             self.display_replace()
             event.accept()
             return
         # 处理组合键 Ctrl+G
-        if event.key() == Qt.Key_G and event.modifiers() & Qt.ControlModifier:
+        elif event.key() == Qt.Key_G and event.modifiers() & Qt.ControlModifier:
             self.jump_to_line()
             event.accept()
             return
+        elif event.modifiers() & Qt.ControlModifier:
+            if event.key() == Qt.Key_Equal:  # Ctrl+= 放大字体
+                self.increase_font_size()
+            elif event.key() == Qt.Key_Minus:  # Ctrl+- 缩小字体
+                self.decrease_font_size()
         # 默认情况下，调用父类的事件处理函数
-        super().keyPressEvent(event)
+        else:
+            super().keyPressEvent(event)
+
+    def increase_font_size(self):
+        self.current_font_size += 1
+        self.update_font()
+
+    def decrease_font_size(self):
+        self.current_font_size -= 1
+        self.update_font()
+
+    def update_font(self):
+        new_font = QFont(self.default_font)
+        new_font.setPointSize(self.current_font_size)
+        self.text_edit.setFont(new_font)
 
     def tip_to_save(self):
         if self.text_edit.document().isModified():
@@ -2398,7 +2438,7 @@ class Notepad(QMainWindow):
                         break
                     lines.append(line)
                 position = f.tell()  # 在循环外获取位置
-            encoding_info = cchardet.detect(b"".join(lines))
+            encoding_info = chardet.detect(b"".join(lines))
             if encoding_info is None:
                 encoding = "utf-8"
             else:

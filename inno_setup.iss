@@ -1,7 +1,7 @@
 ; 脚本由 Inno Setup 脚本向导 生成！
 ; 有关创建 Inno Setup 脚本文件的详细资料请查阅帮助文档！
 
-#define MyAppName "JQEdit"
+#define MyAppName "JQEdit极速启动版"
 #define MyAppVersion "0.7.6"
 #define MyAppPublisher "niejieqiang"
 #define MyAppURL "469063190@qq.com"
@@ -29,8 +29,8 @@ AllowNoIcons=yes
 ; 以下行取消注释，以在非管理安装模式下运行（仅为当前用户安装）。
 ;PrivilegesRequired=lowest
 OutputDir=D:\迅雷下载\JQEdit\
-OutputBaseFilename=JQEdit_setup
-SetupIconFile=C:\Program Files (x86)\Inno Setup 6\SetupClassicIcon.ico
+OutputBaseFilename="JQEdit_极速启动版"
+SetupIconFile="C:\Program Files (x86)\Inno Setup 6\SetupClassicIcon.ico"
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
