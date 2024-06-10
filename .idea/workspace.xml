@@ -4,9 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="新增极速启动版，启动速度匹敌sublimetext,notepad++等编辑器，如果关闭行号，关键字高亮等功能启动速度还有提升空间。缺点就是不能设置字体，仅可以放大缩小。如何又提升速度，又能保存字体设置，仍需努力研究。。。">
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="补充提交">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/JQEdit_setup.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_setup.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/JQEdit_极速启动版.exe" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit_极速启动版.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cprofile_and_piplist.py" beforeDir="false" afterPath="$PROJECT_DIR$/cprofile_and_piplist.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/inno_setup.iss" beforeDir="false" afterPath="$PROJECT_DIR$/inno_setup.iss" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/recent_files.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/recent_files.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -214,14 +219,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1712137288400</updated>
-    </task>
-    <task id="LOCAL-00021" summary="添加一键运行当前程序，可自定义命令">
-      <option name="closed" value="true" />
-      <created>1714651107465</created>
-      <option name="number" value="00021" />
-      <option name="presentableId" value="LOCAL-00021" />
-      <option name="project" value="LOCAL" />
-      <updated>1714651107465</updated>
     </task>
     <task id="LOCAL-00022" summary="取色器添加复制颜色按钮，优化查找替换框体验">
       <option name="closed" value="true" />
@@ -607,7 +604,15 @@
       <option name="project" value="LOCAL" />
       <updated>1717982272981</updated>
     </task>
-    <option name="localTasksCounter" value="70" />
+    <task id="LOCAL-00070" summary="补充提交">
+      <option name="closed" value="true" />
+      <created>1717984230842</created>
+      <option name="number" value="00070" />
+      <option name="presentableId" value="LOCAL-00070" />
+      <option name="project" value="LOCAL" />
+      <updated>1717984230842</updated>
+    </task>
+    <option name="localTasksCounter" value="71" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -663,7 +668,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="编码，保存模块重构" />
     <MESSAGE value="复刻PycharmIDE中没有选择文本时，Ctrl-X,Ctrl-C对应的删除行，复制行功能，Ctrl-W扩展选区，Ctrl-Shift-W取消选区（此功能远不如Pycharm强大，只能将就使用），新增Ctrl-Shift-上箭头键向上移动当前行，Ctrl-Shift-下箭头键向下移动当前行" />
     <MESSAGE value="调整UI加载顺序，变相优化启动效率" />
     <MESSAGE value="新增Ctrl-Shift-上下方向键移动选区，按键时间间隔设定为0.2秒" />
@@ -688,7 +692,8 @@
     <MESSAGE value="使用ccdardet替代chardet,修复最大化启动转圈圈bug,启动速度勉强维持中等水平- -！,python版本降级至3.7.7" />
     <MESSAGE value="初始化小调整，最大化窗口再点击退出最大化时，默认尺寸为800，600" />
     <MESSAGE value="新增极速启动版，启动速度匹敌sublimetext,notepad++等编辑器，如果关闭行号，关键字高亮等功能启动速度还有提升空间。缺点就是不能设置字体，仅可以放大缩小。如何又提升速度，又能保存字体设置，仍需努力研究。。。" />
-    <option name="LAST_COMMIT_MESSAGE" value="新增极速启动版，启动速度匹敌sublimetext,notepad++等编辑器，如果关闭行号，关键字高亮等功能启动速度还有提升空间。缺点就是不能设置字体，仅可以放大缩小。如何又提升速度，又能保存字体设置，仍需努力研究。。。" />
+    <MESSAGE value="补充提交" />
+    <option name="LAST_COMMIT_MESSAGE" value="补充提交" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>

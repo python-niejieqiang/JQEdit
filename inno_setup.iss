@@ -29,7 +29,7 @@ AllowNoIcons=yes
 ; 以下行取消注释，以在非管理安装模式下运行（仅为当前用户安装）。
 ;PrivilegesRequired=lowest
 OutputDir=D:\迅雷下载\JQEdit\
-OutputBaseFilename="JQEdit_极速启动版"
+OutputBaseFilename="JQEdit_setup"
 SetupIconFile="C:\Program Files (x86)\Inno Setup 6\SetupClassicIcon.ico"
 Compression=lzma
 SolidCompression=yes

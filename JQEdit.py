@@ -8,7 +8,7 @@ import sys
 import threading
 import time
 from functools import partial
-import cProfile
+
 import chardet
 import pyperclip
 import ujson
@@ -1675,6 +1675,7 @@ class Notepad(QMainWindow):
         self.timer = QTimer()
         self.timer.timeout.connect(self.check_file_modification)
         self.timer.start(2000)  # 每2秒检查一次
+        self.text_edit.setFont(self.font)
 
     def setup_context_menu(self):
         #   自定义右键菜单
