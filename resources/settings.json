@@ -1,15 +1,6 @@
 {
-    "font": {
-        "font_family": "Consolas",
-        "point_size": 14,
-        "bold": false,
-        "italic": false,
-        "underline": false,
-        "strikeOut": false
-    },
-    "fallback_font": "Microsoft YaHei UI",
-    "theme": "nature_green",
-    "wrap_line_on": true,
+    "theme": "intellijlight",
+    "wrap_line_on": false,
     "statusbar_shown": true,
     "startup": {
         "width": 800,
@@ -51,6 +42,43 @@
             35,
             37,
             43
+        ]
+    },
+    "current_line_number_color": {
+        "intellijlight": [
+            0,
+            51,
+            179
+        ],
+        "dacula_darker": [
+            204,
+            120,
+            50
+        ],
+        "grovbox_soft": [
+            157,
+            0,
+            6
+        ],
+        "nature_green": [
+            46,
+            169,
+            170
+        ],
+        "dark": [
+            200,
+            120,
+            50
+        ],
+        "gerrylight": [
+            112,
+            64,
+            128
+        ],
+        "xcode": [
+            252,
+            95,
+            163
         ]
     },
     "show_line_numbers": true,

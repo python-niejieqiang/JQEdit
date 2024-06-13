@@ -1,7 +1,11 @@
 QPlainTextEdit {
+    font-size:12pt;
     background-color:rgb(30,43,50);
     color: rgb(168, 153, 132);
     selection-background-color: rgb(53, 65, 72);
     selection-color: rgb(168, 153, 132);
-    border: 1px
+    border:1px;
+}
+#line_number_area {
+    font-size:12pt;
 }

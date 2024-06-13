@@ -2,7 +2,7 @@
 ; 有关创建 Inno Setup 脚本文件的详细资料请查阅帮助文档！
 
 #define MyAppName "JQEdit"
-#define MyAppVersion "0.7.6"
+#define MyAppVersion "0.7.8"
 #define MyAppPublisher "niejieqiang"
 #define MyAppURL "469063190@qq.com"
 #define MyAppExeName "JQEdit.exe"
@@ -69,7 +69,7 @@ Root: HKA; Subkey: "Software\Classes\.ini"; ValueType: string; ValueName: ""; Va
 ; 添加命令项，使右键菜单项能够执行编辑器程序
 Root: HKCR; Subkey: "*\shell\用 JQEdit编辑\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""; Flags: uninsdeletekey
 ; 添加图标路径
-Root: HKCR; Subkey: "*\shell\用 JQEdit编辑"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\resources\JQEdit.ico"; Flags: uninsdeletekey
+Root: HKCR; Subkey: "*\shell\用 JQEdit编辑"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\_internal\resources\JQEdit.ico"; Flags: uninsdeletekey
 
 
 Root: HKA; Subkey: "Software\Classes\{#MyAppAssocExt}\OpenWithProgids"; ValueType: string; ValueName: "{#MyAppAssocKey}"; ValueData: ""; Flags: uninsdeletevalue

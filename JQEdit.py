@@ -18,7 +18,7 @@ from PySide6.QtCore import (QTranslator, Q_ARG, QFile, QMetaObject, QRunnable, Q
                             Qt, QEvent, QRect,
                             Signal, QUrl, Slot,
                             QRegularExpression)
-from PySide6.QtGui import (QAction, QIntValidator, QTextFormat, QGuiApplication, QKeySequence, QShortcut, QPalette,
+from PySide6.QtGui import (QAction, QIntValidator,QPen, QTextFormat,qRgb, qRed, qGreen, qBlue, QGuiApplication, QKeySequence, QShortcut, QPalette,
                            QPainter,
                            QSyntaxHighlighter,
                            QColor, QTextCharFormat,
@@ -61,9 +61,16 @@ class FileLoader(QThread):
             print(f"Error loading file: {e}")
 
 class LineNumberArea(QWidget):
-    def __init__(self, editor):
+    def __init__(self, editor,current_line_number_color):
         super().__init__(editor)
         self.editor = editor  # 保存与之关联的文本编辑器实例
+        self.current_line_color = editor.current_line_color  # 添加此行
+        self.current_line_number_color = current_line_number_color
+        self.setObjectName("line_number_area")
+        self.editor.line_number_highlight_changed.connect(self.on_highlight_changed)  # 连接信号
+
+    def on_highlight_changed(self, highlighted_block):
+        self.highlighted_block = highlighted_block  # 保存高亮行号
 
     def sizeHint(self):
         return QSize(self.editor.line_number_area_width(), 0)  # 返回建议的尺寸
@@ -85,12 +92,22 @@ class LineNumberArea(QWidget):
         top = int(self.editor.blockBoundingGeometry(block).translated(self.editor.contentOffset()).top())
         bottom = top + int(self.editor.blockBoundingRect(block).height())
 
+        cursor = self.editor.textCursor()
+        current_block_number = cursor.blockNumber()
+
         while block.isValid() and top <= event.rect().bottom():
             if block.isVisible() and bottom >= event.rect().top():
                 number = str(block_number + 1)
-                # 在行号区域绘制行号
-                painter.drawText(0, top, self.width(), self.editor.fontMetrics().height(),
-                                 Qt.AlignCenter, number)
+
+                if block_number == self.highlighted_block:
+                    line_color = QColor(*self.editor.current_line_color)  # 使用自定义颜色
+                    painter.fillRect(0, top, self.width(), self.editor.fontMetrics().height(), line_color)
+                    painter.setPen(QColor(*self.editor.current_line_number_color))
+                    painter.drawText(0, top, self.width(), self.editor.fontMetrics().height(),Qt.AlignCenter, number)
+                else:
+                    painter.setPen(text_color)
+
+                    painter.drawText(0, top, self.width(), self.editor.fontMetrics().height(),Qt.AlignCenter, number)
 
             block = block.next()
             top = bottom
@@ -108,19 +125,22 @@ class LineNumberWorker(QRunnable):
         self.editor.line_number_area.update()
 
 class TextEditor(QPlainTextEdit):
-    def __init__(self, notepad_instance,current_line_color):
+    line_number_highlight_changed = Signal(int)  # 新增信号，传递当前高亮行号
+    def __init__(self, notepad_instance,current_line_color,current_line_number_color):
         super().__init__()
         self.special_pairs = {'"': '"', "'": "'", '{': '}', '(': ')', '[': ']'}
         self.last_presstime =0  # 选区移动上次按键时间，需要设定按键间隔为0.2秒
         self.selection_phase = 0 # 扩展选区计数器
         self.untitled_name = "Untitled.txt"
         self.current_line_color = current_line_color
+        self.current_line_number_color = current_line_number_color
+
         self.notepad = notepad_instance  # 保存与之关联的记事本实例
         # 数字9最高最宽，由此计算出行号所需的最合适的宽度
         self.line_number_digit_width = self.fontMetrics().horizontalAdvance('9')
 
         self.show_line_numbers = self.notepad.show_line_numbers  # 添加此行，保存行号显示状态
-        self.line_number_area = LineNumberArea(self)  # 创建行号区域实例
+        self.line_number_area = LineNumberArea(self,self.current_line_number_color)  # 创建行号区域实例
 
         # 连接文本块计数变化和更新请求信号到对应槽函数
         self.blockCountChanged.connect(self.update_line_number_area_width)
@@ -224,6 +244,8 @@ class TextEditor(QPlainTextEdit):
             selection.cursor.clearSelection()
             extra_selections.append(selection)
         self.setExtraSelections(extra_selections)  # QPlainTextEdit也支持此方法
+        current_block = self.textCursor().blockNumber()
+        self.line_number_highlight_changed.emit(current_block)
 
     def display_default_file_name(self, filename_):
         # 只需要设置文档的修改状态，窗口的修改状态会自动更新
@@ -289,11 +311,7 @@ class TextEditor(QPlainTextEdit):
         cr = self.viewport().rect()
         if self.show_line_numbers:
             self.line_number_area.setGeometry(QRect(cr.left(), cr.top(),
-                                                     self.line_number_area_width(), cr.height()))
-
-    def setFont(self, font):
-        super().setFont(font)
-        self.line_number_area.setFont(font)
+                                                     self.line_number_area_width()+4, cr.height()))
 
     def paintEvent(self, event):
         super().paintEvent(event)
@@ -768,6 +786,8 @@ class TextEditor(QPlainTextEdit):
         cursor.endEditBlock()
 
 class SyntaxHighlighterBase(QSyntaxHighlighter):
+    keyword_color_changed = Signal(QColor)
+
     def __init__(self, parent=None, theme_name="dark"):
         super().__init__(parent)
 
@@ -796,6 +816,7 @@ class SyntaxHighlighterBase(QSyntaxHighlighter):
                     QColor(*keyword_colors.get("string", {}).get("color", [42, 161, 152])))
                 self.operator_format.setForeground(
                     QColor(*keyword_colors.get("operator", {}).get("color", [200, 120, 50])))
+                self.keyword_color_changed.emit(self.keyword_format.foreground().color())
 
                 # 设置粗体和斜体
                 self.set_format_attributes(self.comment_format, keyword_colors.get("comment", {}))
@@ -846,8 +867,8 @@ class BatchHighlighter(SyntaxHighlighterBase):
         super().__init__(parent, theme_name=theme_name)  # 传递 theme_name 参数
 
         self.highlight_rules.extend([
-            (QRegularExpression(r"(?i)\b(?:rem|call|echo|set|cd|if|else|goto|pause|exit|exist)\b"), self.keyword_format),
-            (QRegularExpression(r"(?i)^\s*(?:\:\:|REM)[^\n]*",QRegularExpression.MultilineOption), self.comment_format)
+            (QRegularExpression(r"\b(?:del|call|echo|set|cd|if|else|goto|pause|exit|exist)\b"), self.keyword_format),
+            (QRegularExpression(r"^\s*(?:\:\:|REM|rem)[^\n]*?$",QRegularExpression.MultilineOption), self.comment_format)
         ])
 
 class KotlinHighlighter(SyntaxHighlighterBase):
@@ -951,7 +972,7 @@ class XMLHighlighter(SyntaxHighlighterBase):
         super().__init__(parent, theme_name=theme_name)
 
         self.highlight_rules.extend( [
-            (QRegularExpression(r"(?:\<\??\w+\s*|\s*\<\/\w+\>)"), self.keyword_format),
+            (QRegularExpression(r"\<\??[^\<\>]*?\>"), self.keyword_format),
             (QRegularExpression(r"^\s*\<\!\-\-[^\n]*?\-\-\>",QRegularExpression.MultilineOption), self.comment_format)
         ])
 
@@ -1618,9 +1639,6 @@ class Notepad(QMainWindow):
     def __init__(self):
         super().__init__()
         self.app_name = "JQEdit"
-        # 设置默认字体
-        self.default_font = self.font()
-        self.current_font_size = self.default_font.pointSize()
         # 用来记录文件编码，名字
         self.current_file_encoding = None
         # 记录当前文件名
@@ -1633,15 +1651,16 @@ class Notepad(QMainWindow):
         # 读取settings.json文件
         self.settings_file = os.path.join(resource_path, "settings.json")
         self.immersive_mode = False  # 记录是否处于沉浸模式
+
+        self._styles_cache = {}  # 用于缓存已加载的样式
         # 读取并设置启动窗口尺寸,主题字体等设置
         self.load_settings()
+        self.apply_theme(self.theme)
 
         # 第一步加载用户第一眼能看到的菜单栏，文本区域，状态栏，主题，然后再加载看不到的菜单子项
         self.setup_menubar_statusbar_plaintextedit()
-        self._styles_cache = {}  # 用于缓存已加载的样式
         self.theme_actions = [] # 将所有主题菜单存入一个数组，确保只勾选选中的主题
         # 预加载基础主题
-        self.apply_theme(self.theme)
         self.highlighter = None
         self.theme_changed.connect(self.on_theme_changed)  # 连接主题改变信号到槽函数
         self.syntax_highlight_toggled.connect(self.toggle_syntax_highlight)
@@ -1764,7 +1783,7 @@ class Notepad(QMainWindow):
         self.menu_bar = QMenuBar(self)
         self.setMenuBar(self.menu_bar)
 
-        self.text_edit = TextEditor(self,self.current_line_color)
+        self.text_edit = TextEditor(self,self.current_line_color,self.current_line_number_color)
         self.setCentralWidget(self.text_edit)
 
         # 添加底部状态栏
@@ -2196,7 +2215,9 @@ class Notepad(QMainWindow):
     def update_current_line_color(self):
         """更新当前行高亮颜色以匹配当前主题"""
         new_color = self.settings.get("current_line_color", {}).get(self.theme)
+        new_line_number_color = self.settings.get("current_line_number_color", {}).get(self.theme)
         self.text_edit.current_line_color = new_color
+        self.text_edit.current_line_number_color = new_line_number_color
         # 强制重新高亮当前行以应用新的颜色
         self.text_edit.highlight_current_line()
 
@@ -2343,13 +2364,34 @@ class Notepad(QMainWindow):
         else:
             super().keyPressEvent(event)
 
-    def increase_font_size(self):
-        self.current_font_size += 1
-        self.update_font()
+    def adjust_font_size(self,num):
+        for filename in os.listdir(resource_path):
+            if filename.endswith(".qss"):
+                qss_file = os.path.join(resource_path, filename)
+                with open(qss_file, "r", encoding="utf-8") as file:
+                    qss_content = file.readlines()
+
+                for i, line in enumerate(qss_content):
+                    if re.search(r"font\s*\-\s*size", line):
+                        #把匹配到的字体大小加一
+                        qss_content[i] = re.sub(r"(\d+)pt",  lambda match:f"{int(match.group(1)) + num}pt", line)
+
+                with open(qss_file, "w", encoding="utf-8") as file:
+                    file.write("".join(qss_content))
+                self.last_modified_time = QFileInfo(self.current_file_name).lastModified().toMSecsSinceEpoch()
+
+                if self.theme in qss_file:
+                    with open(qss_file, "r", encoding="utf-8") as file:
+                        modified_qss = file.read()
+                    self.setStyleSheet(modified_qss)
 
     def decrease_font_size(self):
-        self.current_font_size -= 1
-        self.update_font()
+        to_adjust_size = -1
+        self.adjust_font_size(to_adjust_size)
+
+    def increase_font_size(self):
+        to_adjust_size = 1
+        self.adjust_font_size(to_adjust_size)
 
     def update_font(self):
         new_font = QFont(self.default_font)
@@ -2573,16 +2615,6 @@ class Notepad(QMainWindow):
         except FileNotFoundError:
             self.settings = {}  # 如果文件不存在，创建一个空字典
 
-        # 更新字体设置
-        font_data = self.settings.get("font", {})
-        self.font = QFont(font_data.get("font_family", "Microsoft YaHei UI"), font_data.get("point_size", 12))
-        self.font.setBold(font_data.get("bold", False))
-        self.font.setItalic(font_data.get("italic", False))
-        self.font.setUnderline(font_data.get("underline", False))
-        self.font.setStrikeOut(font_data.get("strikeOut", False))
-        self.fallback_font = self.settings.get("fallback_font")
-        self.font.setFamilies([self.font.family(), self.fallback_font])
-
         # 更新其他设置
         self.theme = self.settings.get("theme", "intellijlight")
         self.syntax_highlight_enabled = self.settings.get("syntax_on", False)
@@ -2592,6 +2624,8 @@ class Notepad(QMainWindow):
         self.statusbar_shown = self.settings.get("statusbar_shown", True)
         self.show_line_numbers = self.settings.get("show_line_numbers", True)
         self.current_line_color = self.settings.get("current_line_color",{}).get(self.theme)
+        self.current_line_number_color = self.settings.get("current_line_number_color",{}).get(self.theme)
+
         # 读取并应用窗口大小设置
         self.startup_data = self.settings.get("startup", {"width": 800,"height": 600,"is_maximized": False})
         self.window_width = self.startup_data.get("width", 800)
@@ -2608,8 +2642,6 @@ class Notepad(QMainWindow):
 
         # 更新现有设置
         existing_settings.update({
-            "font":{"font_family": self.font.family(),"point_size": self.font.pointSize(),"bold": self.font.bold(),"italic": self.font.italic(),"underline": self.font.underline(),"strikeOut": self.font.strikeOut()},
-            "fallback_font": self.fallback_font,  # 假设你已经在设置回滚字体时更新了这个变量
             "theme": self.theme,
             "wrap_line_on": self.wrap_line_on,
             "statusbar_shown": self.statusbar_shown,
@@ -2880,19 +2912,52 @@ class Notepad(QMainWindow):
         # 选择字体
         ok, fallback_font = QFontDialog.getFont()
         if ok:
-            self.fallback_font = fallback_font.family()
-            self.font.setFamilies([self.font.family(), self.fallback_font])
-            self.text_edit.setFont(self.font)
-            self.save_settings()  # 保存字体设置到json
+            font_name = fallback_font.family()
+            for filename in os.listdir(resource_path):
+                if filename.endswith(".qss"):
+                    qss_file = os.path.join(resource_path, filename)
+                    with open(qss_file, "r",encoding="utf-8") as file:
+                        qss_content = file.readlines()
+                    for i, line in enumerate(qss_content):
+                        if re.search(r"font\s*\-\s*family", line):
+                            qss_content[i] = re.sub(r"(?<=\,)\s*\"[^\"]*?\"", '"' + font_name + '"', line)
+                    with open(qss_file, "w",encoding="utf-8") as file:
+                        file.write("".join(qss_content))
+                    self.last_modified_time = QFileInfo(self.current_file_name).lastModified().toMSecsSinceEpoch()
+
+                    if self.theme in qss_file:
+                        with open(qss_file, "r",encoding="utf-8") as file:
+                            modified_qss = file.read()
+                        self.setStyleSheet(modified_qss)
+                        QMessageBox.warning(self,"提示","备选字体修改后需要重启记事本！")
+
 
     @Slot()
     def modify_font(self): # 设置第一字体
         # 选择字体
         ok, font = QFontDialog.getFont()
         if ok:
-            self.text_edit.setFont(font)
-            self.font = font  # 更新字体
-            self.save_settings()  # 保存字体设置到json
+            font_size = font.pointSize()
+            font_name = font.family()
+            for filename in os.listdir(resource_path):
+                if filename.endswith(".qss"):
+                    qss_file = os.path.join(resource_path,filename)
+                    with open(qss_file,"r",encoding="utf-8") as file:
+                        qss_content = file.readlines()
+
+                    for i,line in enumerate(qss_content):
+                        if re.search(r"font\s*\-\s*family",line):
+                            qss_content[i] = re.sub(r"(?<=\:)\s*\"[^\"]*?\"", '"'+font_name+'"' ,line)
+                        elif re.search(r"font\s*\-\s*size",line):
+                            qss_content[i] = re.sub(r"\d+pt",str(font_size)+"pt",line)
+                    with open(qss_file,"w",encoding="utf-8") as file:
+                        file.write("".join(qss_content))
+                    self.last_modified_time = QFileInfo(self.current_file_name).lastModified().toMSecsSinceEpoch()
+
+                    if self.theme in qss_file:
+                        with open(qss_file, "r",encoding="utf-8") as file:
+                            modified_qss = file.read()
+                        self.setStyleSheet(modified_qss)
 
     @Slot()
     def wrap_line_toggle(self):

@@ -4,5 +4,6 @@
     <file url="file://$PROJECT_DIR$/build_exe.bat" charset="GBK" />
     <file url="file://$PROJECT_DIR$/inno_setup.iss" charset="GBK" />
     <file url="file://$PROJECT_DIR$/istory.json" charset="GBK" />
+    <file url="PROJECT" charset="GBK" />
   </component>
 </project>
