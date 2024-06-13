@@ -18,7 +18,7 @@ from PySide6.QtCore import (QTranslator, Q_ARG, QFile, QMetaObject, QRunnable, Q
                             Qt, QEvent, QRect,
                             Signal, QUrl, Slot,
                             QRegularExpression)
-from PySide6.QtGui import (QAction, QIntValidator,QPen, QTextFormat,qRgb, qRed, qGreen, qBlue, QGuiApplication, QKeySequence, QShortcut, QPalette,
+from PySide6.QtGui import (QAction, QIntValidator, QTextFormat, QGuiApplication, QKeySequence, QShortcut, QPalette,
                            QPainter,
                            QSyntaxHighlighter,
                            QColor, QTextCharFormat,
@@ -786,7 +786,6 @@ class TextEditor(QPlainTextEdit):
         cursor.endEditBlock()
 
 class SyntaxHighlighterBase(QSyntaxHighlighter):
-    keyword_color_changed = Signal(QColor)
 
     def __init__(self, parent=None, theme_name="dark"):
         super().__init__(parent)
@@ -816,7 +815,6 @@ class SyntaxHighlighterBase(QSyntaxHighlighter):
                     QColor(*keyword_colors.get("string", {}).get("color", [42, 161, 152])))
                 self.operator_format.setForeground(
                     QColor(*keyword_colors.get("operator", {}).get("color", [200, 120, 50])))
-                self.keyword_color_changed.emit(self.keyword_format.foreground().color())
 
                 # 设置粗体和斜体
                 self.set_format_attributes(self.comment_format, keyword_colors.get("comment", {}))
@@ -1694,7 +1692,6 @@ class Notepad(QMainWindow):
         self.timer = QTimer()
         self.timer.timeout.connect(self.check_file_modification)
         self.timer.start(2000)  # 每2秒检查一次
-        self.text_edit.setFont(self.font)
 
     def setup_context_menu(self):
         #   自定义右键菜单

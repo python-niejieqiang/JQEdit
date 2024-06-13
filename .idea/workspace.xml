@@ -4,7 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="新增：高亮当前行贯穿到行号区域并高亮行号，在极速版的基础上重写字体相关逻辑，样式表中指定字体大小(font-size)，而不指定字体名(font-family)时，启动速度比较快,指定字体后，速度比不上极速启动版，革命尚未成功，仍需研究鱼和熊掌兼得。。。font-family:&quot;第一字体&quot;,&quot;第二字体&quot;;可以实现回滚字体效果" />
+    <list default="true" id="a47e1817-6e9a-4f93-9e76-bb326363ca2d" name="更改" comment="新增：高亮当前行贯穿到行号区域并高亮行号，在极速版的基础上重写字体相关逻辑，样式表中指定字体大小(font-size)，而不指定字体名(font-family)时，启动速度比较快,指定字体后，速度比不上极速启动版，革命尚未成功，仍需研究鱼和熊掌兼得。。。font-family:&quot;第一字体&quot;,&quot;第二字体&quot;;可以实现回滚字体效果">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/JQEdit.py" beforeDir="false" afterPath="$PROJECT_DIR$/JQEdit.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/resources/settings.json" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -212,6 +216,21 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration default="true" type="ShConfigurationType">
+      <option name="SCRIPT_TEXT" value="" />
+      <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
+      <option name="SCRIPT_PATH" value="" />
+      <option name="SCRIPT_OPTIONS" value="" />
+      <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
+      <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="INDEPENDENT_INTERPRETER_PATH" value="false" />
+      <option name="INTERPRETER_PATH" value="C:/Windows/system32/cmd.exe" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="EXECUTE_IN_TERMINAL" value="true" />
+      <option name="EXECUTE_SCRIPT_FILE" value="true" />
+      <envs />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
         <item itemvalue="Python.JQEdit" />
@@ -235,14 +254,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1712137288400</updated>
-    </task>
-    <task id="LOCAL-00022" summary="取色器添加复制颜色按钮，优化查找替换框体验">
-      <option name="closed" value="true" />
-      <created>1714740262004</created>
-      <option name="number" value="00022" />
-      <option name="presentableId" value="LOCAL-00022" />
-      <option name="project" value="LOCAL" />
-      <updated>1714740262004</updated>
     </task>
     <task id="LOCAL-00023" summary="增加单词移动，删除，大小写转换功能">
       <option name="closed" value="true" />
@@ -628,7 +639,15 @@
       <option name="project" value="LOCAL" />
       <updated>1718318848172</updated>
     </task>
-    <option name="localTasksCounter" value="71" />
+    <task id="LOCAL-00071" summary="新增：高亮当前行贯穿到行号区域并高亮行号，在极速版的基础上重写字体相关逻辑，样式表中指定字体大小(font-size)，而不指定字体名(font-family)时，启动速度比较快,指定字体后，速度比不上极速启动版，革命尚未成功，仍需研究鱼和熊掌兼得。。。font-family:&quot;第一字体&quot;,&quot;第二字体&quot;;可以实现回滚字体效果">
+      <option name="closed" value="true" />
+      <created>1718319036349</created>
+      <option name="number" value="00071" />
+      <option name="presentableId" value="LOCAL-00071" />
+      <option name="project" value="LOCAL" />
+      <updated>1718319036349</updated>
+    </task>
+    <option name="localTasksCounter" value="72" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
