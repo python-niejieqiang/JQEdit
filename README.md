@@ -1,6 +1,6 @@
-<img src="http://pic.yupoo.com/python-niejieqiang/6f089aa9/efb0a9fa.png">
-<img src="http://pic.yupoo.com/python-niejieqiang/e5731caa/c4393773.png">
-<img src="http://pic.yupoo.com/python-niejieqiang/05fca6d4/9a94d0af.png">
+<img src="http://pic.yupoo.com/python-niejieqiang/55d34387/f76dcb98.png">
+<img src="http://pic.yupoo.com/python-niejieqiang/c2ddf713/318e6a85.png">
+<img src="http://pic.yupoo.com/python-niejieqiang/bbb4ec0a/7bcfaa88.png">
 **JQEdit**
  使用Pyside6编写。作为Windows记事本的替代品，具有基本的读取、写入和保存功能，支持正则表达式查找替换、切换主题，自动保存用户设置，选区替换、行号显示，行号跳转，选区缩进以及语法关键字高亮等功能。此外，JQEdit还具有处理各国编码的能力，并提供剪贴板功能以及调用命令行的功能。
 JQEdit的源代码遵循GPLv3协议发布。 

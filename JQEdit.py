@@ -2063,6 +2063,10 @@ class Notepad(QMainWindow):
         self.fallback_font_action.triggered.connect(self.set_fallback_font)
         self.theme_menu.addAction(self.fallback_font_action)
 
+        self.restore_quick_startup_action = QAction("恢复默认极速启动", self)
+        self.restore_quick_startup_action.triggered.connect(self.delete_font_settings)
+        self.theme_menu.addAction(self.restore_quick_startup_action)
+
         #添加一个操作来切换行号的可见性
         self.line_numbers_action = QAction("行号", self, checkable=True)
         self.line_numbers_action.setChecked(self.show_line_numbers)
@@ -2368,14 +2372,19 @@ class Notepad(QMainWindow):
                 with open(qss_file, "r", encoding="utf-8") as file:
                     qss_content = file.readlines()
 
+                # 初始化标记，检查是否已修改过font-family和font-size
+                size_modified = False
                 for i, line in enumerate(qss_content):
                     if re.search(r"font\s*\-\s*size", line):
                         #把匹配到的字体大小加一
                         qss_content[i] = re.sub(r"(\d+)pt",  lambda match:f"{int(match.group(1)) + num}pt", line)
+                        size_modified = True
+                if not size_modified:
+                    replacement = 'font-size:12pt;'
+                    qss_content = re.sub(r"\{", "{\n    " + replacement, "".join(qss_content), count=2)
 
                 with open(qss_file, "w", encoding="utf-8") as file:
                     file.write("".join(qss_content))
-                self.last_modified_time = QFileInfo(self.current_file_name).lastModified().toMSecsSinceEpoch()
 
                 if self.theme in qss_file:
                     with open(qss_file, "r", encoding="utf-8") as file:
@@ -2904,33 +2913,68 @@ class Notepad(QMainWindow):
             self.setWindowTitle(f"{self.app_name} - [{self.text_edit.untitled_name}]")
             self.update_save_action_state()
 
+    def delete_font_settings(self):
+        for filename in os.listdir(resource_path):
+            if filename.endswith(".qss"):
+                qss_file = os.path.join(resource_path, filename)
+                with open(qss_file, "r", encoding="utf-8") as file:
+                    qss_content = file.readlines()
+                new_qss_content=[]
+                for line in qss_content:
+                    if re.search(r"font\s*\-\s*family", line):
+                        continue
+                    elif re.search(r"font\s*\-\s*size", line):
+                        continue
+                    else:
+                        # 其他行直接添加到新列表中
+                        new_qss_content.append(line)
+
+                with open(qss_file, "w", encoding="utf-8") as file:
+                    file.write("".join(new_qss_content))
+
+                if self.theme in qss_file:
+                    with open(qss_file, "r", encoding="utf-8") as file:
+                        modified_qss = file.read()
+                    self.setStyleSheet(modified_qss)
+
     @Slot()
     def set_fallback_font(self): # 设置回滚字体，可以实现代码使用Monaco显示，中文使用雅黑显示
         # 选择字体
-        ok, fallback_font = QFontDialog.getFont()
+        ok, font = QFontDialog.getFont()
         if ok:
-            font_name = fallback_font.family()
+
+            selected_font_name = font.family()
+            default_font_name = self.font().defaultFamily()
             for filename in os.listdir(resource_path):
                 if filename.endswith(".qss"):
                     qss_file = os.path.join(resource_path, filename)
-                    with open(qss_file, "r",encoding="utf-8") as file:
+                    with open(qss_file, "r", encoding="utf-8") as file:
                         qss_content = file.readlines()
+
+                    # 初始化标记，检查是否已修改过font-family和font-size
+                    family_modified =  False
+                    num = 0
+
                     for i, line in enumerate(qss_content):
                         if re.search(r"font\s*\-\s*family", line):
-                            qss_content[i] = re.sub(r"(?<=\,)\s*\"[^\"]*?\"", '"' + font_name + '"', line)
-                    with open(qss_file, "w",encoding="utf-8") as file:
+                            qss_content[i],num = re.subn(r"(?<=\,)(\s*\"[^\"]*?\");", '"{}";'.format(selected_font_name), line)
+                            if not num >0:
+                                qss_content[i],num = re.subn(r";", ',"{}";'.format(selected_font_name), line)
+
+
+                    if not num > 0 :
+                        replacement = 'font-family: "{}",'.format(default_font_name)+'"{}";'.format(selected_font_name)
+                        qss_content = re.sub(r"\{", "{\n    " + replacement, "".join(qss_content), count=2)
+                    with open(qss_file, "w", encoding="utf-8") as file:
                         file.write("".join(qss_content))
-                    self.last_modified_time = QFileInfo(self.current_file_name).lastModified().toMSecsSinceEpoch()
 
                     if self.theme in qss_file:
-                        with open(qss_file, "r",encoding="utf-8") as file:
+                        with open(qss_file, "r", encoding="utf-8") as file:
                             modified_qss = file.read()
                         self.setStyleSheet(modified_qss)
-                        QMessageBox.warning(self,"提示","备选字体修改后需要重启记事本！")
-
 
     @Slot()
-    def modify_font(self): # 设置第一字体
+    def modify_font(self):  # 设置第一字体
         # 选择字体
         ok, font = QFontDialog.getFont()
         if ok:
@@ -2938,21 +2982,32 @@ class Notepad(QMainWindow):
             font_name = font.family()
             for filename in os.listdir(resource_path):
                 if filename.endswith(".qss"):
-                    qss_file = os.path.join(resource_path,filename)
-                    with open(qss_file,"r",encoding="utf-8") as file:
+                    qss_file = os.path.join(resource_path, filename)
+                    with open(qss_file, "r", encoding="utf-8") as file:
                         qss_content = file.readlines()
 
-                    for i,line in enumerate(qss_content):
-                        if re.search(r"font\s*\-\s*family",line):
-                            qss_content[i] = re.sub(r"(?<=\:)\s*\"[^\"]*?\"", '"'+font_name+'"' ,line)
-                        elif re.search(r"font\s*\-\s*size",line):
-                            qss_content[i] = re.sub(r"\d+pt",str(font_size)+"pt",line)
-                    with open(qss_file,"w",encoding="utf-8") as file:
+                    # 初始化标记，检查是否已修改过font-family和font-size
+                    family_modified = size_modified = False
+
+                    for i, line in enumerate(qss_content):
+                        if re.search(r"font\s*\-\s*family", line):
+                            qss_content[i] = re.sub(r"(?<=\:)\s*\"[^\"]*?\"", '"{}"'.format(font_name), line)
+                            family_modified = True
+                        elif re.search(r"font\s*\-\s*size", line):
+                            qss_content[i] = re.sub(r"\d+pt", "{}pt".format(font_size), line)
+                            size_modified = True
+
+                    if not family_modified:
+                        replacement = 'font-family: "{}";'.format(font_name)
+                        qss_content = re.sub(r"\{", "{\n    " + replacement, "".join(qss_content), count=2)
+                    if not size_modified:
+                        replacement = 'font-size: {}pt;'.format(font_size)
+                        qss_content = re.sub(r"\{", "{\n    " + replacement, "".join(qss_content), count=2)
+                    with open(qss_file, "w", encoding="utf-8") as file:
                         file.write("".join(qss_content))
-                    self.last_modified_time = QFileInfo(self.current_file_name).lastModified().toMSecsSinceEpoch()
 
                     if self.theme in qss_file:
-                        with open(qss_file, "r",encoding="utf-8") as file:
+                        with open(qss_file, "r", encoding="utf-8") as file:
                             modified_qss = file.read()
                         self.setStyleSheet(modified_qss)
 

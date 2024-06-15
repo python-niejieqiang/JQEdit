@@ -1,5 +1,5 @@
 QPlainTextEdit {
-    font-size:14pt;
+    font-size:12pt;
     background-color: white;
     color: black;
     selection-background-color: rgb(166,210,255);
@@ -7,5 +7,5 @@ QPlainTextEdit {
     border:1px;
 }
 #line_number_area {
-    font-size:14pt;
+    font-size:12pt;
 }
